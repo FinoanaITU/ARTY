@@ -1,0 +1,8 @@
+# Python virtual environment
+.venv/
+
+# Node dependencies
+Front/node_modules/
+Front/node_module/
+Front/package-lock.json
+
