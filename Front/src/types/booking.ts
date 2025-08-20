@@ -2,7 +2,9 @@
 export interface CustomBookingRequest {
   workshopId: number;
   preferredDate: Date;
+  preferredTime?: string;
   alternativeDate?: Date;
+  alternativeTime?: string;
   participants: number;
   isPrivate: boolean;
   specialRequirements?: string;

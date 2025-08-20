@@ -1,15 +1,21 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCart } from '@/contexts/CartContext';
+import { useUser } from '@/contexts/UserContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Star, Heart, ShoppingCart, ArrowLeft, Clock, Package, Truck } from 'lucide-react';
+import { Star, Heart, ShoppingCart, ArrowLeft, Clock, Package, Truck, Lock, Ruler } from 'lucide-react';
 import BulkOrderForm from '@/components/BulkOrderForm';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import ProductReviews from '@/components/ProductReviews';
 import SimilarProducts from '@/components/SimilarProducts';
+import PriceVariationSelector from '@/components/PriceVariationSelector';
+import WorkshopRecommendations from '@/components/WorkshopRecommendations';
+import { PriceVariation } from '@/types/cart';
 
 // Enhanced product data with all required fields
 const getProductById = (id: string) => {
@@ -31,6 +37,12 @@ const getProductById = (id: string) => {
       reviewCount: 24,
       description: 'Masque traditionnel sculpté à la main selon les techniques ancestrales du peuple Vezo. Chaque détail raconte une histoire et représente les traditions maritimes de Madagascar.',
       materials: ['Bois de palissandre', 'Pigments naturels', 'Cire d\'abeille'],
+      dimensions: {
+        length: 25,
+        width: 18,
+        height: 8,
+        weight: 0.6
+      },
       craftingTime: '15 jours',
       stock: 3,
       bulkOrderEnabled: true,
@@ -57,6 +69,12 @@ const getProductById = (id: string) => {
       reviewCount: 18,
       description: 'Représentation artistique du zébu, animal sacré de Madagascar.',
       materials: ['Bois d\'ébène', 'Huile de lin'],
+      dimensions: {
+        length: 15,
+        width: 8,
+        height: 12,
+        weight: 0.3
+      },
       craftingTime: '8 jours',
       stock: 7,
       bulkOrderEnabled: false,
@@ -75,9 +93,12 @@ const getProductById = (id: string) => {
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
+  const { addItem } = useCart();
+  const { user, isLoggedIn } = useUser();
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showBulkForm, setShowBulkForm] = useState(false);
+  const [selectedPriceVariation, setSelectedPriceVariation] = useState<PriceVariation | null>(null);
 
   const product = getProductById(id || '');
 
@@ -94,6 +115,29 @@ const ProductDetail = () => {
       </div>
     );
   }
+
+  const handleAddToCart = () => {
+    if (!isLoggedIn) {
+      alert('Vous devez vous connecter pour ajouter des produits au panier !');
+      return;
+    }
+    
+    if (product) {
+      addItem({
+        type: 'product',
+        productId: product.id,
+        name: product.name,
+        artisan: product.artisan,
+        price: selectedPriceVariation?.discountedPrice || product.price,
+        quantity,
+        image: product.images[0],
+        priceVariation: selectedPriceVariation || undefined
+      });
+      
+      // Show success message
+      alert('Produit ajouté au panier !');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
@@ -148,9 +192,13 @@ const ProductDetail = () => {
                     </span>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-orange-600 mb-4">
-                  {product.price.toLocaleString()} Ar
-                </p>
+                
+                {/* Prix de base pour les non-connectés */}
+                {!isLoggedIn && (
+                  <p className="text-2xl font-bold text-orange-600 mb-4">
+                    À partir de {product.price.toLocaleString()} Ar
+                  </p>
+                )}
               </div>
 
               {/* Product Details */}
@@ -167,6 +215,15 @@ const ProductDetail = () => {
                   <Truck className="w-4 h-4 text-blue-600" />
                   <span>Expédition: 3-5 jours</span>
                 </div>
+                {product.dimensions && (
+                  <div className="flex items-center gap-2">
+                    <Ruler className="w-4 h-4 text-purple-600" />
+                    <span>
+                      {product.dimensions.length} × {product.dimensions.width} × {product.dimensions.height} cm 
+                      ({product.dimensions.weight} kg)
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Materials */}
@@ -181,51 +238,102 @@ const ProductDetail = () => {
                 </div>
               </div>
 
+              {/* Price Variation Selector - Only for logged in users */}
+              {isLoggedIn ? (
+                <PriceVariationSelector
+                  basePrice={product.price}
+                  onPriceChange={setSelectedPriceVariation}
+                />
+              ) : (
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 text-orange-700">
+                      <Lock className="w-5 h-5" />
+                      <div>
+                        <p className="font-medium">Connectez-vous pour voir vos tarifs personnalisés</p>
+                        <p className="text-sm">Les prix varient selon votre profil (particulier, entreprise, résident local)</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <Link to="/login">
+                        <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                          Se connecter
+                        </Button>
+                      </Link>
+                      <Link to="/signup">
+                        <Button variant="outline" size="sm">
+                          Créer un compte
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Quantity and Actions */}
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <label className="font-medium">Quantité:</label>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    >
-                      -
-                    </Button>
-                    <Input 
-                      type="number" 
-                      value={quantity} 
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-20 text-center"
-                      min="1"
-                      max={product.stock}
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                    >
-                      +
-                    </Button>
+                {isLoggedIn && (
+                  <div className="flex items-center gap-4">
+                    <label className="font-medium">Quantité:</label>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      >
+                        -
+                      </Button>
+                      <Input 
+                        type="number" 
+                        value={quantity} 
+                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-20 text-center"
+                        min="1"
+                        max={product.stock}
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      >
+                        +
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex gap-3">
-                  <Button className="flex-1 bg-orange-600 hover:bg-orange-700">
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Ajouter au panier
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => setIsFavorite(!isFavorite)}
-                    className={isFavorite ? 'text-red-600 border-red-600' : ''}
-                  >
-                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-                  </Button>
+                  {isLoggedIn ? (
+                    <>
+                      <Button 
+                        className="flex-1 bg-orange-600 hover:bg-orange-700"
+                        onClick={handleAddToCart}
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Ajouter au panier
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setIsFavorite(!isFavorite)}
+                        className={isFavorite ? 'text-red-600 border-red-600' : ''}
+                      >
+                        <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="flex-1">
+                      <Button 
+                        className="w-full bg-gray-400 cursor-not-allowed"
+                        disabled
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        Connectez-vous pour acheter
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
-                {product.bulkOrderEnabled && (
+                {isLoggedIn && product.bulkOrderEnabled && (
                   <Button 
                     variant="outline" 
                     className="w-full border-green-600 text-green-600 hover:bg-green-50"
@@ -248,7 +356,7 @@ const ProductDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Artisan Info */}
+          {/* Artisan Info - UPDATED to remove contact option */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>À propos de l'artisan</CardTitle>
@@ -279,6 +387,11 @@ const ProductDetail = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Workshop Recommendations */}
+          <div className="mb-8">
+            <WorkshopRecommendations category={product.category} />
+          </div>
 
           {/* Reviews */}
           <ProductReviews productId={product.id} />

@@ -7,19 +7,14 @@ import { AlertCircle, Calendar, Clock, Users } from 'lucide-react';
 import WorkshopBookingCalendar from './WorkshopBookingCalendar';
 import CustomBookingRequest from './CustomBookingRequest';
 import { CustomBookingRequest as CustomBookingRequestType, PrivatizationOption } from '@/types/booking';
-
-interface UnavailabilityPeriod {
-  id: string;
-  startDate: Date;
-  endDate?: Date;
-  reason: string;
-  type: 'single' | 'range';
-}
+import { UnavailabilityPeriod } from '@/types/artisan';
 
 interface AvailabilityAwareBookingProps {
   workshopId: number;
+  workshopType: 'inscription' | 'reservation';
   duration: string;
   maxParticipants: number;
+  artisanName: string;
   privatizationOption?: PrivatizationOption;
   artisanUnavailability: UnavailabilityPeriod[];
   onBooking: (date: Date, time: string) => void;
@@ -28,8 +23,10 @@ interface AvailabilityAwareBookingProps {
 
 const AvailabilityAwareBooking: React.FC<AvailabilityAwareBookingProps> = ({
   workshopId,
+  workshopType,
   duration,
   maxParticipants,
+  artisanName,
   privatizationOption,
   artisanUnavailability,
   onBooking,
@@ -78,6 +75,8 @@ const AvailabilityAwareBooking: React.FC<AvailabilityAwareBookingProps> = ({
       <CustomBookingRequest
         workshopId={workshopId}
         maxParticipants={maxParticipants}
+        artisanName={artisanName}
+        unavailabilityPeriods={artisanUnavailability}
         privatizationOption={privatizationOption}
         onSubmit={handleCustomRequestSubmit}
         onCancel={() => setShowCustomRequest(false)}
@@ -89,30 +88,30 @@ const AvailabilityAwareBooking: React.FC<AvailabilityAwareBookingProps> = ({
     <div className="space-y-6">
       {/* Artisan Availability Notice */}
       {upcomingUnavailability.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-brand-orange/30 bg-brand-beige">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-800">
+            <CardTitle className="flex items-center gap-2 text-brand-brown">
               <AlertCircle className="h-5 w-5" />
               Indisponibilités de l'artisan
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-yellow-700 mb-3">
+            <p className="text-sm text-brand-brown/80 mb-3">
               L'artisan ne sera pas disponible aux dates suivantes :
             </p>
             <div className="space-y-2">
               {upcomingUnavailability.map((period) => (
                 <div key={period.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-yellow-600" />
-                    <span className="text-sm font-medium text-yellow-800">
+                    <Calendar className="h-4 w-4 text-brand-terracotta" />
+                    <span className="text-sm font-medium text-brand-brown">
                       {period.type === 'single' 
                         ? period.startDate.toLocaleDateString('fr-FR')
                         : `${period.startDate.toLocaleDateString('fr-FR')} - ${period.endDate?.toLocaleDateString('fr-FR')}`
                       }
                     </span>
                   </div>
-                  <Badge variant="outline" className="text-xs text-yellow-700 border-yellow-300">
+                  <Badge variant="outline" className="text-xs text-brand-brown border-brand-orange/30">
                     {period.reason}
                   </Badge>
                 </div>
@@ -125,25 +124,27 @@ const AvailabilityAwareBooking: React.FC<AvailabilityAwareBookingProps> = ({
       {/* Standard Booking Calendar */}
       <WorkshopBookingCalendar
         workshopId={workshopId}
+        workshopType={workshopType}
         duration={duration}
         maxParticipants={maxParticipants}
         privatizationOption={privatizationOption}
+        artisanUnavailability={artisanUnavailability}
         onBooking={onBooking}
         onCustomRequest={() => setShowCustomRequest(true)}
       />
 
       {/* Alternative Booking Option */}
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="border-brand-terracotta/30 bg-brand-beige">
         <CardContent className="pt-6">
           <div className="text-center space-y-3">
-            <h3 className="font-medium text-blue-900">Besoin d'un autre créneau ?</h3>
-            <p className="text-sm text-blue-700">
+            <h3 className="font-medium text-brand-brown">Besoin d'un autre créneau ?</h3>
+            <p className="text-sm text-brand-brown/80">
               Si aucun créneau disponible ne vous convient, vous pouvez faire une demande personnalisée.
             </p>
             <Button
               onClick={() => setShowCustomRequest(true)}
               variant="outline"
-              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+              className="border-brand-terracotta text-brand-terracotta hover:bg-brand-terracotta hover:text-white"
             >
               Faire une demande personnalisée
             </Button>

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarIcon, Users, Mail, Phone, MessageSquare } from 'lucide-react';
+import { CalendarIcon, Users, Mail, Phone, MessageSquare, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -14,12 +14,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { CustomBookingRequest as CustomBookingRequestType } from '@/types/booking';
+import { UnavailabilityPeriod } from '@/types/artisan';
+import ArtisanUnavailabilityDisplay from '@/components/ArtisanUnavailabilityDisplay';
 
 const customBookingSchema = z.object({
   preferredDate: z.date({
     required_error: "Une date préférée est requise.",
   }),
+  preferredTime: z.string().optional(),
   alternativeDate: z.date().optional(),
+  alternativeTime: z.string().optional(),
   participants: z.number().min(1, "Au moins 1 participant est requis").max(50, "Maximum 50 participants"),
   isPrivate: z.boolean(),
   specialRequirements: z.string().optional(),
@@ -33,6 +37,8 @@ type CustomBookingFormData = z.infer<typeof customBookingSchema>;
 interface CustomBookingRequestProps {
   workshopId: number;
   maxParticipants: number;
+  artisanName: string;
+  unavailabilityPeriods: UnavailabilityPeriod[];
   privatizationOption?: {
     minParticipants: number;
     maxParticipants: number;
@@ -46,6 +52,8 @@ interface CustomBookingRequestProps {
 const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
   workshopId,
   maxParticipants,
+  artisanName,
+  unavailabilityPeriods,
   privatizationOption,
   onSubmit,
   onCancel
@@ -61,6 +69,8 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
     defaultValues: {
       participants: 1,
       isPrivate: false,
+      preferredTime: '09:00',
+      alternativeTime: '14:00',
     }
   });
 
@@ -78,7 +88,9 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
     const request: CustomBookingRequestType = {
       workshopId,
       preferredDate: data.preferredDate,
+      preferredTime: data.preferredTime,
       alternativeDate: data.alternativeDate,
+      alternativeTime: data.alternativeTime,
       participants: data.participants,
       isPrivate: data.isPrivate,
       specialRequirements: data.specialRequirements,
@@ -92,93 +104,172 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
   const isDateAvailable = (date: Date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return date >= today;
+    
+    // Check if date is in the past
+    if (date < today) return false;
+    
+    // Check if date is in unavailability periods
+    return !unavailabilityPeriods.some(period => {
+      if (period.type === 'single') {
+        return date.toDateString() === period.startDate.toDateString();
+      } else {
+        const endDate = period.endDate || period.startDate;
+        return date >= period.startDate && date <= endDate;
+      }
+    });
+  };
+
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let hour = 8; hour <= 18; hour++) {
+      times.push(`${hour.toString().padStart(2, '0')}:00`);
+      if (hour < 18) {
+        times.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
+    }
+    return times;
+  };
+
+  const timeOptions = generateTimeOptions();
+
+  const handleDateRequest = (requestedDate: Date) => {
+    setValue('preferredDate', requestedDate);
   };
 
   return (
-    <Card className="border-blue-200 bg-blue-50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-blue-900">
-          <CalendarIcon className="h-5 w-5" />
-          Demande de réservation personnalisée
-        </CardTitle>
-        <p className="text-sm text-blue-700">
-          Vous ne trouvez pas de créneau qui vous convient ? Faites-nous une demande personnalisée !
-        </p>
-      </CardHeader>
+    <div className="space-y-6">
+      {/* Calendrier d'indisponibilité de l'artisan */}
+      <ArtisanUnavailabilityDisplay
+        artisanName={artisanName}
+        unavailabilityPeriods={unavailabilityPeriods}
+        onDateRequest={handleDateRequest}
+      />
+
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900">
+            <CalendarIcon className="h-5 w-5" />
+            Demande de réservation personnalisée
+          </CardTitle>
+          <p className="text-sm text-blue-700">
+            Consultez le calendrier ci-dessus pour voir les disponibilités de {artisanName}. Vous pouvez cliquer sur une date disponible pour la sélectionner automatiquement.
+          </p>
+        </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-          {/* Date Selection */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Date préférée *
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !watchedValues.preferredDate && "text-muted-foreground"
-                    )}
+          {/* Date et heure Selection */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-800">Dates et heures souhaitées</h3>
+            
+            {/* Date et heure préférées */}
+            <div className="grid md:grid-cols-2 gap-4 p-4 bg-white rounded-lg border">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Date préférée *
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !watchedValues.preferredDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {watchedValues.preferredDate 
+                        ? format(watchedValues.preferredDate, 'EEEE d MMMM yyyy', { locale: fr })
+                        : "Sélectionner une date"
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={watchedValues.preferredDate}
+                      onSelect={(date) => setValue('preferredDate', date!)}
+                      disabled={(date) => !isDateAvailable(date)}
+                      initialFocus
+                      className="pointer-events-auto"
+                      locale={fr}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.preferredDate && (
+                  <p className="text-sm text-red-600">{errors.preferredDate.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Heure préférée
+                </label>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <select
+                    {...register('preferredTime')}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {watchedValues.preferredDate 
-                      ? format(watchedValues.preferredDate, 'EEEE d MMMM yyyy', { locale: fr })
-                      : "Sélectionner une date"
-                    }
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={watchedValues.preferredDate}
-                    onSelect={(date) => setValue('preferredDate', date!)}
-                    disabled={(date) => !isDateAvailable(date)}
-                    initialFocus
-                    className="pointer-events-auto"
-                    locale={fr}
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.preferredDate && (
-                <p className="text-sm text-red-600">{errors.preferredDate.message}</p>
-              )}
+                    {timeOptions.map(time => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Date alternative (optionnelle)
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !watchedValues.alternativeDate && "text-muted-foreground"
-                    )}
+            {/* Date et heure alternatives */}
+            <div className="grid md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Date alternative (optionnelle)
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !watchedValues.alternativeDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {watchedValues.alternativeDate 
+                        ? format(watchedValues.alternativeDate, 'EEEE d MMMM yyyy', { locale: fr })
+                        : "Sélectionner une date"
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={watchedValues.alternativeDate}
+                      onSelect={(date) => setValue('alternativeDate', date)}
+                      disabled={(date) => !isDateAvailable(date)}
+                      initialFocus
+                      className="pointer-events-auto"
+                      locale={fr}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Heure alternative
+                </label>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <select
+                    {...register('alternativeTime')}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {watchedValues.alternativeDate 
-                      ? format(watchedValues.alternativeDate, 'EEEE d MMMM yyyy', { locale: fr })
-                      : "Sélectionner une date"
-                    }
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={watchedValues.alternativeDate}
-                    onSelect={(date) => setValue('alternativeDate', date)}
-                    disabled={(date) => !isDateAvailable(date)}
-                    initialFocus
-                    className="pointer-events-auto"
-                    locale={fr}
-                  />
-                </PopoverContent>
-              </Popover>
+                    {timeOptions.map(time => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -315,6 +406,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
         </form>
       </CardContent>
     </Card>
+    </div>
   );
 };
 

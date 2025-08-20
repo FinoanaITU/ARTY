@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -19,6 +20,13 @@ export default {
 		},
 		extend: {
 			colors: {
+				// Nouvelle charte graphique
+				'brand': {
+					'beige': '#ede0d8',
+					'brown': '#917155',
+					'terracotta': '#c26143',
+					'orange': '#eca853',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

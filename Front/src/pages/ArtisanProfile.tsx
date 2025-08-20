@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCart } from '@/contexts/CartContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const ArtisanProfile = () => {
   const { id } = useParams();
   const { t } = useLanguage();
+  const { addItem } = useCart();
   const [activeTab, setActiveTab] = useState('products');
 
   // Mock data - in real app, fetch based on id
@@ -89,6 +90,19 @@ const ArtisanProfile = () => {
     }
   ];
 
+  const handleAddToCart = (product: any) => {
+    addItem({
+      type: 'product',
+      productId: product.id,
+      name: product.name,
+      artisan: artisan.name,
+      price: product.price,
+      quantity: 1,
+      image: product.image
+    });
+    alert('Produit ajouté au panier !');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
       <Navigation />
@@ -131,12 +145,9 @@ const ArtisanProfile = () => {
                   ))}
                 </div>
                 
-                <div className="flex flex-col md:flex-row gap-3">
-                  <Button className="bg-orange-600 hover:bg-orange-700">
-                    Contacter l'artisan
-                  </Button>
+                <div className="flex justify-center md:justify-start">
                   <Button variant="outline" className="border-orange-600 text-orange-600 hover:bg-orange-50">
-                    Suivre
+                    Suivre l'artisan
                   </Button>
                 </div>
               </div>
@@ -184,12 +195,20 @@ const ArtisanProfile = () => {
                           {product.inStock ? 'En stock' : 'Épuisé'}
                         </span>
                       </div>
-                      <Button 
-                        className="w-full bg-orange-600 hover:bg-orange-700"
-                        disabled={!product.inStock}
-                      >
-                        {product.inStock ? 'Ajouter au panier' : 'Indisponible'}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Link to={`/product/${product.id}`} className="flex-1">
+                          <Button variant="outline" className="w-full">
+                            Voir détails
+                          </Button>
+                        </Link>
+                        <Button 
+                          className="bg-orange-600 hover:bg-orange-700"
+                          disabled={!product.inStock}
+                          onClick={() => handleAddToCart(product)}
+                        >
+                          {product.inStock ? 'Panier' : 'Épuisé'}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -217,11 +236,11 @@ const ArtisanProfile = () => {
                   </div>
                   
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">Contact</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">Informations</h3>
                     <div className="space-y-2 text-gray-600">
-                      <p>📞 {artisan.contact.phone}</p>
-                      <p>✉️ {artisan.contact.email}</p>
                       <p>📍 {artisan.location}</p>
+                      <p>⭐ {artisan.rating}/5 ({artisan.reviewsCount} avis)</p>
+                      <p>📅 Membre depuis {new Date(artisan.joinedDate).getFullYear()}</p>
                     </div>
                   </div>
                 </div>

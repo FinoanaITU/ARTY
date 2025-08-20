@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -6,8 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarIcon, Clock, Users, Plus, AlertTriangle, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { isReservationAllowed } from '@/utils/dateValidation';
 import CustomBookingRequest from './CustomBookingRequest';
+import PriceVariationSelector from './PriceVariationSelector';
+import PaymentPlanSelector from './PaymentPlanSelector';
+import ProductRecommendations from './ProductRecommendations';
+import { useCart } from '@/contexts/CartContext';
 import { CustomBookingRequest as CustomBookingRequestType, PrivatizationOption } from '@/types/booking';
+import { PriceVariation, PaymentPlan } from '@/types/cart';
+import { UnavailabilityPeriod } from '@/types/artisan';
 
 interface TimeSlot {
   time: string;
@@ -17,18 +23,12 @@ interface TimeSlot {
   minParticipants: number;
 }
 
-interface UnavailabilityPeriod {
-  id: string;
-  startDate: Date;
-  endDate?: Date;
-  reason: string;
-  type: 'single' | 'range';
-}
-
 interface WorkshopBookingCalendarProps {
   workshopId: number;
+  workshopType: 'inscription' | 'reservation';
   duration: string;
   maxParticipants: number;
+  artisanName?: string;
   privatizationOption?: PrivatizationOption;
   artisanUnavailability?: UnavailabilityPeriod[];
   onBooking: (date: Date, time: string) => void;
@@ -37,8 +37,10 @@ interface WorkshopBookingCalendarProps {
 
 const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   workshopId,
+  workshopType,
   duration,
   maxParticipants,
+  artisanName = "Artisan",
   privatizationOption,
   artisanUnavailability = [],
   onBooking,
@@ -47,6 +49,9 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showCustomRequest, setShowCustomRequest] = useState(false);
+  const [selectedPriceVariation, setSelectedPriceVariation] = useState<PriceVariation | null>(null);
+  const [selectedPaymentPlan, setSelectedPaymentPlan] = useState<PaymentPlan | null>(null);
+  const { addItem } = useCart();
 
   // Check if a date is unavailable due to artisan's schedule
   const isDateUnavailable = (date: Date) => {
@@ -141,7 +146,31 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   const timeSlots = selectedDate ? getAvailableTimeSlots(selectedDate) : [];
 
   const handleBooking = () => {
-    if (selectedDate && selectedTime) {
+    if (selectedDate && selectedTime && selectedPriceVariation) {
+      // Check if reservation is allowed (5 business days minimum)
+      const reservationCheck = isReservationAllowed(selectedDate);
+      
+      if (!reservationCheck.allowed) {
+        alert(reservationCheck.message);
+        return;
+      }
+
+      // Add to cart instead of direct booking
+      addItem({
+        type: 'workshop',
+        workshopId,
+        name: `Atelier - ${duration}`,
+        artisan: 'Artisan Name', // This should come from props
+        price: selectedPriceVariation.discountedPrice,
+        quantity: 1,
+        image: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=300&h=300&fit=crop',
+        selectedDate,
+        selectedTime,
+        priceVariation: selectedPriceVariation,
+        paymentPlan: selectedPaymentPlan || undefined
+      });
+      
+      alert('Demande de devis envoyée ! Vous recevrez une réponse dans les 24-48h.');
       onBooking(selectedDate, selectedTime);
     }
   };
@@ -153,6 +182,62 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     setShowCustomRequest(false);
   };
 
+  // For inscription type, show only custom request option
+  if (workshopType === 'inscription') {
+    if (showCustomRequest) {
+      return (
+        <CustomBookingRequest
+          workshopId={workshopId}
+          maxParticipants={maxParticipants}
+          artisanName={artisanName}
+          unavailabilityPeriods={artisanUnavailability}
+          privatizationOption={privatizationOption}
+          onSubmit={handleCustomRequest}
+          onCancel={() => setShowCustomRequest(false)}
+        />
+      );
+    }
+
+    return (
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900">
+            <CalendarIcon className="h-5 w-5" />
+            Demander une date personnalisée
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-2">Atelier sur inscription avec date fixe</p>
+                <p className="text-blue-700 mb-3">
+                  Cet atelier a une date fixe prédéfinie, mais vous pouvez demander une session personnalisée 
+                  pour votre groupe si cette date ne vous convient pas.
+                </p>
+                <div className="bg-blue-100 p-3 rounded-lg">
+                  <p className="font-medium text-blue-900 mb-1">⏰ Délai de préparation requis</p>
+                  <p className="text-blue-800 text-sm">
+                    L'artisan a besoin d'un minimum de <strong>5 jours</strong> pour préparer votre atelier personnalisé.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={() => setShowCustomRequest(true)}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Demander une date personnalisée
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const isDateAvailable = (date: Date) => {
     // Disable past dates and check artisan availability
     const today = new Date();
@@ -162,14 +247,26 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     const isWeekend = day === 0 || day === 6;
     const isArtisanUnavailable = isDateUnavailable(date);
     
+    // For reservation workshops, check 5-day minimum
+    if (workshopType === 'reservation') {
+      const reservationCheck = isReservationAllowed(date);
+      if (!reservationCheck.allowed) {
+        return false;
+      }
+    }
+    
     return !isPastDate && !isWeekend && !isArtisanUnavailable;
   };
+
+  const basePrice = 35000; // Example workshop price
 
   if (showCustomRequest) {
     return (
       <CustomBookingRequest
         workshopId={workshopId}
         maxParticipants={maxParticipants}
+        artisanName={artisanName}
+        unavailabilityPeriods={artisanUnavailability}
         privatizationOption={privatizationOption}
         onSubmit={handleCustomRequest}
         onCancel={() => setShowCustomRequest(false)}
@@ -179,9 +276,23 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Price Variation Selector */}
+      <PriceVariationSelector
+        basePrice={basePrice}
+        onPriceChange={setSelectedPriceVariation}
+      />
+
+      {/* Payment Plan Selector */}
+      {selectedPriceVariation && (
+        <PaymentPlanSelector
+          totalPrice={selectedPriceVariation.discountedPrice}
+          onPaymentPlanChange={setSelectedPaymentPlan}
+        />
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
             <div className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
               Choisir une date
@@ -253,17 +364,51 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
 
       {selectedDate && !isDateUnavailable(selectedDate) && (
         <>
+          {/* Date validation warning for reservations */}
+          {workshopType === 'reservation' && (() => {
+            const reservationCheck = isReservationAllowed(selectedDate);
+            if (!reservationCheck.allowed) {
+              return (
+                <Card className="border-red-200 bg-red-50">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-red-800">
+                        <p className="font-medium mb-1">Réservation impossible</p>
+                        <p className="text-red-700">{reservationCheck.message}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+            return null;
+          })()}
+
           {/* Contextual Information */}
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="pt-4">
               <div className="flex items-start gap-3">
                 <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-blue-800">
-                  <p className="font-medium mb-2">À propos des créneaux :</p>
+                  <p className="font-medium mb-2">
+                    {workshopType === 'reservation' ? 'À propos des devis :' : 'À propos des créneaux :'}
+                  </p>
                   <ul className="space-y-1 text-blue-700">
-                    <li>• Un minimum de 4 participants est requis pour maintenir l'atelier</li>
-                    <li>• Vous pouvez réserver même si le minimum n'est pas atteint</li>
-                    <li>• Nous vous contacterons 48h avant si l'atelier ne peut pas avoir lieu</li>
+                    {workshopType === 'reservation' ? (
+                      <>
+                        <li>• Votre demande génère automatiquement une demande de devis</li>
+                        <li>• Vous recevrez un devis personnalisé dans les 24-48h</li>
+                        <li>• Le prix final dépend de votre lieu, groupe et matériel</li>
+                        <li>• L'atelier est confirmé uniquement après acceptation du devis</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>• Un minimum de 4 participants est requis pour maintenir l'atelier</li>
+                        <li>• Vous pouvez réserver même si le minimum n'est pas atteint</li>
+                        <li>• Nous vous contacterons 48h avant si l'atelier ne peut pas avoir lieu</li>
+                      </>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -367,14 +512,29 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
                   {format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr })} à {selectedTime}
                 </p>
                 <p className="text-sm text-gray-500">Durée: {duration}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {selectedPriceVariation?.discountedPrice.toLocaleString()} Ar
+                  {selectedPaymentPlan?.type === 'installment' && (
+                    <span className="text-sm font-normal text-gray-600 block">
+                      (50% maintenant, 50% le jour J)
+                    </span>
+                  )}
+                </p>
               </div>
-              <Button onClick={handleBooking} className="w-full bg-green-600 hover:bg-green-700">
-                Confirmer la réservation
+              <Button 
+                onClick={handleBooking} 
+                disabled={workshopType === 'reservation' && selectedDate && !isReservationAllowed(selectedDate).allowed}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {workshopType === 'reservation' ? 'Demander un devis' : 'Ajouter au panier'}
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Product Recommendations */}
+      <ProductRecommendations currentProductId={0} category="Sculpture" />
     </div>
   );
 };

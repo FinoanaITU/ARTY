@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -7,30 +6,36 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import WorkshopBookingCalendar from '@/components/WorkshopBookingCalendar';
+import WorkshopRegistrationForm from '@/components/WorkshopRegistrationForm';
+import ArtisanUnavailabilityDisplay from '@/components/ArtisanUnavailabilityDisplay';
 
 const WorkshopDetail = () => {
   const { id } = useParams();
   const { t } = useLanguage();
   const [showBookingCalendar, setShowBookingCalendar] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [showUnavailabilityCalendar, setShowUnavailabilityCalendar] = useState(false);
 
   // Mock data - in real app, fetch based on id
+  const workshopType: 'inscription' | 'reservation' = (id === '2' || id === '4' || id === '6') ? 'reservation' : 'inscription';
+  
   const workshop = {
     id: parseInt(id || '1'),
-    title: id === '2' || id === '4' || id === '6' ? 'Tissage traditionnel Malagasy' : 'Initiation à la sculpture sur bois',
-    instructor: id === '2' || id === '4' || id === '6' ? 'Voahangy Razafy' : 'Hery Rakoto',
+    title: workshopType === 'reservation' ? 'Tissage traditionnel Malagasy' : 'Initiation à la sculpture sur bois',
+    instructor: workshopType === 'reservation' ? 'Voahangy Razafy' : 'Hery Rakoto',
     instructorImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
-    type: id === '2' || id === '4' || id === '6' ? 'reservation' : 'inscription',
-    date: id === '2' || id === '4' || id === '6' ? undefined : '2024-06-15',
-    duration: id === '2' || id === '4' || id === '6' ? '4 heures' : '3 heures',
-    price: id === '2' || id === '4' || id === '6' ? 30000 : 25000,
-    participants: id === '2' || id === '4' || id === '6' ? undefined : 8,
-    maxParticipants: id === '2' || id === '4' || id === '6' ? 10 : 12,
-    image: id === '2' || id === '4' || id === '6' 
+    type: workshopType,
+    date: workshopType === 'reservation' ? undefined : '2024-06-15',
+    duration: workshopType === 'reservation' ? '4 heures' : '3 heures',
+    price: workshopType === 'reservation' ? 30000 : 25000,
+    participants: workshopType === 'reservation' ? undefined : 8,
+    maxParticipants: workshopType === 'reservation' ? 10 : 12,
+    image: workshopType === 'reservation'
       ? 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=400&h=300&fit=crop'
       : 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop',
-    location: id === '2' || id === '4' || id === '6' ? 'Fianarantsoa' : 'Atelier Rakoto, Antananarivo',
-    difficulty: id === '2' || id === '4' || id === '6' ? 'Intermédiaire' : 'Débutant',
-    description: id === '2' || id === '4' || id === '6' 
+    location: workshopType === 'reservation' ? 'Fianarantsoa' : 'Atelier Rakoto, Antananarivo',
+    difficulty: workshopType === 'reservation' ? 'Intermédiaire' : 'Débutant',
+    description: workshopType === 'reservation'
       ? 'Découvrez les techniques ancestrales du tissage malgache dans cet atelier flexible. Réservez votre créneau selon vos disponibilités et apprenez à créer de magnifiques textiles traditionnels.'
       : 'Découvrez l\'art ancestral de la sculpture sur bois malgache dans cet atelier d\'initiation. Vous apprendrez les techniques de base, les outils traditionnels et créerez votre première œuvre sous la guidance experte de Hery Rakoto.',
     whatYouWillLearn: [
@@ -78,22 +83,64 @@ const WorkshopDetail = () => {
     setShowBookingCalendar(false);
   };
 
+  // Mock données d'indisponibilité de l'artisan
+  const artisanUnavailability = [
+    {
+      id: '1',
+      artisanId: 'artisan-1',
+      startDate: new Date('2024-08-15'),
+      endDate: new Date('2024-08-20'),
+      reason: 'Congés d\'été',
+      type: 'range' as const,
+      status: 'approved' as const,
+      createdAt: new Date('2024-08-01'),
+      updatedAt: new Date('2024-08-01')
+    },
+    {
+      id: '2',
+      artisanId: 'artisan-1',
+      startDate: new Date('2024-08-25'),
+      reason: 'Salon d\'artisanat',
+      type: 'single' as const,
+      status: 'approved' as const,
+      createdAt: new Date('2024-08-01'),
+      updatedAt: new Date('2024-08-01')
+    },
+    {
+      id: '3',
+      artisanId: 'artisan-1',
+      startDate: new Date('2024-09-01'),
+      endDate: new Date('2024-09-03'),
+      reason: 'Formation technique',
+      type: 'range' as const,
+      status: 'approved' as const,
+      createdAt: new Date('2024-08-01'),
+      updatedAt: new Date('2024-08-01')
+    }
+  ];
+
+  const handleCustomDateRequest = (requestedDate: Date) => {
+    console.log('Date requested:', requestedDate);
+    setShowUnavailabilityCalendar(false);
+    setShowBookingCalendar(true);
+  };
+
   const isWorkshopFull = workshop.type === 'inscription' && workshop.participants! >= workshop.maxParticipants;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-orange-50 pb-20 md:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-brand-beige to-orange-50 pb-20 md:pb-0">
       <Navigation />
       
       <div className="px-4 py-6">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
-          <Link to="/workshops" className="inline-flex items-center text-green-600 hover:text-green-700 mb-6">
+          <Link to="/workshops" className="inline-flex items-center text-brand-brown hover:text-brand-terracotta mb-6">
             ← Retour aux ateliers
           </Link>
 
           {/* Workshop Header */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-            <div className="aspect-video bg-green-100 relative">
+            <div className="aspect-video bg-brand-beige relative">
               <img
                 src={workshop.image}
                 alt={workshop.title}
@@ -103,8 +150,8 @@ const WorkshopDetail = () => {
               {/* Workshop Type Badge */}
               <div className={`absolute top-4 left-4 px-3 py-2 rounded-full text-sm font-medium ${
                 workshop.type === 'inscription' 
-                  ? 'bg-orange-600 text-white' 
-                  : 'bg-purple-600 text-white'
+                  ? 'bg-brand-terracotta text-white' 
+                  : 'bg-brand-brown text-white'
               }`}>
                 {workshop.type === 'inscription' ? 'Inscription' : 'Réservation flexible'}
               </div>
@@ -119,7 +166,7 @@ const WorkshopDetail = () => {
                 </span>
               </div>
 
-              <div className="absolute bottom-4 left-4 bg-green-600 text-white px-3 py-2 rounded-full">
+              <div className="absolute bottom-4 left-4 bg-brand-brown text-white px-3 py-2 rounded-full">
                 <span className="text-sm font-medium">{workshop.difficulty}</span>
               </div>
             </div>
@@ -135,17 +182,17 @@ const WorkshopDetail = () => {
               </div>
               <div className="flex items-center gap-4 text-gray-600 mb-6">
                 <span>📍 {workshop.location}</span>
-                <span className="text-2xl font-bold text-green-600">
+                <span className="text-2xl font-bold text-brand-terracotta">
                   {workshop.price.toLocaleString()} Ar
                 </span>
               </div>
               
               {/* Privatization Info */}
               {workshop.privatizationOption && (
-                <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <h3 className="font-semibold text-purple-900 mb-2">Option de privatisation disponible</h3>
-                  <p className="text-sm text-purple-700 mb-2">{workshop.privatizationOption.description}</p>
-                  <div className="text-sm text-purple-600">
+                <div className="mb-6 p-4 bg-brand-beige rounded-lg border border-brand-brown/20">
+                  <h3 className="font-semibold text-brand-brown mb-2">Option de privatisation disponible</h3>
+                  <p className="text-sm text-brand-brown/80 mb-2">{workshop.privatizationOption.description}</p>
+                  <div className="text-sm text-brand-brown">
                     À partir de {workshop.privatizationOption.basePrice.toLocaleString()} Ar + {workshop.privatizationOption.pricePerParticipant.toLocaleString()} Ar/participant
                   </div>
                 </div>
@@ -153,35 +200,77 @@ const WorkshopDetail = () => {
               
               <div className="flex flex-col md:flex-row gap-4">
                 {workshop.type === 'inscription' ? (
-                  <Button 
-                    className="flex-1 bg-green-600 hover:bg-green-700 py-3"
-                    disabled={isWorkshopFull}
-                  >
-                    {isWorkshopFull ? 'Complet' : 'S\'inscrire maintenant'}
-                  </Button>
+                  <>
+                    <Button 
+                      className="flex-1 bg-brand-brown hover:bg-brand-brown/90 py-3"
+                      disabled={isWorkshopFull}
+                      onClick={() => {
+                        setShowRegistrationForm(true);
+                        setShowBookingCalendar(false);
+                        setShowUnavailabilityCalendar(false);
+                      }}
+                    >
+                      {isWorkshopFull ? 'Complet' : 'S\'inscrire maintenant'}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="flex-1 border-brand-terracotta text-brand-terracotta hover:bg-brand-terracotta hover:text-white py-3"
+                      onClick={() => {
+                        setShowUnavailabilityCalendar(!showUnavailabilityCalendar);
+                        setShowBookingCalendar(false);
+                        setShowRegistrationForm(false);
+                      }}
+                    >
+                      {showUnavailabilityCalendar ? 'Masquer le calendrier' : 'Voir les disponibilités'}
+                    </Button>
+                  </>
                 ) : (
                   <Button 
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 py-3"
+                    className="flex-1 bg-brand-brown hover:bg-brand-brown/90 py-3"
                     onClick={() => setShowBookingCalendar(!showBookingCalendar)}
                   >
                     {showBookingCalendar ? 'Masquer le calendrier' : 'Réserver un créneau'}
                   </Button>
                 )}
-                <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                <Button variant="outline" className="border-brand-brown text-brand-brown hover:bg-brand-brown hover:text-white">
                   Ajouter aux favoris
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Booking Calendar for reservation type */}
-          {workshop.type === 'reservation' && showBookingCalendar && (
+          {/* Registration Form for inscription workshops */}
+          {showRegistrationForm && workshop.type === 'inscription' && (
+            <div className="mb-6">
+              <WorkshopRegistrationForm
+                workshop={workshop}
+                onCancel={() => setShowRegistrationForm(false)}
+              />
+            </div>
+          )}
+
+          {/* Artisan Unavailability Calendar */}
+          {showUnavailabilityCalendar && workshop.type === 'inscription' && (
+            <div className="mb-6">
+              <ArtisanUnavailabilityDisplay
+                artisanName={workshop.instructor}
+                unavailabilityPeriods={artisanUnavailability}
+                onDateRequest={handleCustomDateRequest}
+              />
+            </div>
+          )}
+
+          {/* Booking Calendar for reservation type or custom requests */}
+          {showBookingCalendar && (
             <div className="mb-6">
               <WorkshopBookingCalendar
                 workshopId={workshop.id}
+                workshopType={workshop.type}
                 duration={workshop.duration}
                 maxParticipants={workshop.maxParticipants}
+                artisanName={workshop.instructor}
                 privatizationOption={workshop.privatizationOption}
+                artisanUnavailability={artisanUnavailability}
                 onBooking={handleBooking}
                 onCustomRequest={handleCustomRequest}
               />
@@ -195,15 +284,15 @@ const WorkshopDetail = () => {
               {/* Description */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Description</CardTitle>
+                  <CardTitle className="text-brand-brown">Description</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600 leading-relaxed">{workshop.description}</p>
                   
                   {workshop.type === 'reservation' && (
-                    <div className="mt-4 p-4 bg-purple-50 rounded-lg">
-                      <h4 className="font-medium text-purple-900 mb-2">Atelier sur réservation</h4>
-                      <p className="text-sm text-purple-700">
+                    <div className="mt-4 p-4 bg-brand-beige rounded-lg">
+                      <h4 className="font-medium text-brand-brown mb-2">Atelier sur réservation</h4>
+                      <p className="text-sm text-brand-brown/80">
                         Cet atelier propose des créneaux flexibles. Vous pouvez choisir la date et l'heure qui vous conviennent le mieux parmi les disponibilités proposées.
                       </p>
                     </div>
@@ -214,13 +303,13 @@ const WorkshopDetail = () => {
               {/* What You'll Learn */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Ce que vous apprendrez</CardTitle>
+                  <CardTitle className="text-brand-brown">Ce que vous apprendrez</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
                     {workshop.whatYouWillLearn.map((item, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <span className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></span>
+                        <span className="w-2 h-2 bg-brand-terracotta rounded-full mt-2 flex-shrink-0"></span>
                         <span className="text-gray-600">{item}</span>
                       </li>
                     ))}
@@ -232,13 +321,13 @@ const WorkshopDetail = () => {
               {workshop.type === 'inscription' && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Programme de l'atelier</CardTitle>
+                    <CardTitle className="text-brand-brown">Programme de l'atelier</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       {workshop.schedule.map((item, index) => (
                         <div key={index} className="flex gap-4">
-                          <span className="font-medium text-green-600 w-16 flex-shrink-0">
+                          <span className="font-medium text-brand-terracotta w-16 flex-shrink-0">
                             {item.time}
                           </span>
                           <span className="text-gray-600">{item.activity}</span>
@@ -255,11 +344,11 @@ const WorkshopDetail = () => {
               {/* Instructor Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Votre instructeur</CardTitle>
+                  <CardTitle className="text-brand-brown">Votre instructeur</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-orange-100 rounded-full overflow-hidden">
+                    <div className="w-12 h-12 bg-brand-orange/20 rounded-full overflow-hidden">
                       <img
                         src={workshop.instructorImage}
                         alt={workshop.instructor}
@@ -275,7 +364,7 @@ const WorkshopDetail = () => {
                     Artisan passionné avec plus de 15 ans d'expérience dans l'artisanat traditionnel malgache.
                   </p>
                   <Link to={`/artisan/1`}>
-                    <Button variant="outline" size="sm" className="w-full">
+                    <Button variant="outline" size="sm" className="w-full border-brand-brown text-brand-brown hover:bg-brand-brown hover:text-white">
                       Voir le profil
                     </Button>
                   </Link>
@@ -285,13 +374,13 @@ const WorkshopDetail = () => {
               {/* Materials Included */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Matériel inclus</CardTitle>
+                  <CardTitle className="text-brand-brown">Matériel inclus</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
                     {workshop.materials.map((material, index) => (
                       <li key={index} className="flex items-center gap-2 text-sm">
-                        <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                        <span className="w-1.5 h-1.5 bg-brand-terracotta rounded-full"></span>
                         <span className="text-gray-600">{material}</span>
                       </li>
                     ))}
@@ -302,7 +391,7 @@ const WorkshopDetail = () => {
               {/* Important Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Informations importantes</CardTitle>
+                  <CardTitle className="text-brand-brown">Informations importantes</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-gray-600">
                   <div>
@@ -317,7 +406,7 @@ const WorkshopDetail = () => {
                   <div>
                     <strong>Type :</strong> 
                     <Badge className={`ml-2 ${
-                      workshop.type === 'inscription' ? 'bg-orange-100 text-orange-800' : 'bg-purple-100 text-purple-800'
+                      workshop.type === 'inscription' ? 'bg-brand-orange text-white' : 'bg-brand-brown text-white'
                     }`}>
                       {workshop.type === 'inscription' ? 'Inscription fixe' : 'Réservation flexible'}
                     </Badge>
@@ -325,7 +414,7 @@ const WorkshopDetail = () => {
                   {workshop.privatizationOption && (
                     <div>
                       <strong>Privatisation :</strong> 
-                      <Badge className="ml-2 bg-purple-100 text-purple-800">
+                      <Badge className="ml-2 bg-brand-brown text-white">
                         Disponible
                       </Badge>
                     </div>
