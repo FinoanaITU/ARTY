@@ -151,6 +151,15 @@ async def register_artisan(
         tokens = auth_service.generate_tokens(user)
         
         # Préparer la réponse avec les données utilisateur
+        # Safely read artisan_profile attributes (peut être None si récupération échoue)
+        specialty = None
+        description = None
+        experience = None
+        if artisan_profile:
+            specialty = getattr(artisan_profile, 'main_specialty', None)
+            description = getattr(artisan_profile, 'activity_description', None)
+            experience = getattr(artisan_profile, 'years_experience', None)
+
         user_dict = {
             "id": str(user.id),
             "email": user.email,
@@ -161,9 +170,9 @@ async def register_artisan(
             "nationality": user.nationality.value if user.nationality and hasattr(user.nationality, 'value') else (str(user.nationality) if user.nationality else None),
             "company_name": user.company_name,
             "siret": user.siret,
-            "specialty": artisan_profile.main_specialty,
-            "description": artisan_profile.activity_description,
-            "experience": artisan_profile.years_experience,
+            "specialty": specialty,
+            "description": description,
+            "experience": experience,
             "created_at": user.created_at,
             "updated_at": user.updated_at,
         }
@@ -182,6 +191,10 @@ async def register_artisan(
             detail=str(e)
         )
     except Exception as e:
+        # Print full exception and traceback to aid test debugging (will appear in pytest -s output)
+        import traceback
+        print("Exception in register_artisan:", str(e))
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la création du compte artisan: {str(e)}"

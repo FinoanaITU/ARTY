@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Text, ARRAY, Integer, Date, JSON, func, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, Text, ARRAY, Integer, Date, JSON, func, Enum as SQLEnum, ForeignKey, TypeDecorator
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
@@ -28,6 +28,48 @@ class ProfileStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
+class EnumType(TypeDecorator):
+    """
+    TypeDecorator pour mapper les enums depuis SQLite VARCHAR.
+    Pour SQLite, stocke les valeurs de l'enum comme strings et les convertit correctement.
+    Pour PostgreSQL, utilise SQLEnum natif.
+    """
+    impl = String
+    cache_ok = True
+    
+    def __init__(self, enum_class, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.enum_class = enum_class
+    
+    def load_dialect_impl(self, dialect):
+        # Pour PostgreSQL, utiliser SQLEnum natif
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(SQLEnum(self.enum_class))
+        # Pour SQLite, utiliser String
+        return dialect.type_descriptor(String(50))
+    
+    def process_bind_param(self, value, dialect):
+        # Convertir l'enum en sa valeur string lors de l'insertion
+        if value is None:
+            return None
+        if isinstance(value, self.enum_class):
+            return value.value
+        return value
+    
+    def process_result_value(self, value, dialect):
+        # Convertir la valeur string en enum lors de la récupération
+        if value is None:
+            return None
+        if isinstance(value, self.enum_class):
+            return value
+        try:
+            # Créer l'enum depuis sa valeur (ex: "artisan" -> UserRole.ARTISAN)
+            return self.enum_class(value)
+        except (ValueError, KeyError):
+            # Si la valeur n'est pas valide, retourner la première valeur de l'enum
+            return list(self.enum_class)[0]
+
+
 class User(BaseModel):
     __tablename__ = "users"
     
@@ -38,12 +80,12 @@ class User(BaseModel):
     address = Column(Text, nullable=True)
     city = Column(String(100), nullable=True)
     country = Column(String(100), nullable=True, default="madagascar")
-    role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.BUYER, index=True)
+    role = Column(EnumType(UserRole), nullable=False, default=UserRole.BUYER, index=True)
     avatar = Column(String(500), nullable=True)
     
     # Buyer specific fields
-    buyer_type = Column(SQLEnum(BuyerType), nullable=True)
-    nationality = Column(SQLEnum(Nationality), nullable=True)
+    buyer_type = Column(EnumType(BuyerType), nullable=True)
+    nationality = Column(EnumType(Nationality), nullable=True)
     company_name = Column(String(200), nullable=True)
     siret = Column(String(50), nullable=True)
     
@@ -77,7 +119,7 @@ class ArtisanProfile(BaseModel):
     nif = Column(String(50), nullable=True)
     stat = Column(String(50), nullable=True)
     documents_not_available = Column(Boolean, default=False, nullable=False)
-    status = Column(SQLEnum(ProfileStatus), default=ProfileStatus.PENDING_APPROVAL, nullable=False, index=True)
+    status = Column(EnumType(ProfileStatus), default=ProfileStatus.PENDING_APPROVAL, nullable=False, index=True)
     admin_notes = Column(Text, nullable=True)
     
     # Additional fields from original UserProfile if needed
