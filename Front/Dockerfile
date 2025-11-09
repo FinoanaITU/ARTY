@@ -9,13 +9,23 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Install dependencies - use npm install if package-lock.json is problematic
+RUN if [ -f package-lock.json ]; then \
+      npm ci --legacy-peer-deps || npm install --legacy-peer-deps; \
+    else \
+      npm install --legacy-peer-deps; \
+    fi && \
+    npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Verify Vite is installed correctly
+RUN ls -la node_modules/vite/dist/node/chunks/ || echo "Vite chunks not found, will reinstall" && \
+    npm list vite || npm install vite@^5.4.21 --save-dev
 
 # Build the application
 RUN npm run build

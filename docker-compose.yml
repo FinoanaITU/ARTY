@@ -142,8 +142,8 @@ services:
       - "3000:80"
     environment:
       - NODE_ENV=production
-      - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_WS_URL=ws://localhost:8000
+      - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_WS_URL=ws://localhost:8000
     depends_on:
       backend:
         condition: service_healthy
@@ -167,8 +167,8 @@ services:
       - "8080:8080"
     environment:
       - NODE_ENV=development
-      - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_WS_URL=ws://localhost:8000
+      - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_WS_URL=ws://localhost:8000
     volumes:
       - ./Front:/app
       - /app/node_modules

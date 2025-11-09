@@ -82,10 +82,10 @@ class UserOut(BaseModel):
     id: UUID
     email: EmailStr
     name: str
-    role: UserRole
+    role: str  # String pour compatibilité JSON
     avatar: Optional[str] = None
-    buyer_type: Optional[BuyerType] = None
-    nationality: Optional[Nationality] = None
+    buyer_type: Optional[str] = None  # String pour compatibilité
+    nationality: Optional[str] = None  # String pour compatibilité
     company_name: Optional[str] = None
     siret: Optional[str] = None
     specialty: Optional[str] = None  # Pour artisans

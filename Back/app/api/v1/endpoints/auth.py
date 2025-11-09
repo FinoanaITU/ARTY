@@ -34,8 +34,25 @@ async def register_buyer(
         user = auth_service.create_buyer(db, buyer_data)
         tokens = auth_service.generate_tokens(user)
         
-        # Préparer la réponse avec les données utilisateur
-        user_out = UserOut.model_validate(user)
+        # Préparer la réponse avec les données utilisateur (buyer n'a pas de profil artisan)
+        user_dict = {
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+            "avatar": user.avatar,
+            "buyer_type": user.buyer_type.value if user.buyer_type and hasattr(user.buyer_type, 'value') else (str(user.buyer_type) if user.buyer_type else None),
+            "nationality": user.nationality.value if user.nationality and hasattr(user.nationality, 'value') else (str(user.nationality) if user.nationality else None),
+            "company_name": user.company_name,
+            "siret": user.siret,
+            "specialty": None,
+            "description": None,
+            "experience": None,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+        }
+        
+        user_out = UserOut(**user_dict)
         
         return TokenOut(
             access_token=tokens["access_token"],
@@ -134,10 +151,24 @@ async def register_artisan(
         tokens = auth_service.generate_tokens(user)
         
         # Préparer la réponse avec les données utilisateur
-        user_out = UserOut.model_validate(user)
-        user_out.specialty = artisan_profile.main_specialty
-        user_out.description = artisan_profile.activity_description
-        user_out.experience = artisan_profile.years_experience
+        user_dict = {
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+            "avatar": user.avatar,
+            "buyer_type": user.buyer_type.value if user.buyer_type and hasattr(user.buyer_type, 'value') else (str(user.buyer_type) if user.buyer_type else None),
+            "nationality": user.nationality.value if user.nationality and hasattr(user.nationality, 'value') else (str(user.nationality) if user.nationality else None),
+            "company_name": user.company_name,
+            "siret": user.siret,
+            "specialty": artisan_profile.main_specialty,
+            "description": artisan_profile.activity_description,
+            "experience": artisan_profile.years_experience,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+        }
+        
+        user_out = UserOut(**user_dict)
         
         return TokenOut(
             access_token=tokens["access_token"],
@@ -175,18 +206,37 @@ async def login(
         )
     
     tokens = auth_service.generate_tokens(user)
-    user_out = UserOut.model_validate(user)
+    
+    # Préparer la réponse avec les données utilisateur
+    user_dict = {
+        "id": str(user.id),
+        "email": user.email,
+        "name": user.name,
+        "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+        "avatar": user.avatar,
+        "buyer_type": user.buyer_type.value if user.buyer_type and hasattr(user.buyer_type, 'value') else (str(user.buyer_type) if user.buyer_type else None),
+        "nationality": user.nationality.value if user.nationality and hasattr(user.nationality, 'value') else (str(user.nationality) if user.nationality else None),
+        "company_name": user.company_name,
+        "siret": user.siret,
+        "specialty": None,
+        "description": None,
+        "experience": None,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+    }
     
     # Ajouter les infos artisan si nécessaire
     if user.role.value == "artisan" and user.artisan_profile:
-        user_out.specialty = user.artisan_profile.main_specialty
-        user_out.description = user.artisan_profile.activity_description
-        user_out.experience = user.artisan_profile.years_experience
+        user_dict["specialty"] = user.artisan_profile.main_specialty
+        user_dict["description"] = user.artisan_profile.activity_description
+        user_dict["experience"] = user.artisan_profile.years_experience
+    
+    user_out = UserOut(**user_dict)
     
     return TokenOut(
         access_token=tokens["access_token"],
-        refresh_token=tokens["refresh_token"],
-        token_type=tokens["token_type"],
+        refresh_token=tokens.get("refresh_token"),
+        token_type=tokens.get("token_type", "bearer"),
         user=user_out
     )
 
@@ -232,22 +282,54 @@ async def refresh_token(
             detail="Token invalide"
         )
     
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user or not user.is_active:
+    import uuid as uuid_lib
+    try:
+        user = db.query(User).filter(User.id == uuid_lib.UUID(user_id)).first()
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Utilisateur introuvable ou inactif"
+            )
+        
+        tokens = auth_service.generate_tokens(user)
+        
+        # Préparer la réponse avec les données utilisateur
+        user_dict = {
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+            "avatar": user.avatar,
+            "buyer_type": user.buyer_type.value if user.buyer_type and hasattr(user.buyer_type, 'value') else (str(user.buyer_type) if user.buyer_type else None),
+            "nationality": user.nationality.value if user.nationality and hasattr(user.nationality, 'value') else (str(user.nationality) if user.nationality else None),
+            "company_name": user.company_name,
+            "siret": user.siret,
+            "specialty": None,
+            "description": None,
+            "experience": None,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+        }
+        
+        # Ajouter les infos artisan si nécessaire
+        if user.role.value == "artisan" and user.artisan_profile:
+            user_dict["specialty"] = user.artisan_profile.main_specialty
+            user_dict["description"] = user.artisan_profile.activity_description
+            user_dict["experience"] = user.artisan_profile.years_experience
+        
+        user_out = UserOut(**user_dict)
+        
+        return TokenOut(
+            access_token=tokens["access_token"],
+            refresh_token=tokens.get("refresh_token"),
+            token_type=tokens.get("token_type", "bearer"),
+            user=user_out
+        )
+    except (ValueError, TypeError) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Utilisateur introuvable ou inactif"
+            detail="Format d'ID utilisateur invalide"
         )
-    
-    tokens = auth_service.generate_tokens(user)
-    user_out = UserOut.model_validate(user)
-    
-    return TokenOut(
-        access_token=tokens["access_token"],
-        refresh_token=tokens["refresh_token"],
-        token_type=tokens["token_type"],
-        user=user_out
-    )
 
 
 @router.post("/logout")

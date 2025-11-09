@@ -52,11 +52,13 @@ class User(BaseModel):
     is_email_verified = Column(Boolean, default=False, nullable=False)
     last_login_at = Column(DateTime, nullable=True)
     
-    # Relationships
-    artisan_profile = relationship("ArtisanProfile", back_populates="user", uselist=False)
-    orders = relationship("Order", back_populates="buyer")
-    cart_items = relationship("CartItem", back_populates="user")
-    sessions = relationship("UserSession", back_populates="user")
+    # Relationships (using strings to avoid circular imports)
+    artisan_profile = relationship("ArtisanProfile", back_populates="user", uselist=False, lazy="select")
+    # Temporarily comment out relationships that cause circular import issues
+    # These will be enabled when Order and CartItem models are properly configured
+    # orders = relationship("Order", back_populates="buyer", lazy="dynamic")
+    # cart_items = relationship("CartItem", back_populates="user", lazy="dynamic")
+    sessions = relationship("UserSession", back_populates="user", lazy="dynamic")
 
 
 class ArtisanProfile(BaseModel):
@@ -94,9 +96,10 @@ class ArtisanProfile(BaseModel):
     # Relationships
     user = relationship("User", back_populates="artisan_profile")
     artisan_photos = relationship("ArtisanPhoto", back_populates="artisan_profile", cascade="all, delete-orphan")
-    products = relationship("Product", back_populates="artisan")
-    workshops = relationship("Workshop", back_populates="artisan")
-    unavailability_periods = relationship("UnavailabilityPeriod", back_populates="artisan", cascade="all, delete-orphan")
+    # Temporarily comment out relationships that require models not yet fully configured
+    # products = relationship("Product", back_populates="artisan")
+    # workshops = relationship("Workshop", back_populates="artisan")
+    # unavailability_periods = relationship("UnavailabilityPeriod", back_populates="artisan", cascade="all, delete-orphan")
 
 
 class ArtisanPhoto(BaseModel):

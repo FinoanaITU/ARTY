@@ -197,9 +197,10 @@ class AuthService:
             return None
         
         try:
-            user = db.query(User).filter(User.id == uuid.UUID(user_id)).first()
+            user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+            user = db.query(User).filter(User.id == user_uuid).first()
             return user if user and user.is_active else None
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, AttributeError):
             return None
 
 
