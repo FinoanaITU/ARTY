@@ -1,5 +1,5 @@
 """
-Tests unitaires pour l'authentification
+Tests unitaires pour les endpoints d'authentification API
 """
 import pytest
 from fastapi.testclient import TestClient
@@ -8,10 +8,11 @@ from sqlalchemy.orm import Session
 from app.models.user import User, UserRole, BuyerType, Nationality
 from app.core.security import verify_password, get_password_hash
 import uuid
+import io
 
 
-class TestBuyerRegistration:
-    """Tests pour l'inscription des acheteurs"""
+class TestBuyerRegistrationAPI:
+    """Tests pour l'endpoint d'inscription des acheteurs"""
     
     def test_register_buyer_particulier_success(
         self, client: TestClient, db: Session, test_buyer_data: dict
@@ -75,6 +76,8 @@ class TestBuyerRegistration:
         self, client: TestClient, created_buyer: User, test_buyer_data: dict
     ):
         """Test d'inscription avec un email déjà existant"""
+        # Utiliser l'email du buyer créé
+        test_buyer_data["email"] = created_buyer.email
         response = client.post(
             "/api/v1/auth/register/buyer",
             json=test_buyer_data
@@ -99,8 +102,21 @@ class TestBuyerRegistration:
         self, client: TestClient, test_buyer_data: dict
     ):
         """Test d'inscription avec des champs requis manquants"""
-        # Supprimer le champ email
-        del test_buyer_data["email"]
+        # Créer une copie pour ne pas modifier le fixture
+        invalid_data = test_buyer_data.copy()
+        del invalid_data["email"]
+        response = client.post(
+            "/api/v1/auth/register/buyer",
+            json=invalid_data
+        )
+        
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    
+    def test_register_buyer_empty_password(
+        self, client: TestClient, test_buyer_data: dict
+    ):
+        """Test d'inscription avec mot de passe vide"""
+        test_buyer_data["password"] = ""
         response = client.post(
             "/api/v1/auth/register/buyer",
             json=test_buyer_data
@@ -108,23 +124,23 @@ class TestBuyerRegistration:
         
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     
-    def test_register_buyer_weak_password(
-        self, client: TestClient, test_buyer_data: dict
+    def test_register_buyer_foreign_country(
+        self, client: TestClient, db: Session, test_buyer_data: dict
     ):
-        """Test d'inscription avec un mot de passe faible"""
-        test_buyer_data["password"] = "123"
+        """Test d'inscription avec un pays étranger"""
+        test_buyer_data["country"] = "france"
         response = client.post(
             "/api/v1/auth/register/buyer",
             json=test_buyer_data
         )
         
-        # Le endpoint devrait accepter ou rejeter selon la validation
-        # Pour l'instant, on vérifie juste que ça ne plante pas
-        assert response.status_code in [status.HTTP_201_CREATED, status.HTTP_422_UNPROCESSABLE_ENTITY, status.HTTP_400_BAD_REQUEST]
+        assert response.status_code == status.HTTP_201_CREATED
+        user = db.query(User).filter(User.email == test_buyer_data["email"]).first()
+        assert user.nationality == Nationality.FOREIGN
 
 
-class TestArtisanRegistration:
-    """Tests pour l'inscription des artisans"""
+class TestArtisanRegistrationAPI:
+    """Tests pour l'endpoint d'inscription des artisans"""
     
     def test_register_artisan_success(
         self, client: TestClient, db: Session, test_artisan_data: dict
@@ -180,6 +196,9 @@ class TestArtisanRegistration:
         self, client: TestClient, created_artisan: User, test_artisan_data: dict
     ):
         """Test d'inscription artisan avec email déjà existant"""
+        # Utiliser l'email de l'artisan créé
+        test_artisan_data["email"] = created_artisan.email
+        
         form_data = {
             "email": test_artisan_data["email"],
             "password": test_artisan_data["password"],
@@ -200,10 +219,34 @@ class TestArtisanRegistration:
         )
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+    
+    def test_register_artisan_missing_required_fields(
+        self, client: TestClient, test_artisan_data: dict
+    ):
+        """Test d'inscription artisan avec champs requis manquants"""
+        form_data = {
+            "email": test_artisan_data["email"],
+            "password": test_artisan_data["password"],
+            # company_name manquant
+            # main_specialty manquant
+            # activity_description manquant
+            "region": test_artisan_data["region"],
+            "city": test_artisan_data["city"],
+            "languages": ",".join(test_artisan_data["languages"]),
+            "offerings": ",".join(test_artisan_data["offerings"]),
+            "documents_not_available": "false"
+        }
+        
+        response = client.post(
+            "/api/v1/auth/register/artisan",
+            data=form_data
+        )
+        
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-class TestLogin:
-    """Tests pour la connexion"""
+class TestLoginAPI:
+    """Tests pour l'endpoint de connexion"""
     
     def test_login_success(
         self, client: TestClient, created_buyer: User, test_buyer_data: dict
@@ -283,10 +326,34 @@ class TestLogin:
         )
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    
+    def test_login_invalid_email_format(self, client: TestClient):
+        """Test de connexion avec un format d'email invalide"""
+        response = client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": "invalid-email",
+                "password": "testpassword123"
+            }
+        )
+        
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    
+    def test_login_empty_password(self, client: TestClient, created_buyer: User, test_buyer_data: dict):
+        """Test de connexion avec mot de passe vide"""
+        response = client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": test_buyer_data["email"],
+                "password": ""
+            }
+        )
+        
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-class TestGetCurrentUser:
-    """Tests pour la récupération de l'utilisateur courant"""
+class TestGetCurrentUserAPI:
+    """Tests pour l'endpoint de récupération de l'utilisateur courant"""
     
     def test_get_me_success(
         self, client: TestClient, created_buyer: User, auth_headers_buyer: dict
@@ -317,10 +384,35 @@ class TestGetCurrentUser:
         )
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    
+    def test_get_me_wrong_token_format(self, client: TestClient):
+        """Test de récupération avec format de token incorrect"""
+        response = client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": "InvalidFormat token"}
+        )
+        
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    
+    def test_get_me_artisan_with_profile(
+        self, client: TestClient, created_artisan: User, auth_headers_artisan: dict
+    ):
+        """Test de récupération d'un artisan avec profil"""
+        response = client.get(
+            "/api/v1/auth/me",
+            headers=auth_headers_artisan
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["role"] == "artisan"
+        # Vérifier que les infos artisan sont présentes si disponibles
+        if created_artisan.artisan_profile:
+            assert data.get("specialty") is not None or data.get("description") is not None
 
 
-class TestRefreshToken:
-    """Tests pour le rafraîchissement du token"""
+class TestRefreshTokenAPI:
+    """Tests pour l'endpoint de rafraîchissement du token"""
     
     def test_refresh_token_success(
         self, client: TestClient, created_buyer: User, test_buyer_data: dict
@@ -371,35 +463,39 @@ class TestRefreshToken:
         )
         
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-
-class TestPasswordHashing:
-    """Tests pour le hachage des mots de passe"""
     
-    def test_password_hashing(self):
-        """Test que le hachage de mot de passe fonctionne"""
-        from app.core.security import get_password_hash, verify_password
+    def test_refresh_token_wrong_type(self, client: TestClient, created_buyer: User, test_buyer_data: dict):
+        """Test de rafraîchissement avec un access_token au lieu d'un refresh_token"""
+        # Obtenir un access_token
+        login_response = client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": test_buyer_data["email"],
+                "password": test_buyer_data["password"]
+            }
+        )
+        access_token = login_response.json()["access_token"]
         
-        password = "testpassword123"
-        hashed = get_password_hash(password)
+        # Essayer d'utiliser l'access_token comme refresh_token
+        response = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": access_token}
+        )
         
-        assert hashed != password
-        assert verify_password(password, hashed)
-        assert not verify_password("wrongpassword", hashed)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
-    def test_password_hash_different_salts(self):
-        """Test que deux hachages du même mot de passe sont différents (salts différents)"""
-        from app.core.security import get_password_hash
+    def test_refresh_token_empty_string(self, client: TestClient):
+        """Test de rafraîchissement avec token vide"""
+        response = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": ""}
+        )
         
-        password = "testpassword123"
-        hash1 = get_password_hash(password)
-        hash2 = get_password_hash(password)
-        
-        assert hash1 != hash2  # Différents à cause du salt
+        assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_422_UNPROCESSABLE_ENTITY]
 
 
-class TestUserRoles:
-    """Tests pour les rôles utilisateurs"""
+class TestUserRolesAPI:
+    """Tests pour les rôles utilisateurs via l'API"""
     
     def test_buyer_role_assigned(
         self, client: TestClient, db: Session, test_buyer_data: dict
@@ -442,8 +538,8 @@ class TestUserRoles:
         assert user.role == UserRole.ARTISAN
 
 
-class TestNationalityDetection:
-    """Tests pour la détection de nationalité"""
+class TestNationalityDetectionAPI:
+    """Tests pour la détection de nationalité via l'API"""
     
     def test_madagascar_nationality_local(
         self, client: TestClient, db: Session, test_buyer_data: dict

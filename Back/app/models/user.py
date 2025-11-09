@@ -107,7 +107,9 @@ class ArtisanPhoto(BaseModel):
     
     artisan_profile_id = Column(UUID(as_uuid=True), ForeignKey("artisan_profiles.id"), nullable=False, index=True)
     photo_url = Column(String(500), nullable=False)
-    order = Column(Integer, default=0, nullable=False)
+    # 'order' is a SQL reserved word in some dialects (e.g. SQLite). Use 'position'
+    # to avoid SQL syntax errors during migrations / tests.
+    position = Column(Integer, default=0, nullable=False)
     
     # Relationships
     artisan_profile = relationship("ArtisanProfile", back_populates="artisan_photos")

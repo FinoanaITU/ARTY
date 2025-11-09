@@ -62,7 +62,7 @@ class ArtisanRegisterIn(BaseModel):
 class LoginIn(BaseModel):
     """Schema pour la connexion"""
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=1, description="Le mot de passe ne peut pas être vide")
 
 
 # ============ OUTPUT SCHEMAS ============
