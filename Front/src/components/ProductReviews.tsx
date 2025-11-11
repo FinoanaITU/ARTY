@@ -13,7 +13,7 @@ interface Review {
 }
 
 interface ProductReviewsProps {
-  productId: number;
+  productId: string | number;
 }
 
 const ProductReviews = ({ productId }: ProductReviewsProps) => {

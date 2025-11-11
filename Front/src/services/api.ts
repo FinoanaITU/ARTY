@@ -194,12 +194,12 @@ class ApiService {
     in_stock?: boolean;
     page?: number;
     limit?: number;
-  }) {
+  }): Promise<ProductListResponse> {
     const response = await this.api.get('/products/', { params });
     return response.data;
   }
 
-  async getProduct(productId: string) {
+  async getProduct(productId: string): Promise<ProductOut> {
     const response = await this.api.get(`/products/${productId}`);
     return response.data;
   }
@@ -226,7 +226,7 @@ class ApiService {
       };
     },
     photos?: File[]
-  ) {
+  ): Promise<ProductOut> {
     const formData = new FormData();
     
     // Ajouter les champs textuels
@@ -240,8 +240,8 @@ class ApiService {
           if (dims.height !== undefined) formData.append('dimensions_height', String(dims.height));
           if (dims.weight !== undefined) formData.append('dimensions_weight', String(dims.weight));
         } else if (Array.isArray(value)) {
-          // Convertir les tableaux en JSON string ou liste séparée par virgules
-          formData.append(key, JSON.stringify(value));
+          // Convertir les tableaux en liste séparée par virgules pour le backend
+          formData.append(key, value.join(','));
         } else {
           formData.append(key, String(value));
         }
@@ -287,7 +287,7 @@ class ApiService {
       status?: string;
     },
     photos?: File[]
-  ) {
+  ): Promise<ProductOut> {
     const formData = new FormData();
     
     // Ajouter les champs textuels
@@ -301,8 +301,8 @@ class ApiService {
           if (dims.height !== undefined) formData.append('dimensions_height', String(dims.height));
           if (dims.weight !== undefined) formData.append('dimensions_weight', String(dims.weight));
         } else if (Array.isArray(value)) {
-          // Convertir les tableaux en JSON string
-          formData.append(key, JSON.stringify(value));
+          // Convertir les tableaux en liste séparée par virgules pour le backend
+          formData.append(key, value.join(','));
         } else {
           formData.append(key, String(value));
         }
@@ -329,8 +329,30 @@ class ApiService {
     return response.data;
   }
 
-  async getCategories() {
-    const response = await this.api.get('/products/categories/list');
+  async getCategories(): Promise<CategoriesResponse> {
+    const response = await this.api.get('/products/categories');
+    return response.data;
+  }
+
+  async getSimilarProducts(productId: string, limit: number = 3): Promise<ProductListResponse> {
+    const response = await this.api.get(`/products/${productId}/similar`, {
+      params: { limit }
+    });
+    return response.data;
+  }
+
+  async createBulkOrderRequest(
+    productId: string,
+    data: {
+      quantity: number;
+      customer_name: string;
+      customer_email: string;
+      customer_phone: string;
+      company?: string;
+      message?: string;
+    }
+  ): Promise<BulkOrderRequestOut> {
+    const response = await this.api.post(`/products/${productId}/bulk-order-request`, data);
     return response.data;
   }
 

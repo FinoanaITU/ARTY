@@ -18,38 +18,7 @@ import WorkshopRecommendations from '@/components/WorkshopRecommendations';
 import { PriceVariation } from '@/types/cart';
 import apiService from '@/services/api';
 import { toast } from 'sonner';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  subcategory?: string;
-  price: number;
-  images: string[];
-  artisan: {
-    id: string;
-    name: string;
-  };
-  materials: string[];
-  available_colors?: string[];
-  dimensions?: {
-    length?: number;
-    width?: number;
-    height?: number;
-    weight?: number;
-  };
-  stock: number;
-  customizable?: boolean;
-  production_time_days: number;
-  bulk_order_enabled: boolean;
-  min_bulk_quantity?: number;
-  status: string;
-  rating?: number;
-  review_count: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { ProductOut } from '@/types/product';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,7 +26,7 @@ const ProductDetail = () => {
   const { addItem } = useCart();
   const { user, isLoggedIn } = useUser();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<ProductOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -141,7 +110,7 @@ const ProductDetail = () => {
     
     addItem({
       type: 'product',
-      productId: Number(product.id),
+      productId: product.id,
       name: product.name,
       artisan: product.artisan.name,
       price: selectedPriceVariation?.discountedPrice || product.price,
@@ -434,23 +403,20 @@ const ProductDetail = () => {
           </div>
 
           {/* Reviews */}
-          <ProductReviews productId={Number(product.id)} />
+          <ProductReviews productId={product.id} />
 
           {/* Similar Products */}
-          <SimilarProducts currentProductId={Number(product.id)} category={product.category} />
+          <SimilarProducts currentProductId={product.id} category={product.category} />
 
           {/* Bulk Order Form Modal */}
-          {showBulkForm && (
+          {showBulkForm && product.bulk_order_enabled && (
             <BulkOrderForm 
+              productId={product.id}
               product={{
-                id: Number(product.id),
+                id: product.id,
                 name: product.name,
                 price: product.price,
-                stock: product.stock,
-                bulkOrderEnabled: product.bulk_order_enabled,
                 minBulkQuantity: product.min_bulk_quantity || 5,
-                artisan: product.artisan.name,
-                images: product.images
               }}
               onClose={() => setShowBulkForm(false)}
             />

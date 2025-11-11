@@ -9,25 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import apiService from '@/services/api';
 import { toast } from 'sonner';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  images: string[];
-  artisan: {
-    id: string;
-    name: string;
-  };
-  stock: number;
-  rating?: number;
-  review_count?: number;
-}
-
-interface Category {
-  name: string;
-  subcategories: string[];
-}
+import type { ProductListItem, CategoryOut } from '@/types/product';
 
 const Products = () => {
   const { t } = useLanguage();
@@ -35,8 +17,8 @@ const Products = () => {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<ProductListItem[]>([]);
+  const [categories, setCategories] = useState<CategoryOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);

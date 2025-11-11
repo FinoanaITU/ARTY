@@ -4,21 +4,26 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import apiService from '@/services/api';
+import { toast } from 'sonner';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   minBulkQuantity?: number;
 }
 
 interface BulkOrderFormProps {
+  productId: string;
   product: Product;
   onClose: () => void;
 }
 
-const BulkOrderForm = ({ product, onClose }: BulkOrderFormProps) => {
+const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
   const [quantity, setQuantity] = useState(product.minBulkQuantity || 5);
+  const [loading, setLoading] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     email: '',
@@ -26,7 +31,14 @@ const BulkOrderForm = ({ product, onClose }: BulkOrderFormProps) => {
     company: '',
     message: ''
   });
+  const [bulkOrderData, setBulkOrderData] = useState<{
+    unit_price: number;
+    discount_percentage: number;
+    discount_amount: number;
+    total_amount: number;
+  } | null>(null);
 
+  // Calculer les remises selon la grille backend
   const calculateBulkPrice = (qty: number) => {
     let discount = 0;
     if (qty >= 50) discount = 0.25;
@@ -34,19 +46,53 @@ const BulkOrderForm = ({ product, onClose }: BulkOrderFormProps) => {
     else if (qty >= 10) discount = 0.10;
     else if (qty >= 5) discount = 0.05;
     
-    return product.price * (1 - discount);
+    const unitPrice = product.price * (1 - discount);
+    const subtotal = product.price * qty;
+    const discountAmount = subtotal * discount;
+    const totalAmount = subtotal - discountAmount;
+    
+    return {
+      unit_price: unitPrice,
+      discount_percentage: discount * 100,
+      discount_amount: discountAmount,
+      total_amount: totalAmount
+    };
   };
 
-  const unitPrice = calculateBulkPrice(quantity);
-  const totalPrice = unitPrice * quantity;
-  const savings = (product.price - unitPrice) * quantity;
+  // Mettre à jour les calculs quand la quantité change
+  React.useEffect(() => {
+    const calculated = calculateBulkPrice(quantity);
+    setBulkOrderData(calculated);
+  }, [quantity, product.price]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const unitPrice = bulkOrderData?.unit_price || product.price;
+  const totalPrice = bulkOrderData?.total_amount || (product.price * quantity);
+  const discountAmount = bulkOrderData?.discount_amount || 0;
+  const discountPercentage = bulkOrderData?.discount_percentage || 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Bulk order submitted:', { product, quantity, customerInfo, totalPrice });
-    // Here you would typically send the data to your backend
-    alert('Demande de commande en gros envoyée ! Nous vous contacterons bientôt.');
-    onClose();
+    setLoading(true);
+    
+    try {
+      await apiService.createBulkOrderRequest(productId, {
+        quantity,
+        customer_name: customerInfo.name,
+        customer_email: customerInfo.email,
+        customer_phone: customerInfo.phone,
+        company: customerInfo.company || undefined,
+        message: customerInfo.message || undefined
+      });
+      
+      toast.success('Demande de commande en gros envoyée avec succès ! Nous vous contacterons bientôt.');
+      onClose();
+    } catch (error: any) {
+      console.error('Error creating bulk order request:', error);
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de l\'envoi de la demande';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,17 +129,27 @@ const BulkOrderForm = ({ product, onClose }: BulkOrderFormProps) => {
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>Prix unitaire (avec remise):</span>
-                    <span className="font-medium">{unitPrice.toLocaleString()} Ar</span>
+                    <span>Prix unitaire de base:</span>
+                    <span className="font-medium">{product.price.toLocaleString('fr-FR')} Ar</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Prix total:</span>
-                    <span className="font-bold text-lg">{totalPrice.toLocaleString()} Ar</span>
-                  </div>
-                  {savings > 0 && (
+                  {discountPercentage > 0 && (
                     <div className="flex justify-between text-green-600">
-                      <span>Économies:</span>
-                      <span className="font-medium">-{savings.toLocaleString()} Ar</span>
+                      <span>Remise ({discountPercentage.toFixed(0)}%):</span>
+                      <span className="font-medium">-{discountAmount.toLocaleString('fr-FR')} Ar</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>Prix unitaire (avec remise):</span>
+                    <span className="font-medium">{unitPrice.toLocaleString('fr-FR')} Ar</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2 mt-2">
+                    <span className="font-semibold">Prix total:</span>
+                    <span className="font-bold text-lg">{totalPrice.toLocaleString('fr-FR')} Ar</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Économies totales:</span>
+                      <span className="font-medium">-{discountAmount.toLocaleString('fr-FR')} Ar</span>
                     </div>
                   )}
                 </div>
@@ -155,8 +211,7 @@ const BulkOrderForm = ({ product, onClose }: BulkOrderFormProps) => {
 
               <div>
                 <label className="block text-sm font-medium mb-1">Message (optionnel)</label>
-                <textarea
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                <Textarea
                   rows={3}
                   value={customerInfo.message}
                   onChange={(e) => setCustomerInfo(prev => ({...prev, message: e.target.value}))}
@@ -167,11 +222,11 @@ const BulkOrderForm = ({ product, onClose }: BulkOrderFormProps) => {
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={loading}>
                 Annuler
               </Button>
-              <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
-                Envoyer la demande
+              <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700" disabled={loading}>
+                {loading ? 'Envoi en cours...' : 'Envoyer la demande'}
               </Button>
             </div>
           </form>

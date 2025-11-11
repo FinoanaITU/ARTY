@@ -1,59 +1,51 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-interface SimilarProduct {
-  id: number;
-  name: string;
-  artisan: string;
-  price: number;
-  image: string;
-  rating: number;
-  category: string;
-}
+import { Loader2 } from 'lucide-react';
+import apiService from '@/services/api';
+import type { ProductListItem } from '@/types/product';
 
 interface SimilarProductsProps {
-  currentProductId: number;
+  currentProductId: string;
   category: string;
 }
 
 const SimilarProducts = ({ currentProductId, category }: SimilarProductsProps) => {
-  // Mock similar products data - in a real app, this would come from an API
-  const allProducts: SimilarProduct[] = [
-    {
-      id: 2,
-      name: 'Statuette Zébu sacré',
-      artisan: 'Hery Rakoto',
-      price: 25000,
-      image: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300&h=300&fit=crop',
-      rating: 4.7,
-      category: 'Sculpture sur bois'
-    },
-    {
-      id: 4,
-      name: 'Masque Sakalava',
-      artisan: 'Rabe Andriana',
-      price: 38000,
-      image: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300&h=300&fit=crop',
-      rating: 4.6,
-      category: 'Sculpture sur bois'
-    },
-    {
-      id: 5,
-      name: 'Sculpture Animalière',
-      artisan: 'Hery Rakoto',
-      price: 32000,
-      image: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=300&h=300&fit=crop',
-      rating: 4.8,
-      category: 'Sculpture sur bois'
-    }
-  ];
+  const [similarProducts, setSimilarProducts] = useState<ProductListItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const similarProducts = allProducts.filter(
-    product => product.category === category && product.id !== currentProductId
-  ).slice(0, 3);
+  useEffect(() => {
+    const loadSimilarProducts = async () => {
+      setLoading(true);
+      try {
+        const response = await apiService.getSimilarProducts(currentProductId, 3);
+        setSimilarProducts(response.items || []);
+      } catch (error) {
+        console.error('Error loading similar products:', error);
+        // En cas d'erreur, on ne affiche pas de produits similaires
+        setSimilarProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentProductId) {
+      loadSimilarProducts();
+    }
+  }, [currentProductId]);
+
+  if (loading) {
+    return (
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Produits similaires</h2>
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+        </div>
+      </div>
+    );
+  }
 
   if (similarProducts.length === 0) {
     return null;
@@ -74,24 +66,44 @@ const SimilarProducts = ({ currentProductId, category }: SimilarProductsProps) =
         {similarProducts.map((product) => (
           <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="aspect-square bg-orange-100 relative">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded-full text-xs font-medium">
-                ⭐ {product.rating}
-              </div>
+              {product.images && product.images.length > 0 ? (
+                <img
+                  src={product.images[0]}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+non+disponible';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  Pas d'image
+                </div>
+              )}
+              {product.rating && (
+                <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded-full text-xs font-medium">
+                  ⭐ {product.rating.toFixed(1)}
+                </div>
+              )}
             </div>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">{product.name}</CardTitle>
-              <CardDescription>par {product.artisan}</CardDescription>
+              <CardDescription>par {product.artisan.name}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xl font-bold text-orange-600">
-                  {product.price.toLocaleString()} Ar
+                  {product.price.toLocaleString('fr-FR')} Ar
                 </span>
+                {product.stock > 0 ? (
+                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                    En stock
+                  </span>
+                ) : (
+                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                    Rupture
+                  </span>
+                )}
               </div>
               <Link to={`/product/${product.id}`}>
                 <Button className="w-full bg-orange-600 hover:bg-orange-700">

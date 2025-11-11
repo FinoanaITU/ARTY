@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Navigation from '@/components/Navigation';
@@ -13,14 +13,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import apiService from '@/services/api';
+import type { ProductOut } from '@/types/product';
 
 const ArtisanDashboard = () => {
   const { user } = useUser();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
   const [showWorkshopCreation, setShowWorkshopCreation] = useState(false);
+  const [products, setProducts] = useState<ProductOut[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
 
   // Mock data for artisan stats and orders
   const artisanStats = {
@@ -72,6 +76,123 @@ const ArtisanDashboard = () => {
       title: "Indisponibilités mises à jour",
       description: "Vos périodes d'indisponibilité ont été enregistrées avec succès.",
     });
+  };
+
+  // Charger les produits de l'artisan
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
+
+      setProductsLoading(true);
+      try {
+        const response = await apiService.getProducts({
+          artisan_id: user.id,
+          limit: 100 // Charger tous les produits de l'artisan
+        });
+        setProducts(response.items || []);
+      } catch (error) {
+        console.error('Error loading products:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger vos produits",
+          variant: "destructive"
+        });
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [user]);
+
+  const handleCreateProduct = async (productData: any, photos?: File[]) => {
+    try {
+      const createdProduct = await apiService.createProduct({
+        name: productData.name,
+        description: productData.description,
+        category: productData.category,
+        subcategory: productData.subcategory,
+        price: productData.price,
+        materials: productData.materials || [],
+        available_colors: productData.availableColors || [],
+        stock: productData.stock,
+        customizable: productData.customizable || false,
+        production_time_days: productData.productionTime,
+        bulk_order_enabled: productData.bulk_order_enabled || false,
+        min_bulk_quantity: productData.min_bulk_quantity,
+        dimensions: productData.dimensions
+      }, photos);
+      
+      setProducts(prev => [createdProduct, ...prev]);
+      toast({
+        title: "Produit créé",
+        description: "Votre produit a été créé avec succès et est en attente d'approbation"
+      });
+    } catch (error: any) {
+      console.error('Error creating product:', error);
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de la création du produit';
+      toast({
+        title: "Erreur",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateProduct = async (id: string, productData: any, photos?: File[]) => {
+    try {
+      const updatedProduct = await apiService.updateProduct(id, {
+        name: productData.name,
+        description: productData.description,
+        category: productData.category,
+        subcategory: productData.subcategory,
+        price: productData.price,
+        materials: productData.materials || [],
+        available_colors: productData.availableColors || [],
+        stock: productData.stock,
+        customizable: productData.customizable || false,
+        production_time_days: productData.productionTime,
+        bulk_order_enabled: productData.bulk_order_enabled || false,
+        min_bulk_quantity: productData.min_bulk_quantity,
+        dimensions: productData.dimensions,
+        status: productData.status
+      }, photos);
+      
+      setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
+      toast({
+        title: "Produit mis à jour",
+        description: "Votre produit a été mis à jour avec succès"
+      });
+    } catch (error: any) {
+      console.error('Error updating product:', error);
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de la mise à jour du produit';
+      toast({
+        title: "Erreur",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      await apiService.deleteProduct(id);
+      setProducts(prev => prev.filter(p => p.id !== id));
+      toast({
+        title: "Produit supprimé",
+        description: "Votre produit a été supprimé avec succès"
+      });
+    } catch (error: any) {
+      console.error('Error deleting product:', error);
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de la suppression du produit';
+      toast({
+        title: "Erreur",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
   };
 
   if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -397,30 +518,18 @@ const ArtisanDashboard = () => {
             </TabsContent>
 
             <TabsContent value="products">
-              <ArtisanProductManager 
-                products={[]} 
-                onCreateProduct={(product) => {
-                  console.log('Product created:', product);
-                  toast({
-                    title: "Produit créé",
-                    description: "Votre produit a été créé avec succès"
-                  });
-                }}
-                onUpdateProduct={(id, product) => {
-                  console.log('Product updated:', id, product);
-                  toast({
-                    title: "Produit mis à jour",
-                    description: "Votre produit a été mis à jour avec succès"
-                  });
-                }}
-                onDeleteProduct={(id) => {
-                  console.log('Product deleted:', id);
-                  toast({
-                    title: "Produit supprimé",
-                    description: "Votre produit a été supprimé avec succès"
-                  });
-                }}
-              />
+              {productsLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+                </div>
+              ) : (
+                <ArtisanProductManager 
+                  products={products}
+                  onCreateProduct={handleCreateProduct}
+                  onUpdateProduct={handleUpdateProduct}
+                  onDeleteProduct={handleDeleteProduct}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="profile">

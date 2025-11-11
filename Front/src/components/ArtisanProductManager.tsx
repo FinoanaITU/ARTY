@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,28 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
-import { ArtisanProduct } from '@/types/artisan';
+import { Plus, Edit, Trash2, Image as ImageIcon, Upload, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import apiService from '@/services/api';
+import type { ProductOut, CategoryOut } from '@/types/product';
 
 interface ArtisanProductManagerProps {
-  products: ArtisanProduct[];
-  onCreateProduct: (product: Omit<ArtisanProduct, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  onUpdateProduct: (id: string, product: Partial<ArtisanProduct>) => void;
-  onDeleteProduct: (id: string) => void;
+  products: ProductOut[];
+  onCreateProduct: (productData: any, photos?: File[]) => Promise<void>;
+  onUpdateProduct: (id: string, productData: any, photos?: File[]) => Promise<void>;
+  onDeleteProduct: (id: string) => Promise<void>;
 }
-
-const productCategories = [
-  'Sculptures',
-  'Textiles',
-  'Bijoux',
-  'Poterie',
-  'Vannerie',
-  'Décoration',
-  'Ustensiles',
-  'Mobilier',
-  'Autres'
-];
 
 export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
   products,
@@ -38,13 +27,18 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
   onDeleteProduct
 }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ArtisanProduct | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductOut | null>(null);
+  const [categories, setCategories] = useState<CategoryOut[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: '',
+    subcategory: '',
     price: 0,
-    images: [''],
     materials: [''],
     availableColors: [''],
     dimensions: {
@@ -55,16 +49,37 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     },
     stock: 0,
     customizable: false,
-    productionTime: 1
+    productionTime: 1,
+    bulk_order_enabled: false,
+    min_bulk_quantity: 0
   });
+
+  // Charger les catégories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await apiService.getCategories();
+        setCategories(response.categories || []);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Obtenir les sous-catégories de la catégorie sélectionnée
+  const getSubcategories = () => {
+    const category = categories.find(cat => cat.name === selectedCategory);
+    return category?.subcategories || [];
+  };
 
   const resetForm = () => {
     setFormData({
       name: '',
       description: '',
       category: '',
+      subcategory: '',
       price: 0,
-      images: [''],
       materials: [''],
       availableColors: [''],
       dimensions: {
@@ -75,13 +90,19 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       },
       stock: 0,
       customizable: false,
-      productionTime: 1
+      productionTime: 1,
+      bulk_order_enabled: false,
+      min_bulk_quantity: 0
     });
     setEditingProduct(null);
+    setSelectedCategory('');
+    setSelectedSubcategory('');
+    setUploadedFiles([]);
+    setImagePreviews([]);
   };
 
-  const handleSubmit = () => {
-    if (!formData.name || !formData.description || !formData.category) {
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.description || !selectedCategory) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs obligatoires",
@@ -92,78 +113,106 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
 
     const productData = {
       ...formData,
-      images: formData.images.filter(img => img.trim() !== ''),
+      category: selectedCategory,
+      subcategory: selectedSubcategory || undefined,
       materials: formData.materials.filter(mat => mat.trim() !== ''),
       availableColors: formData.availableColors.filter(color => color.trim() !== ''),
-      status: 'pending_approval' as const,
-      artisanId: 'current-artisan-id' // This would come from context
+      dimensions: Object.values(formData.dimensions).some(v => v > 0) ? formData.dimensions : undefined,
+      min_bulk_quantity: formData.bulk_order_enabled && formData.min_bulk_quantity > 0 ? formData.min_bulk_quantity : undefined
     };
 
-    if (editingProduct) {
-      onUpdateProduct(editingProduct.id, productData);
-      toast({
-        title: "Produit modifié",
-        description: "Votre produit a été modifié et est en attente d'approbation"
-      });
-    } else {
-      onCreateProduct(productData);
-      toast({
-        title: "Produit créé",
-        description: "Votre produit a été créé et est en attente d'approbation"
-      });
+    try {
+      if (editingProduct) {
+        await onUpdateProduct(editingProduct.id, productData, uploadedFiles.length > 0 ? uploadedFiles : undefined);
+      } else {
+        await onCreateProduct(productData, uploadedFiles.length > 0 ? uploadedFiles : undefined);
+      }
+      resetForm();
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      // L'erreur est déjà gérée dans ArtisanDashboard
     }
-
-    resetForm();
-    setIsCreateModalOpen(false);
   };
 
-  const handleEdit = (product: ArtisanProduct) => {
+  const handleEdit = (product: ProductOut) => {
     setEditingProduct(product);
+    setSelectedCategory(product.category);
+    setSelectedSubcategory(product.subcategory || '');
     setFormData({
       name: product.name,
       description: product.description,
       category: product.category,
+      subcategory: product.subcategory || '',
       price: product.price,
-      images: product.images.length > 0 ? product.images : [''],
       materials: product.materials.length > 0 ? product.materials : [''],
-      availableColors: product.availableColors?.length > 0 ? product.availableColors : [''],
+      availableColors: product.available_colors?.length > 0 ? product.available_colors : [''],
       dimensions: product.dimensions || { length: 0, width: 0, height: 0, weight: 0 },
       stock: product.stock,
-      customizable: product.customizable,
-      productionTime: product.productionTime
+      customizable: product.customizable || false,
+      productionTime: product.production_time_days,
+      bulk_order_enabled: product.bulk_order_enabled || false,
+      min_bulk_quantity: product.min_bulk_quantity || 0
     });
+    setImagePreviews(product.images || []);
     setIsCreateModalOpen(true);
   };
 
-  const addArrayField = (field: 'images' | 'materials' | 'availableColors') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + uploadedFiles.length > 10) {
+      toast({
+        title: "Erreur",
+        description: "Vous ne pouvez pas télécharger plus de 10 images",
+        variant: "destructive"
+      });
+      return;
+    }
+    setUploadedFiles(prev => [...prev, ...files]);
+    
+    // Créer des prévisualisations
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviews(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addArrayField = (field: 'materials' | 'availableColors') => {
     setFormData(prev => ({
       ...prev,
       [field]: [...prev[field], '']
     }));
   };
 
-  const updateArrayField = (field: 'images' | 'materials' | 'availableColors', index: number, value: string) => {
+  const updateArrayField = (field: 'materials' | 'availableColors', index: number, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: prev[field].map((item, i) => i === index ? value : item)
     }));
   };
 
-  const removeArrayField = (field: 'images' | 'materials' | 'availableColors', index: number) => {
+  const removeArrayField = (field: 'materials' | 'availableColors', index: number) => {
     setFormData(prev => ({
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index)
     }));
   };
 
-  const getStatusBadge = (status: ArtisanProduct['status']) => {
-    const statusConfig = {
-      draft: { label: 'Brouillon', variant: 'secondary' as const },
-      pending_approval: { label: 'En attente', variant: 'secondary' as const },
-      published: { label: 'Publié', variant: 'default' as const },
-      rejected: { label: 'Rejeté', variant: 'destructive' as const }
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
+      draft: { label: 'Brouillon', variant: 'secondary' },
+      pending_approval: { label: 'En attente', variant: 'secondary' },
+      published: { label: 'Publié', variant: 'default' },
+      rejected: { label: 'Rejeté', variant: 'destructive' }
     };
-    return statusConfig[status];
+    return statusConfig[status] || { label: status, variant: 'secondary' as const };
   };
 
   return (
@@ -203,18 +252,42 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                 </div>
                 <div>
                   <Label htmlFor="category">Catégorie *</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                  <Select value={selectedCategory} onValueChange={(value) => {
+                    setSelectedCategory(value);
+                    setSelectedSubcategory(''); // Reset subcategory when category changes
+                    setFormData(prev => ({ ...prev, category: value, subcategory: '' }));
+                  }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionnez une catégorie" />
                     </SelectTrigger>
                     <SelectContent>
-                      {productCategories.map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      {categories.map(category => (
+                        <SelectItem key={category.name} value={category.name}>{category.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {selectedCategory && getSubcategories().length > 0 && (
+                <div>
+                  <Label htmlFor="subcategory">Sous-catégorie (optionnel)</Label>
+                  <Select value={selectedSubcategory} onValueChange={(value) => {
+                    setSelectedSubcategory(value);
+                    setFormData(prev => ({ ...prev, subcategory: value }));
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez une sous-catégorie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Aucune sous-catégorie</SelectItem>
+                      {getSubcategories().map(subcategory => (
+                        <SelectItem key={subcategory} value={subcategory}>{subcategory}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="description">Description *</Label>
@@ -261,35 +334,41 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
               </div>
 
               <div>
-                <Label>Images du produit</Label>
-                {formData.images.map((image, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <Input
-                      value={image}
-                      onChange={(e) => updateArrayField('images', index, e.target.value)}
-                      placeholder="URL de l'image"
-                    />
-                    {formData.images.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeArrayField('images', index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
+                <Label>Images du produit (max 10)</Label>
+                <div className="mt-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileChange}
+                    className="mb-2"
+                  />
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addArrayField('images')}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter une image
-                </Button>
+                  {uploadedFiles.length === 0 && imagePreviews.length === 0 && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Aucune image sélectionnée. Les images existantes seront conservées lors de la mise à jour.
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -436,66 +515,75 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
         </Dialog>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => {
-          const statusConfig = getStatusBadge(product.status);
-          return (
-            <Card key={product.id}>
-              <div className="aspect-square bg-gray-100 relative">
-                {product.images[0] ? (
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-gray-400" />
+      {products.length === 0 ? (
+        <div className="text-center py-12">
+          <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 mb-4">Aucun produit créé pour le moment</p>
+          <Button onClick={() => setIsCreateModalOpen(true)} className="bg-orange-600 hover:bg-orange-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Créer votre premier produit
+          </Button>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map((product) => {
+            const statusConfig = getStatusBadge(product.status);
+            return (
+              <Card key={product.id}>
+                <div className="aspect-square bg-gray-100 relative">
+                  {product.images && product.images.length > 0 && product.images[0] ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+non+disponible';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageIcon className="w-12 h-12 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2">
+                    <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                   </div>
-                )}
-                <div className="absolute top-2 right-2">
-                  <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                 </div>
-              </div>
-              <CardContent className="p-4">
-                <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
-                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-orange-600">
-                    {product.price.toLocaleString()} Ar
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    Stock: {product.stock}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(product)}
-                    className="flex-1"
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Modifier
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDeleteProduct(product.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-                {product.status === 'rejected' && product.adminNotes && (
-                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                    <strong>Raison du rejet:</strong> {product.adminNotes}
+                <CardContent className="p-4">
+                  <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold text-orange-600">
+                      {product.price.toLocaleString('fr-FR')} Ar
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      Stock: {product.stock}
+                    </span>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(product)}
+                      className="flex-1"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Modifier
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onDeleteProduct(product.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

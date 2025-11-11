@@ -2,8 +2,8 @@
 export interface CartItem {
   id: string;
   type: 'product' | 'workshop' | 'subscription';
-  productId?: number;
-  workshopId?: number;
+  productId?: string | number;
+  workshopId?: string | number;
   subscriptionPlanId?: string;
   name: string;
   artisan?: string;
