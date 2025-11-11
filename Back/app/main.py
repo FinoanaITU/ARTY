@@ -5,7 +5,9 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.core.database import engine
-from app.models import base
+from app.models.base import BaseModel
+# Import user models to ensure they are registered
+from app.models.user import User, ArtisanProfile, ArtisanPhoto, UserSession, SocialAccount
 
 
 @asynccontextmanager
@@ -13,7 +15,10 @@ async def lifespan(app: FastAPI):
     # Startup
     print("Starting up Artizaho Backend...")
     # Create database tables
-    base.Base.metadata.create_all(bind=engine)
+    # Don't create tables here - use Alembic migrations instead
+    # This avoids loading all models and their relationships
+    # BaseModel.metadata.create_all(bind=engine)
+    pass
     yield
     # Shutdown
     print("Shutting down Artizaho Backend...")

@@ -27,12 +27,13 @@ class Review(BaseModel):
     flagged_count = Column(Integer, default=0)
     
     # Relationships
-    reviewer = relationship("User", back_populates="reviews")
-    order = relationship("Order", back_populates="reviews")
-    booking = relationship("WorkshopBooking", back_populates="reviews")
-    moderated_by = relationship("User")
-    helpful_votes = relationship("ReviewHelpfulVote", back_populates="review")
-    flags = relationship("ReviewFlag", back_populates="review")
+    # Temporarily commented out to avoid circular dependency issues
+    # reviewer = relationship("User", back_populates="reviews")
+    # order = relationship("Order", back_populates="reviews")
+    # booking = relationship("WorkshopBooking", back_populates="reviews")
+    # moderated_by = relationship("User")
+    # helpful_votes = relationship("ReviewHelpfulVote", back_populates="review")
+    # flags = relationship("ReviewFlag", back_populates="review")
     
     # Polymorphic relationships
     @property
@@ -56,8 +57,9 @@ class ReviewHelpfulVote(BaseModel):
     is_helpful = Column(Boolean, nullable=False)
     
     # Relationships
-    review = relationship("Review", back_populates="helpful_votes")
-    user = relationship("User")
+    # Temporarily commented out
+    # review = relationship("Review", back_populates="helpful_votes")
+    # user = relationship("User")
 
 
 class ReviewFlag(BaseModel):
@@ -72,6 +74,7 @@ class ReviewFlag(BaseModel):
     reviewed_at = Column(DateTime)
     
     # Relationships
-    review = relationship("Review", back_populates="flags")
-    reporter = relationship("User", foreign_keys=[reporter_id])
-    reviewed_by = relationship("User", foreign_keys=[reviewed_by_user_id]) 
+    # Temporarily commented out
+    # review = relationship("Review", back_populates="flags")
+    # reporter = relationship("User", foreign_keys=[reporter_id])
+    # reviewed_by = relationship("User", foreign_keys=[reviewed_by_user_id]) 

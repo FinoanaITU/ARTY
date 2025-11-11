@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, Numeric, JSON, ForeignKey, Date, Inet
+from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, Numeric, JSON, ForeignKey, Date
+from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
@@ -17,7 +18,8 @@ class Cart(BaseModel):
     expires_at = Column(DateTime, index=True)
     
     # Relationships
-    user = relationship("User")
+    # Temporarily removed back_populates to avoid circular import
+    user = relationship("User", foreign_keys=[user_id])
     items = relationship("CartItem", back_populates="cart")
 
 
@@ -33,9 +35,10 @@ class CartItem(BaseModel):
     customization_notes = Column(Text)
     
     # Relationships
-    cart = relationship("Cart", back_populates="items")
-    product = relationship("Product", back_populates="cart_items")
-    variant = relationship("ProductVariant", back_populates="cart_items")
+    # Temporarily commented out to avoid circular dependency issues
+    # cart = relationship("Cart", back_populates="items")
+    # product = relationship("Product", back_populates="cart_items")
+    # variant = relationship("ProductVariant", back_populates="cart_items")
 
 
 class Order(BaseModel):
@@ -64,15 +67,16 @@ class Order(BaseModel):
     customer_notes = Column(Text)
     admin_notes = Column(Text)
     device_info = Column(JSON)
-    ip_address = Column(Inet)
+    ip_address = Column(INET)
     user_agent = Column(Text)
     
     # Relationships
-    user = relationship("User", back_populates="orders")
-    items = relationship("OrderItem", back_populates="order")
-    payments = relationship("Payment", back_populates="order")
-    status_history = relationship("OrderStatusHistory", back_populates="order")
-    reviews = relationship("Review", back_populates="order")
+    # Temporarily commented out to avoid circular import issues
+    # user = relationship("User", foreign_keys=[user_id])
+    # items = relationship("OrderItem", back_populates="order")
+    # payments = relationship("Payment", back_populates="order")
+    # status_history = relationship("OrderStatusHistory", back_populates="order")
+    # reviews = relationship("Review", back_populates="order")
 
 
 class OrderItem(BaseModel):
@@ -94,10 +98,11 @@ class OrderItem(BaseModel):
     customization_notes = Column(Text)
     
     # Relationships
-    order = relationship("Order", back_populates="items")
-    product = relationship("Product", back_populates="order_items")
-    variant = relationship("ProductVariant", back_populates="order_items")
-    artisan = relationship("User")
+    # Temporarily commented out
+    # order = relationship("Order", back_populates="items")
+    # product = relationship("Product", back_populates="order_items")
+    # variant = relationship("ProductVariant", back_populates="order_items")
+    # artisan = relationship("User")
 
 
 class Payment(BaseModel):
@@ -120,8 +125,9 @@ class Payment(BaseModel):
     refunded_at = Column(DateTime)
     
     # Relationships
-    order = relationship("Order", back_populates="payments")
-    user = relationship("User")
+    # Temporarily commented out
+    # order = relationship("Order", back_populates="payments")
+    # user = relationship("User")
 
 
 class OrderStatusHistory(BaseModel):
@@ -134,5 +140,6 @@ class OrderStatusHistory(BaseModel):
     changed_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
     
     # Relationships
-    order = relationship("Order", back_populates="status_history")
-    changed_by = relationship("User") 
+    # Temporarily commented out
+    # order = relationship("Order", back_populates="status_history")
+    # changed_by = relationship("User") 

@@ -46,12 +46,13 @@ class Workshop(BaseModel):
     rating_average = Column(Numeric(3, 2), default=0)
     rating_count = Column(Integer, default=0)
     
-    # Relationships
-    artisan = relationship("User", back_populates="workshops")
-    category = relationship("Category")
-    sessions = relationship("WorkshopSession", back_populates="workshop")
-    bookings = relationship("WorkshopBooking", back_populates="workshop")
-    reviews = relationship("Review", back_populates="workshop")
+    # Relationships - ALL COMMENTED OUT to avoid circular dependency issues
+    # These will be enabled when all models are properly configured
+    # artisan = relationship("User", back_populates="workshops")
+    # category = relationship("Category")
+    # sessions = relationship("WorkshopSession", back_populates="workshop")
+    # bookings = relationship("WorkshopBooking", back_populates="workshop")
+    # reviews = relationship("Review", back_populates="workshop")
 
 
 class WorkshopSession(BaseModel):
@@ -72,10 +73,10 @@ class WorkshopSession(BaseModel):
     session_notes = Column(Text)
     special_instructions = Column(Text)
     
-    # Relationships
-    workshop = relationship("Workshop", back_populates="sessions")
-    private_client = relationship("User")
-    bookings = relationship("WorkshopBooking", back_populates="session")
+    # Relationships - ALL COMMENTED OUT
+    # workshop = relationship("Workshop", back_populates="sessions")
+    # private_client = relationship("User")
+    # bookings = relationship("WorkshopBooking", back_populates="session")
 
 
 class WorkshopBooking(BaseModel):
@@ -103,11 +104,11 @@ class WorkshopBooking(BaseModel):
     certificate_issued = Column(Boolean, default=False)
     certificate_url = Column(String(500))
     
-    # Relationships
-    session = relationship("WorkshopSession", back_populates="bookings")
-    workshop = relationship("Workshop", back_populates="bookings")
-    user = relationship("User", back_populates="workshop_bookings")
-    reviews = relationship("Review", back_populates="booking")
+    # Relationships - ALL COMMENTED OUT
+    # session = relationship("WorkshopSession", back_populates="bookings")
+    # workshop = relationship("Workshop", back_populates="bookings")
+    # user = relationship("User", back_populates="workshop_bookings")
+    # reviews = relationship("Review", back_populates="booking")
 
 
 class WorkshopAvailability(BaseModel):
@@ -123,5 +124,5 @@ class WorkshopAvailability(BaseModel):
     valid_from = Column(Date)
     valid_until = Column(Date)
     
-    # Relationships
-    artisan = relationship("User") 
+    # Relationships - ALL COMMENTED OUT
+    # artisan = relationship("User")

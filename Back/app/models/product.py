@@ -21,9 +21,10 @@ class Category(BaseModel):
     path = Column(String(255), index=True)
     
     # Relationships
-    parent = relationship("Category", remote_side=[id])
-    children = relationship("Category")
-    products = relationship("Product", back_populates="category")
+    # Temporarily commented out to avoid configuration issues during auth setup
+    # parent = relationship("Category", remote_side="Category.id")
+    # children = relationship("Category")
+    # products = relationship("Product", back_populates="category")
 
 
 class Product(BaseModel):
@@ -66,14 +67,16 @@ class Product(BaseModel):
     published_at = Column(DateTime)
     
     # Relationships
-    category = relationship("Category", back_populates="products")
-    artisan = relationship("User", back_populates="products")
-    images = relationship("ProductImage", back_populates="product")
-    variants = relationship("ProductVariant", back_populates="product")
-    favorites = relationship("ProductFavorite", back_populates="product")
-    cart_items = relationship("CartItem", back_populates="product")
-    order_items = relationship("OrderItem", back_populates="product")
-    reviews = relationship("Review", back_populates="product")
+    # Temporarily commented out relationships that cause circular dependency issues
+    # These will be enabled when all models are properly configured
+    # category = relationship("Category", back_populates="products")
+    # artisan = relationship("User", back_populates="products")
+    # images = relationship("ProductImage", back_populates="product")
+    # variants = relationship("ProductVariant", back_populates="product")
+    # favorites = relationship("ProductFavorite", back_populates="product")
+    # cart_items = relationship("CartItem", back_populates="product")
+    # order_items = relationship("OrderItem", back_populates="product")
+    # reviews = relationship("Review", back_populates="product")
 
 
 class ProductImage(BaseModel):
@@ -90,7 +93,8 @@ class ProductImage(BaseModel):
     format = Column(String(10))
     
     # Relationships
-    product = relationship("Product", back_populates="images")
+    # Temporarily commented out
+    # product = relationship("Product", back_populates="images")
 
 
 class ProductVariant(BaseModel):
@@ -109,9 +113,10 @@ class ProductVariant(BaseModel):
     is_active = Column(Boolean, default=True, index=True)
     
     # Relationships
-    product = relationship("Product", back_populates="variants")
-    cart_items = relationship("CartItem", back_populates="variant")
-    order_items = relationship("OrderItem", back_populates="variant")
+    # Temporarily commented out
+    # product = relationship("Product", back_populates="variants")
+    # cart_items = relationship("CartItem", back_populates="variant")
+    # order_items = relationship("OrderItem", back_populates="variant")
 
 
 class ProductFavorite(BaseModel):
@@ -121,5 +126,6 @@ class ProductFavorite(BaseModel):
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False, index=True)
     
     # Relationships
-    user = relationship("User")
-    product = relationship("Product", back_populates="favorites") 
+    # Temporarily commented out
+    # user = relationship("User")
+    # product = relationship("Product", back_populates="favorites") 

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture JOS2025#009</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+        }
+        
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            background: white;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+            margin-bottom: 20px;
+        }
+        
+        .header-left, .header-right {
+            width: 48%;
+        }
+        
+        .header-right {
+            text-align: right;
+        }
+        
+        .company-name {
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 3px;
+        }
+        
+        .header-info {
+            font-size: 9pt;
+            line-height: 1.5;
+        }
+        
+        .facture-title {
+            background-color: #2563eb;
+            color: white;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .facture-title h1 {
+            font-size: 24pt;
+            margin-bottom: 10px;
+        }
+        
+        .facture-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10pt;
+        }
+        
+        .facture-details-right {
+            text-align: right;
+        }
+        
+        .total-principal {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th {
+            background-color: #2563eb;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-size: 10pt;
+        }
+        
+        th.center {
+            text-align: center;
+        }
+        
+        th.right {
+            text-align: right;
+        }
+        
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-size: 10pt;
+        }
+        
+        td.center {
+            text-align: center;
+        }
+        
+        td.right {
+            text-align: right;
+        }
+        
+        .totaux {
+            margin-left: auto;
+            width: 300px;
+            margin-bottom: 20px;
+        }
+        
+        .totaux-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .totaux-row.total {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 15px;
+            font-weight: bold;
+            font-size: 14pt;
+            border: none;
+        }
+        
+        .conditions {
+            border-top: 2px solid #333;
+            padding-top: 15px;
+            margin-top: 20px;
+        }
+        
+        .conditions h3 {
+            font-size: 11pt;
+            margin-bottom: 8px;
+        }
+        
+        .conditions-text {
+            font-size: 10pt;
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+        
+        .signature {
+            margin-top: 60px;
+            text-align: right;
+        }
+        
+        .signature-space {
+            height: 60px;
+        }
+        
+        .signature-name {
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        
+        .signature-label {
+            font-size: 9pt;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .page {
+                margin: 0;
+                border: none;
+                width: 100%;
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="company-name">ANDRIATSILAVO Finoana</div>
+                <div class="header-info">
+                    Adresse : Maimbahoaka Talatamaty<br>
+                    Tél : +261 32 83 882 72<br>
+                    Mail : finoanaandriatsilavoo@gmail.com<br>
+                    STAT : 47414112026005734<br>
+                    NIF : 4019325545
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="company-name">CODE TALENT SARL</div>
+                <div class="header-info">
+                    Lot III U 136 J Bis Anosizato I<br>
+                    Immeuble Moufadal Center<br>
+                    Tél : +261 32 76 620 78<br>
+                    N° SIRET : 62011112025010138
+                </div>
+            </div>
+        </div>
+        
+        <!-- Facture Title -->
+        <div class="facture-title">
+            <h1>FACTURE</h1>
+            <div class="facture-details">
+                <div>
+                    <div>Numéro de facture: FIN2025#001</div>
+                    <div>Date de facture: 02/10/2025</div>
+                </div>
+                <div class="facture-details-right">
+                    <div>Conditions de paiement (jours): 22</div>
+                    <div>Date d'échéance: 06/10/2025</div>
+                    <div class="total-principal">Total à payer en MGA: 4 800 000,00 MGA</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th class="center" style="width: 80px;">Quantité</th>
+                    <th class="center" style="width: 80px;">Unité</th>
+                    <th class="right" style="width: 120px;">Prix</th>
+                    <th class="right" style="width: 120px;">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Consultation mensuelle</td>
+                    <td class="center">1</td>
+                    <td class="center">Unité</td>
+                    <td class="right">4 800 000</td>
+                    <td class="right" style="font-weight: bold;">4 800 000 MGA</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Totaux -->
+        <div class="totaux">
+            <div class="totaux-row">
+                <span style="font-weight: bold;">Total HT</span>
+                <span>4 800 000 Ar</span>
+            </div>
+            <div class="totaux-row">
+                <span>ISI (5%)</span>
+                <span>0 Ar</span>
+            </div>
+            <div class="totaux-row total">
+                <span>Total TTC</span>
+                <span>4 800 000 Ar</span>
+            </div>
+        </div>
+        
+        <!-- Conditions de paiement -->
+        <div class="conditions">
+            <h3>Conditions de paiement et mentions particulières :</h3>
+            <div class="conditions-text">Virement bancaire
+RIB 00008 01001 05001267805 14 au nom de ANDRIANJAFY MIALY</div>
+        </div>
+        
+        <!-- Signature -->
+        <div class="signature">
+            <div>Prénom et nom</div>
+            <div class="signature-space"></div>
+            <div class="signature-name">ANDRIATSILAVO Finoana</div>
+            <div class="signature-label">Signature</div>
+        </div>
+    </div>
+</body>
+</html>

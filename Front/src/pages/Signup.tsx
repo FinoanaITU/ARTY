@@ -13,6 +13,7 @@ import { UserPlus, Store, ShoppingBag, Building, User, MapPin, Upload, X, Chevro
 import { useUser } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import apiService from '@/services/api';
 
 type UserRole = 'buyer' | 'artisan';
 type BuyerType = 'entreprise' | 'particulier';
@@ -76,8 +77,9 @@ const Signup = () => {
     experience: ''
   });
 
-  const { setUser } = useUser();
+  const { login } = useUser();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   // SEO Setup
   useEffect(() => {
@@ -154,7 +156,7 @@ const Signup = () => {
     setArtisanStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (role === 'artisan') {
@@ -168,46 +170,78 @@ const Signup = () => {
         toast.error('Veuillez remplir tous les champs obligatoires');
         return;
       }
-      
-      // Create artisan user
-      const newUser = {
-        id: Date.now().toString(),
-        name: formData.name,
-        email: formData.email,
-        role,
-        avatar: '/placeholder.svg',
-        artisanData: {
-          photos: photoPreviews,
-          personalInfo: {
-            fullName: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            region: formData.city,
-            languages: formData.languages
-          },
-          account: {
-            companyName: formData.artisanCompanyName,
-            password: formData.password
-          },
-          artisanInfo: {
-            mainSpecialty: formData.mainSpecialty,
-            otherSkills: formData.otherSkills,
-            yearsExperience: formData.yearsExperience,
-            activityDescription: formData.activityDescription,
-            brandStory: formData.brandStory
-          },
-          offerings: formData.offerings,
-          documents: {
-            nif: formData.nif,
-            stat: formData.stat,
-            documentsNotAvailable: formData.documentsNotAvailable
-          }
+
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('Les mots de passe ne correspondent pas');
+        return;
+      }
+
+      if (formData.password.length < 6) {
+        toast.error('Le mot de passe doit contenir au moins 6 caractères');
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        // Convertir les photos preview en File objects si nécessaire
+        const photoFiles: File[] = [];
+        // Note: Les photos sont déjà dans le state `photos` en tant que File[]
+        
+        const artisanData = {
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          phone: formData.phone || undefined,
+          region: formData.city || formData.region || '',
+          city: formData.city || '',
+          address: formData.address || undefined,
+          languages: formData.languages || [],
+          company_name: formData.artisanCompanyName,
+          main_specialty: formData.mainSpecialty,
+          other_skills: formData.otherSkills || [],
+          years_experience: formData.yearsExperience || undefined,
+          activity_description: formData.activityDescription,
+          brand_story: formData.brandStory || undefined,
+          offerings: formData.offerings.length > 0 ? formData.offerings : ['both'],
+          nif: formData.nif || undefined,
+          stat: formData.stat || undefined,
+          documents_not_available: formData.documentsNotAvailable,
+        };
+
+        const response = await apiService.registerArtisan(artisanData, photos.length > 0 ? photos : undefined);
+        
+        // Sauvegarder les tokens
+        if (response.access_token && response.refresh_token) {
+          apiService.setTokens(response.access_token, response.refresh_token);
         }
-      };
-      
-      setUser(newUser as any);
-      toast.success('Compte artisan créé avec succès !');
-      navigate('/artisan-dashboard');
+
+        // Sauvegarder l'utilisateur
+        if (response.user) {
+          const formattedUser = {
+            id: response.user.id,
+            name: response.user.name,
+            email: response.user.email,
+            role: response.user.role,
+            avatar: response.user.avatar,
+            specialty: response.user.specialty,
+            description: response.user.description,
+            experience: response.user.experience,
+          };
+          localStorage.setItem('user', JSON.stringify(formattedUser));
+          
+          // Mettre à jour le contexte via login
+          await login(formData.email, formData.password);
+        }
+
+        toast.success('Compte artisan créé avec succès ! En attente de validation.');
+        navigate('/artisan-dashboard');
+      } catch (error: any) {
+        console.error('Registration error:', error);
+        toast.error(error.response?.data?.detail || 'Erreur lors de la création du compte');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     
@@ -227,26 +261,56 @@ const Signup = () => {
       return;
     }
 
-    const locationType = getLocationType();
+    setLoading(true);
 
-    // Créer l'utilisateur acheteur
-    const newUser = {
-      id: Date.now().toString(),
-      name: formData.name,
-      email: formData.email,
-      role,
-      avatar: '/placeholder.svg',
-      buyerType,
-      locationType,
-      ...(buyerType === 'entreprise' && {
-        companyName: formData.companyName,
-        siret: formData.siret
-      })
-    };
+    try {
+      const buyerData = {
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        phone: formData.phone || undefined,
+        address: formData.address || undefined,
+        city: formData.city || undefined,
+        country: selectedCountry || 'madagascar',
+        buyer_type: buyerType,
+        company_name: buyerType === 'entreprise' ? formData.companyName : undefined,
+        siret: buyerType === 'entreprise' ? formData.siret : undefined,
+      };
 
-    setUser(newUser as any);
-    toast.success('Compte créé avec succès !');
-    navigate('/dashboard');
+      const response = await apiService.registerBuyer(buyerData);
+      
+      // Sauvegarder les tokens
+      if (response.access_token && response.refresh_token) {
+        apiService.setTokens(response.access_token, response.refresh_token);
+      }
+
+      // Sauvegarder l'utilisateur
+      if (response.user) {
+        const formattedUser = {
+          id: response.user.id,
+          name: response.user.name,
+          email: response.user.email,
+          role: response.user.role,
+          avatar: response.user.avatar,
+          buyer_type: response.user.buyer_type,
+          nationality: response.user.nationality,
+          company_name: response.user.company_name,
+          siret: response.user.siret,
+        };
+        localStorage.setItem('user', JSON.stringify(formattedUser));
+        
+        // Mettre à jour le contexte via login
+        await login(formData.email, formData.password);
+      }
+
+      toast.success('Compte créé avec succès !');
+      navigate('/products');
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast.error(error.response?.data?.detail || 'Erreur lors de la création du compte');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -812,8 +876,9 @@ const Signup = () => {
                       <Button
                         type="submit"
                         className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                        disabled={loading}
                       >
-                        Créer mon compte artisan
+                        {loading ? 'Création en cours...' : 'Créer mon compte artisan'}
                         <UserPlus className="h-4 w-4" />
                       </Button>
                     )}
@@ -824,8 +889,12 @@ const Signup = () => {
               {/* Submit button for buyers only */}
               {role === 'buyer' && (
                 <div className="flex flex-col gap-4">
-                  <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700">
-                    Créer mon compte
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                    disabled={loading}
+                  >
+                    {loading ? 'Création en cours...' : 'Créer mon compte'}
                   </Button>
                   
                   <div className="text-center text-sm text-gray-600">
