@@ -57,6 +57,20 @@ else
     echo "💡 Continuing to start the application..."
 fi
 
+# Exécuter le seed data (catégories, admin user)
+echo "🌱 Seeding initial data (categories, admin user)..."
+cd /app
+python3 scripts/seed_initial_data.py
+SEED_EXIT_CODE=$?
+
+if [ $SEED_EXIT_CODE -eq 0 ]; then
+    echo "✅ Initial data seeded successfully!"
+else
+    echo "⚠️  Seed data exited with code: $SEED_EXIT_CODE"
+    echo "💡 Check the logs above for details."
+    echo "💡 Continuing to start the application..."
+fi
+
 # Démarrer l'application
 echo "🎉 Starting FastAPI application..."
 exec "$@"

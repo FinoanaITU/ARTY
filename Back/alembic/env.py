@@ -16,6 +16,9 @@ from app.models.base import BaseModel
 # Les autres modèles seront importés progressivement quand leurs relations seront configurées
 from app.models.user import User, ArtisanProfile, ArtisanPhoto, UserSession, SocialAccount
 
+# Import product models for categories migration
+from app.models.product import Category, Product, ProductImage, ProductVariant, ProductFavorite, BulkOrderRequest
+
 # Temporarily disable imports of other models to avoid circular dependency issues
 # These will be enabled when all relationships are properly configured
 # from app.models import user, product, order, workshop, review, notification, analytics

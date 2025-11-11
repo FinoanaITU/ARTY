@@ -18,7 +18,17 @@ async def lifespan(app: FastAPI):
     # Don't create tables here - use Alembic migrations instead
     # This avoids loading all models and their relationships
     # BaseModel.metadata.create_all(bind=engine)
-    pass
+    
+    # Seed initial data (categories, admin user)
+    try:
+        from scripts.seed_initial_data import seed_initial_data
+        print("Seeding initial data...")
+        seed_initial_data()
+    except Exception as e:
+        print(f"Warning: Could not seed initial data: {e}")
+        # Ne pas bloquer le démarrage si le seed échoue
+        # (peut arriver si les tables n'existent pas encore)
+    
     yield
     # Shutdown
     print("Shutting down Artizaho Backend...")
