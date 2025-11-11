@@ -183,6 +183,157 @@ class ApiService {
     }
   }
 
+  // Product endpoints
+  async getProducts(params?: {
+    category?: string;
+    subcategory?: string;
+    search?: string;
+    artisan_id?: string;
+    min_price?: number;
+    max_price?: number;
+    in_stock?: boolean;
+    page?: number;
+    limit?: number;
+  }) {
+    const response = await this.api.get('/products/', { params });
+    return response.data;
+  }
+
+  async getProduct(productId: string) {
+    const response = await this.api.get(`/products/${productId}`);
+    return response.data;
+  }
+
+  async createProduct(
+    data: {
+      name: string;
+      description: string;
+      category: string;
+      subcategory?: string;
+      price: number;
+      materials?: string[];
+      available_colors?: string[];
+      stock: number;
+      customizable?: boolean;
+      production_time_days: number;
+      bulk_order_enabled?: boolean;
+      min_bulk_quantity?: number;
+      dimensions?: {
+        length?: number;
+        width?: number;
+        height?: number;
+        weight?: number;
+      };
+    },
+    photos?: File[]
+  ) {
+    const formData = new FormData();
+    
+    // Ajouter les champs textuels
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (key === 'dimensions') {
+          // Dimensions sont envoyées séparément
+          const dims = value as { length?: number; width?: number; height?: number; weight?: number };
+          if (dims.length !== undefined) formData.append('dimensions_length', String(dims.length));
+          if (dims.width !== undefined) formData.append('dimensions_width', String(dims.width));
+          if (dims.height !== undefined) formData.append('dimensions_height', String(dims.height));
+          if (dims.weight !== undefined) formData.append('dimensions_weight', String(dims.weight));
+        } else if (Array.isArray(value)) {
+          // Convertir les tableaux en JSON string ou liste séparée par virgules
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, String(value));
+        }
+      }
+    });
+
+    // Ajouter les photos
+    if (photos && photos.length > 0) {
+      photos.slice(0, 10).forEach((photo) => {
+        formData.append('photos', photo);
+      });
+    }
+
+    const response = await this.api.post('/products/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  async updateProduct(
+    productId: string,
+    data: {
+      name?: string;
+      description?: string;
+      category?: string;
+      subcategory?: string;
+      price?: number;
+      materials?: string[];
+      available_colors?: string[];
+      stock?: number;
+      customizable?: boolean;
+      production_time_days?: number;
+      bulk_order_enabled?: boolean;
+      min_bulk_quantity?: number;
+      dimensions?: {
+        length?: number;
+        width?: number;
+        height?: number;
+        weight?: number;
+      };
+      status?: string;
+    },
+    photos?: File[]
+  ) {
+    const formData = new FormData();
+    
+    // Ajouter les champs textuels
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (key === 'dimensions') {
+          // Dimensions sont envoyées séparément
+          const dims = value as { length?: number; width?: number; height?: number; weight?: number };
+          if (dims.length !== undefined) formData.append('dimensions_length', String(dims.length));
+          if (dims.width !== undefined) formData.append('dimensions_width', String(dims.width));
+          if (dims.height !== undefined) formData.append('dimensions_height', String(dims.height));
+          if (dims.weight !== undefined) formData.append('dimensions_weight', String(dims.weight));
+        } else if (Array.isArray(value)) {
+          // Convertir les tableaux en JSON string
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, String(value));
+        }
+      }
+    });
+
+    // Ajouter les photos
+    if (photos && photos.length > 0) {
+      photos.slice(0, 10).forEach((photo) => {
+        formData.append('photos', photo);
+      });
+    }
+
+    const response = await this.api.patch(`/products/${productId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  async deleteProduct(productId: string) {
+    const response = await this.api.delete(`/products/${productId}`);
+    return response.data;
+  }
+
+  async getCategories() {
+    const response = await this.api.get('/products/categories/list');
+    return response.data;
+  }
+
   // Méthodes génériques pour d'autres endpoints
   get(endpoint: string, config?: any) {
     return this.api.get(endpoint, config);

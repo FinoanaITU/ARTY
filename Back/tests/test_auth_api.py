@@ -246,7 +246,8 @@ class TestArtisanRegistrationAPI:
         assert artisan_profile.company_name == test_artisan_data["company_name"]
         assert artisan_profile.main_specialty == test_artisan_data["main_specialty"]
     
-    def test_register_artisan_duplicate_email(
+    @pytest.mark.asyncio
+    async def test_register_artisan_duplicate_email(
         self, client: TestClient, db: Session, test_artisan_data: dict
     ):
         """Test d'inscription artisan avec email déjà existant"""
@@ -256,7 +257,7 @@ class TestArtisanRegistrationAPI:
         
         # Créer le premier artisan
         artisan_data = ArtisanRegisterIn(**test_artisan_data)
-        result = auth_service.create_artisan(db, artisan_data, [])
+        result = await auth_service.create_artisan(db, artisan_data, [])
         db.commit()
         
         # create_artisan retourne un tuple (user, artisan_profile)

@@ -19,7 +19,15 @@ class StorageService:
     
     def _ensure_directory(self, folder_path: str):
         """Crée le répertoire s'il n'existe pas"""
-        full_path = os.path.join(self.upload_dir, folder_path)
+        # Utiliser le chemin absolu pour éviter les problèmes de chemins relatifs
+        if not os.path.isabs(self.upload_dir):
+            # Si le chemin est relatif, le rendre absolu depuis le répertoire du projet
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            upload_dir = os.path.join(base_dir, self.upload_dir.lstrip('./'))
+        else:
+            upload_dir = self.upload_dir
+        
+        full_path = os.path.join(upload_dir, folder_path)
         os.makedirs(full_path, exist_ok=True)
         return full_path
     
@@ -71,14 +79,15 @@ class StorageService:
         # Chemin complet du fichier
         file_path = os.path.join(folder_path, unique_filename)
         
-        # Lire et sauvegarder le fichier
+        # Lire le contenu du fichier
+        content = await file.read()
+        
+        # Vérifier la taille avant d'écrire
+        if len(content) > max_size:
+            raise ValueError(f"Fichier trop volumineux. Taille max: {max_size / 1024 / 1024}MB")
+        
+        # Sauvegarder le fichier
         async with aiofiles.open(file_path, 'wb') as f:
-            content = await file.read()
-            
-            # Vérifier la taille
-            if len(content) > max_size:
-                raise ValueError(f"Fichier trop volumineux. Taille max: {max_size / 1024 / 1024}MB")
-            
             await f.write(content)
         
         # Retourner l'URL relative

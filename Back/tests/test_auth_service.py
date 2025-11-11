@@ -66,10 +66,11 @@ class TestAuthService:
         with pytest.raises(ValueError, match="existe déjà"):
             AuthService.create_buyer(db, buyer_data)
     
-    def test_create_artisan_success(self, db: Session, test_artisan_data: dict):
+    @pytest.mark.asyncio
+    async def test_create_artisan_success(self, db: Session, test_artisan_data: dict):
         """Test de création d'un artisan"""
         artisan_data = ArtisanRegisterIn(**test_artisan_data)
-        user, profile = AuthService.create_artisan(db, artisan_data)
+        user, profile = await AuthService.create_artisan(db, artisan_data)
         
         assert user is not None
         assert user.email == test_artisan_data["email"]
@@ -83,14 +84,15 @@ class TestAuthService:
         assert profile.main_specialty == test_artisan_data["main_specialty"]
         assert profile.status == ProfileStatus.PENDING_APPROVAL
     
-    def test_create_artisan_duplicate_email(self, db: Session, test_artisan_data: dict):
+    @pytest.mark.asyncio
+    async def test_create_artisan_duplicate_email(self, db: Session, test_artisan_data: dict):
         """Test de création d'un artisan avec email existant"""
         artisan_data = ArtisanRegisterIn(**test_artisan_data)
-        AuthService.create_artisan(db, artisan_data)
+        await AuthService.create_artisan(db, artisan_data)
         
         # Tentative de créer un deuxième artisan avec le même email
         with pytest.raises(ValueError, match="existe déjà"):
-            AuthService.create_artisan(db, artisan_data)
+            await AuthService.create_artisan(db, artisan_data)
     
     def test_authenticate_success(self, db: Session, created_buyer: User, test_buyer_data: dict):
         """Test d'authentification réussie"""

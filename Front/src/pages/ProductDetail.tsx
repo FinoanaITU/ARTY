@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
 import { useUser } from '@/contexts/UserContext';
@@ -8,7 +8,7 @@ import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Star, Heart, ShoppingCart, ArrowLeft, Clock, Package, Truck, Lock, Ruler } from 'lucide-react';
+import { Star, Heart, ShoppingCart, ArrowLeft, Clock, Package, Truck, Lock, Ruler, Loader2 } from 'lucide-react';
 import BulkOrderForm from '@/components/BulkOrderForm';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import ProductReviews from '@/components/ProductReviews';
@@ -16,91 +16,96 @@ import SimilarProducts from '@/components/SimilarProducts';
 import PriceVariationSelector from '@/components/PriceVariationSelector';
 import WorkshopRecommendations from '@/components/WorkshopRecommendations';
 import { PriceVariation } from '@/types/cart';
+import apiService from '@/services/api';
+import { toast } from 'sonner';
 
-// Enhanced product data with all required fields
-const getProductById = (id: string) => {
-  const products = {
-    '1': {
-      id: 1,
-      name: 'Masque traditionnel Vezo',
-      artisan: 'Hery Rakoto',
-      price: 45000,
-      location: 'Antananarivo',
-      images: [
-        'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=600&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=600&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=600&h=600&fit=crop'
-      ],
-      category: 'Sculpture sur bois',
-      subcategory: 'Masques traditionnels',
-      rating: 4.8,
-      reviewCount: 24,
-      description: 'Masque traditionnel sculpté à la main selon les techniques ancestrales du peuple Vezo. Chaque détail raconte une histoire et représente les traditions maritimes de Madagascar.',
-      materials: ['Bois de palissandre', 'Pigments naturels', 'Cire d\'abeille'],
-      dimensions: {
-        length: 25,
-        width: 18,
-        height: 8,
-        weight: 0.6
-      },
-      craftingTime: '15 jours',
-      stock: 3,
-      bulkOrderEnabled: true,
-      minBulkQuantity: 5,
-      artisanInfo: {
-        photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-        description: 'Maître sculpteur spécialisé dans l\'art traditionnel malgache depuis 20 ans.',
-        experience: '20 ans',
-        specialties: ['Masques traditionnels', 'Sculptures animalières', 'Objets décoratifs']
-      }
-    },
-    '2': {
-      id: 2,
-      name: 'Statuette Zébu sacré',
-      artisan: 'Hery Rakoto',
-      price: 25000,
-      location: 'Antananarivo',
-      images: [
-        'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=600&h=600&fit=crop'
-      ],
-      category: 'Sculpture sur bois',
-      subcategory: 'Figurines',
-      rating: 4.7,
-      reviewCount: 18,
-      description: 'Représentation artistique du zébu, animal sacré de Madagascar.',
-      materials: ['Bois d\'ébène', 'Huile de lin'],
-      dimensions: {
-        length: 15,
-        width: 8,
-        height: 12,
-        weight: 0.3
-      },
-      craftingTime: '8 jours',
-      stock: 7,
-      bulkOrderEnabled: false,
-      minBulkQuantity: 10,
-      artisanInfo: {
-        photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-        description: 'Maître sculpteur spécialisé dans l\'art traditionnel malgache depuis 20 ans.',
-        experience: '20 ans',
-        specialties: ['Masques traditionnels', 'Sculptures animalières', 'Objets décoratifs']
-      }
-    }
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  price: number;
+  images: string[];
+  artisan: {
+    id: string;
+    name: string;
   };
-  return products[id as keyof typeof products] || null;
-};
+  materials: string[];
+  available_colors?: string[];
+  dimensions?: {
+    length?: number;
+    width?: number;
+    height?: number;
+    weight?: number;
+  };
+  stock: number;
+  customizable?: boolean;
+  production_time_days: number;
+  bulk_order_enabled: boolean;
+  min_bulk_quantity?: number;
+  status: string;
+  rating?: number;
+  review_count: number;
+  created_at: string;
+  updated_at: string;
+}
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
   const { addItem } = useCart();
   const { user, isLoggedIn } = useUser();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showBulkForm, setShowBulkForm] = useState(false);
   const [selectedPriceVariation, setSelectedPriceVariation] = useState<PriceVariation | null>(null);
 
-  const product = getProductById(id || '');
+  // Charger le produit
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const productData = await apiService.getProduct(id);
+        setProduct(productData);
+        // Limiter la quantité au stock disponible
+        if (productData.stock > 0) {
+          setQuantity(Math.min(quantity, productData.stock));
+        }
+      } catch (error: any) {
+        console.error('Error loading product:', error);
+        if (error.response?.status === 404) {
+          toast.error('Produit non trouvé');
+        } else {
+          toast.error('Erreur lors du chargement du produit');
+        }
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
+        <Navigation />
+        <div className="flex justify-center items-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -118,25 +123,34 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!isLoggedIn) {
-      alert('Vous devez vous connecter pour ajouter des produits au panier !');
+      toast.error('Vous devez vous connecter pour ajouter des produits au panier !');
+      navigate('/login');
       return;
     }
     
-    if (product) {
-      addItem({
-        type: 'product',
-        productId: product.id,
-        name: product.name,
-        artisan: product.artisan,
-        price: selectedPriceVariation?.discountedPrice || product.price,
-        quantity,
-        image: product.images[0],
-        priceVariation: selectedPriceVariation || undefined
-      });
-      
-      // Show success message
-      alert('Produit ajouté au panier !');
+    if (product.stock === 0) {
+      toast.error('Ce produit est en rupture de stock');
+      return;
     }
+    
+    if (quantity > product.stock) {
+      toast.error(`Quantité disponible: ${product.stock}`);
+      setQuantity(product.stock);
+      return;
+    }
+    
+    addItem({
+      type: 'product',
+      productId: Number(product.id),
+      name: product.name,
+      artisan: product.artisan.name,
+      price: selectedPriceVariation?.discountedPrice || product.price,
+      quantity,
+      image: product.images && product.images.length > 0 ? product.images[0] : '',
+      priceVariation: selectedPriceVariation || undefined
+    });
+    
+    toast.success('Produit ajouté au panier !');
   };
 
   return (
@@ -167,7 +181,10 @@ const ProductDetail = () => {
           <div className="grid lg:grid-cols-2 gap-8 mb-8">
             {/* Product Images */}
             <div>
-              <ProductImageGallery images={product.images} productName={product.name} />
+              <ProductImageGallery 
+                images={product.images && product.images.length > 0 ? product.images : ['https://via.placeholder.com/600?text=Image+non+disponible']} 
+                productName={product.name} 
+              />
             </div>
 
             {/* Product Info */}
@@ -175,28 +192,38 @@ const ProductDetail = () => {
               <div>
                 <div className="flex items-center gap-2 text-sm text-orange-600 mb-2">
                   <span>{product.category}</span>
-                  <span>•</span>
-                  <span>{product.subcategory}</span>
+                  {product.subcategory && (
+                    <>
+                      <span>•</span>
+                      <span>{product.subcategory}</span>
+                    </>
+                  )}
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`w-5 h-5 ${i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
-                      />
-                    ))}
-                    <span className="text-sm text-gray-600 ml-2">
-                      {product.rating} ({product.reviewCount} avis)
-                    </span>
+                {product.rating && (
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`w-5 h-5 ${
+                            product.rating && i < Math.floor(product.rating) 
+                              ? 'fill-yellow-400 text-yellow-400' 
+                              : 'text-gray-300'
+                          }`} 
+                        />
+                      ))}
+                      <span className="text-sm text-gray-600 ml-2">
+                        {product.rating.toFixed(1)} ({product.review_count} avis)
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 {/* Prix de base pour les non-connectés */}
                 {!isLoggedIn && (
                   <p className="text-2xl font-bold text-orange-600 mb-4">
-                    À partir de {product.price.toLocaleString()} Ar
+                    À partir de {product.price.toLocaleString('fr-FR')} Ar
                   </p>
                 )}
               </div>
@@ -205,38 +232,56 @@ const ProductDetail = () => {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-orange-600" />
-                  <span>Temps de fabrication: {product.craftingTime}</span>
+                  <span>Temps de fabrication: {product.production_time_days} jour{product.production_time_days > 1 ? 's' : ''}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Package className="w-4 h-4 text-green-600" />
-                  <span>Stock: {product.stock} pièces</span>
+                  <span>Stock: {product.stock} pièce{product.stock > 1 ? 's' : ''}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Truck className="w-4 h-4 text-blue-600" />
                   <span>Expédition: 3-5 jours</span>
                 </div>
-                {product.dimensions && (
+                {product.dimensions && (product.dimensions.length || product.dimensions.width || product.dimensions.height) && (
                   <div className="flex items-center gap-2">
                     <Ruler className="w-4 h-4 text-purple-600" />
                     <span>
-                      {product.dimensions.length} × {product.dimensions.width} × {product.dimensions.height} cm 
-                      ({product.dimensions.weight} kg)
+                      {product.dimensions.length && `${product.dimensions.length} cm`}
+                      {product.dimensions.width && ` × ${product.dimensions.width} cm`}
+                      {product.dimensions.height && ` × ${product.dimensions.height} cm`}
+                      {product.dimensions.weight && ` (${product.dimensions.weight} kg)`}
                     </span>
                   </div>
                 )}
               </div>
 
               {/* Materials */}
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Matériaux utilisés</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.materials.map((material, index) => (
-                    <span key={index} className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
-                      {material}
-                    </span>
-                  ))}
+              {product.materials && product.materials.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Matériaux utilisés</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.materials.map((material, index) => (
+                      <span key={index} className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">
+                        {material}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Available Colors */}
+              {product.available_colors && product.available_colors.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Couleurs disponibles</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.available_colors.map((color, index) => (
+                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                        {color}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Price Variation Selector - Only for logged in users */}
               {isLoggedIn ? (
@@ -286,7 +331,10 @@ const ProductDetail = () => {
                       <Input 
                         type="number" 
                         value={quantity} 
-                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        onChange={(e) => {
+                          const val = Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1));
+                          setQuantity(val);
+                        }}
                         className="w-20 text-center"
                         min="1"
                         max={product.stock}
@@ -295,6 +343,7 @@ const ProductDetail = () => {
                         variant="outline" 
                         size="sm"
                         onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                        disabled={quantity >= product.stock}
                       >
                         +
                       </Button>
@@ -308,9 +357,10 @@ const ProductDetail = () => {
                       <Button 
                         className="flex-1 bg-orange-600 hover:bg-orange-700"
                         onClick={handleAddToCart}
+                        disabled={product.stock === 0}
                       >
                         <ShoppingCart className="w-4 h-4 mr-2" />
-                        Ajouter au panier
+                        {product.stock > 0 ? 'Ajouter au panier' : 'Rupture de stock'}
                       </Button>
                       <Button 
                         variant="outline"
@@ -333,13 +383,13 @@ const ProductDetail = () => {
                   )}
                 </div>
 
-                {isLoggedIn && product.bulkOrderEnabled && (
+                {isLoggedIn && product.bulk_order_enabled && (
                   <Button 
                     variant="outline" 
                     className="w-full border-green-600 text-green-600 hover:bg-green-50"
                     onClick={() => setShowBulkForm(true)}
                   >
-                    Commande en gros (min. {product.minBulkQuantity} pièces)
+                    Commande en gros {product.min_bulk_quantity && `(min. ${product.min_bulk_quantity} pièces)`}
                   </Button>
                 )}
               </div>
@@ -356,30 +406,20 @@ const ProductDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Artisan Info - UPDATED to remove contact option */}
+          {/* Artisan Info */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>À propos de l'artisan</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-start gap-4">
-                <img 
-                  src={product.artisanInfo.photo} 
-                  alt={product.artisan}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
+                <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-semibold text-xl">
+                  {product.artisan.name.charAt(0).toUpperCase()}
+                </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1">{product.artisan}</h3>
-                  <p className="text-gray-600 mb-3">{product.artisanInfo.description}</p>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {product.artisanInfo.specialties.map((specialty, index) => (
-                      <span key={index} className="px-2 py-1 bg-green-100 text-green-700 rounded text-sm">
-                        {specialty}
-                      </span>
-                    ))}
-                  </div>
-                  <Link to={`/artisan/${product.artisan.toLowerCase().replace(' ', '-')}`}>
-                    <Button variant="outline" size="sm">
+                  <h3 className="font-semibold text-lg mb-1">{product.artisan.name}</h3>
+                  <Link to={`/artisan/${product.artisan.id}`}>
+                    <Button variant="outline" size="sm" className="mt-2">
                       Voir le profil complet
                     </Button>
                   </Link>
@@ -394,15 +434,24 @@ const ProductDetail = () => {
           </div>
 
           {/* Reviews */}
-          <ProductReviews productId={product.id} />
+          <ProductReviews productId={Number(product.id)} />
 
           {/* Similar Products */}
-          <SimilarProducts currentProductId={product.id} category={product.category} />
+          <SimilarProducts currentProductId={Number(product.id)} category={product.category} />
 
           {/* Bulk Order Form Modal */}
           {showBulkForm && (
             <BulkOrderForm 
-              product={product}
+              product={{
+                id: Number(product.id),
+                name: product.name,
+                price: product.price,
+                stock: product.stock,
+                bulkOrderEnabled: product.bulk_order_enabled,
+                minBulkQuantity: product.min_bulk_quantity || 5,
+                artisan: product.artisan.name,
+                images: product.images
+              }}
               onClose={() => setShowBulkForm(false)}
             />
           )}

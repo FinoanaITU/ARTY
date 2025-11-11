@@ -1,96 +1,100 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import apiService from '@/services/api';
+import { toast } from 'sonner';
 
-const artisans = {
-  'Hery Rakoto': {
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
-    description: 'Maître sculpteur spécialisé dans l\'art traditionnel malgache depuis 20 ans.'
-  },
-  'Voahangy Razafy': {
-    photo: 'https://images.unsplash.com/photo-1494790108755-2616b332b302?w=50&h=50&fit=crop&crop=face',
-    description: 'Tisseuse experte en lamba traditionnels et soie sauvage.'
-  },
-  'Nivo Andriamana': {
-    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
-    description: 'Potier traditionnel utilisant des techniques ancestrales.'
-  }
-};
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  artisan: {
+    id: string;
+    name: string;
+  };
+  stock: number;
+  rating?: number;
+  review_count?: number;
+}
 
-const categories = {
-  'Sculpture et Bois': {
-    subcategories: ['Masques traditionnels', 'Figurines', 'Objets décoratifs', 'Ustensiles'],
-    products: [
-      {
-        id: 1,
-        name: 'Masque traditionnel Vezo',
-        artisan: 'Hery Rakoto',
-        price: 45000,
-        image: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300&h=300&fit=crop',
-        rating: 4.8,
-        subcategory: 'Masques traditionnels'
-      },
-      {
-        id: 2,
-        name: 'Statuette Zébu sacré',
-        artisan: 'Hery Rakoto',
-        price: 25000,
-        image: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300&h=300&fit=crop',
-        rating: 4.7,
-        subcategory: 'Figurines'
-      }
-    ]
-  },
-  'Textile et Tissage': {
-    subcategories: ['Lamba traditionnels', 'Vêtements', 'Accessoires', 'Décorations'],
-    products: [
-      {
-        id: 3,
-        name: 'Lamba Mena traditionnel',
-        artisan: 'Voahangy Razafy',
-        price: 65000,
-        image: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=300&h=300&fit=crop',
-        rating: 4.9,
-        subcategory: 'Lamba traditionnels'
-      },
-      {
-        id: 4,
-        name: 'Châle en soie sauvage',
-        artisan: 'Voahangy Razafy',
-        price: 35000,
-        image: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=300&h=300&fit=crop',
-        rating: 4.8,
-        subcategory: 'Accessoires'
-      }
-    ]
-  },
-  'Poterie et Céramique': {
-    subcategories: ['Vaisselle', 'Décorations', 'Sculptures', 'Ustensiles'],
-    products: [
-      {
-        id: 5,
-        name: 'Bol en terre cuite',
-        artisan: 'Nivo Andriamana',
-        price: 15000,
-        image: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?w=300&h=300&fit=crop',
-        rating: 4.6,
-        subcategory: 'Vaisselle'
-      }
-    ]
-  }
-};
+interface Category {
+  name: string;
+  subcategories: string[];
+}
 
 const Products = () => {
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['Sculpture et Bois']);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  // Charger les catégories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await apiService.getCategories();
+        setCategories(response.categories || []);
+        // Développer la première catégorie par défaut
+        if (response.categories && response.categories.length > 0) {
+          setExpandedCategories([response.categories[0].name]);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        toast.error('Erreur lors du chargement des catégories');
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Charger les produits
+  useEffect(() => {
+    const loadProducts = async () => {
+      setLoading(true);
+      try {
+        const params: any = {
+          page,
+          limit: 20,
+        };
+        
+        if (searchTerm) {
+          params.search = searchTerm;
+        }
+        
+        if (selectedCategory) {
+          params.category = selectedCategory;
+        }
+        
+        if (selectedSubcategory) {
+          params.subcategory = selectedSubcategory;
+        }
+
+        const response = await apiService.getProducts(params);
+        setProducts(response.items || []);
+        setTotal(response.total || 0);
+        setTotalPages(response.pages || 1);
+      } catch (error) {
+        console.error('Error loading products:', error);
+        toast.error('Erreur lors du chargement des produits');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProducts();
+  }, [searchTerm, selectedCategory, selectedSubcategory, page]);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => 
@@ -100,16 +104,16 @@ const Products = () => {
     );
   };
 
-  const getAllProducts = () => {
-    return Object.values(categories).flatMap(cat => cat.products);
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(selectedCategory === category ? '' : category);
+    setSelectedSubcategory(''); // Reset subcategory when changing category
+    setPage(1); // Reset to first page
   };
 
-  const filteredProducts = getAllProducts().filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.artisan.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubcategory = !selectedSubcategory || product.subcategory === selectedSubcategory;
-    return matchesSearch && matchesSubcategory;
-  });
+  const handleSubcategoryClick = (subcategory: string) => {
+    setSelectedSubcategory(selectedSubcategory === subcategory ? '' : subcategory);
+    setPage(1); // Reset to first page
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
@@ -134,11 +138,15 @@ const Products = () => {
                 <h3 className="font-semibold text-gray-900 mb-4">Catégories</h3>
                 
                 {/* Clear filters */}
-                {selectedSubcategory && (
+                {(selectedCategory || selectedSubcategory) && (
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => setSelectedSubcategory('')}
+                    onClick={() => {
+                      setSelectedCategory('');
+                      setSelectedSubcategory('');
+                      setPage(1);
+                    }}
                     className="mb-4 w-full text-orange-600"
                   >
                     Effacer les filtres
@@ -146,28 +154,38 @@ const Products = () => {
                 )}
 
                 <div className="space-y-2">
-                  {Object.entries(categories).map(([category, data]) => (
-                    <div key={category}>
+                  {categories.map((category) => (
+                    <div key={category.name}>
                       <button
-                        onClick={() => toggleCategory(category)}
+                        onClick={() => toggleCategory(category.name)}
                         className="flex items-center justify-between w-full text-left py-2 px-3 hover:bg-orange-50 rounded-md transition-colors"
                       >
-                        <span className="text-sm font-medium text-gray-700">{category}</span>
-                        {expandedCategories.includes(category) ? (
+                        <span 
+                          className={`text-sm font-medium ${
+                            selectedCategory === category.name 
+                              ? 'text-orange-600' 
+                              : 'text-gray-700'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCategoryClick(category.name);
+                          }}
+                        >
+                          {category.name}
+                        </span>
+                        {expandedCategories.includes(category.name) ? (
                           <ChevronDown className="w-4 h-4 text-gray-500" />
                         ) : (
                           <ChevronRight className="w-4 h-4 text-gray-500" />
                         )}
                       </button>
                       
-                      {expandedCategories.includes(category) && (
+                      {expandedCategories.includes(category.name) && category.subcategories && category.subcategories.length > 0 && (
                         <div className="ml-4 mt-1 space-y-1">
-                          {data.subcategories.map((subcategory) => (
+                          {category.subcategories.map((subcategory) => (
                             <button
                               key={subcategory}
-                              onClick={() => setSelectedSubcategory(
-                                selectedSubcategory === subcategory ? '' : subcategory
-                              )}
+                              onClick={() => handleSubcategoryClick(subcategory)}
                               className={`block w-full text-left py-1 px-2 text-sm rounded transition-colors ${
                                 selectedSubcategory === subcategory
                                   ? 'bg-orange-100 text-orange-700'
@@ -201,72 +219,121 @@ const Products = () => {
               {/* Results Count */}
               <div className="mb-6">
                 <p className="text-gray-600">
-                  {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''} trouvé{filteredProducts.length > 1 ? 's' : ''}
-                  {selectedSubcategory && ` dans "${selectedSubcategory}"`}
+                  {loading ? (
+                    <span>Chargement...</span>
+                  ) : (
+                    <>
+                      {total} produit{total > 1 ? 's' : ''} trouvé{total > 1 ? 's' : ''}
+                      {selectedCategory && ` dans "${selectedCategory}"`}
+                      {selectedSubcategory && ` > "${selectedSubcategory}"`}
+                    </>
+                  )}
                 </p>
               </div>
 
+              {/* Loading State */}
+              {loading && (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+                </div>
+              )}
+
               {/* Products Grid */}
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-square bg-orange-100 relative">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded-full text-xs font-medium">
-                        ⭐ {product.rating}
-                      </div>
-                      <div className="absolute top-2 left-2 bg-orange-600 text-white px-2 py-1 rounded-full text-xs">
-                        {product.subcategory}
-                      </div>
-                    </div>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{product.name}</CardTitle>
-                      <CardDescription>
-                        <div className="flex items-center gap-2 mt-2">
+              {!loading && (
+                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {products.map((product) => (
+                    <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <div className="aspect-square bg-orange-100 relative">
+                        {product.images && product.images.length > 0 ? (
                           <img
-                            src={artisans[product.artisan as keyof typeof artisans]?.photo}
-                            alt={product.artisan}
-                            className="w-8 h-8 rounded-full object-cover"
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+non+disponible';
+                            }}
                           />
-                          <div>
-                            <div className="font-medium text-sm">{product.artisan}</div>
-                            <div className="text-xs text-gray-500">
-                              {artisans[product.artisan as keyof typeof artisans]?.description}
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            Pas d'image
+                          </div>
+                        )}
+                        {product.rating && (
+                          <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded-full text-xs font-medium">
+                            ⭐ {product.rating.toFixed(1)}
+                          </div>
+                        )}
+                      </div>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">{product.name}</CardTitle>
+                        <CardDescription>
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-semibold text-xs">
+                              {product.artisan.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm">{product.artisan.name}</div>
                             </div>
                           </div>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="text-xl font-bold text-orange-600">
+                            {product.price.toLocaleString('fr-FR')} Ar
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            product.stock > 0 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {product.stock > 0 ? 'En stock' : 'Rupture de stock'}
+                          </span>
                         </div>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-xl font-bold text-orange-600">
-                          {product.price.toLocaleString()} Ar
-                        </span>
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                          En stock
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link to={`/product/${product.id}`} className="flex-1">
-                          <Button className="w-full bg-orange-600 hover:bg-orange-700">
-                            Acheter
+                        <div className="flex gap-2">
+                          <Link to={`/product/${product.id}`} className="flex-1">
+                            <Button 
+                              className="w-full bg-orange-600 hover:bg-orange-700"
+                              disabled={product.stock === 0}
+                            >
+                              {product.stock > 0 ? 'Voir détails' : 'Indisponible'}
+                            </Button>
+                          </Link>
+                          <Button variant="outline" size="sm">
+                            ♡
                           </Button>
-                        </Link>
-                        <Button variant="outline" size="sm">
-                          ♡
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {!loading && totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                    disabled={page === 1}
+                  >
+                    Précédent
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {page} sur {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={page === totalPages}
+                  >
+                    Suivant
+                  </Button>
+                </div>
+              )}
 
               {/* No Results */}
-              {filteredProducts.length === 0 && (
+              {!loading && products.length === 0 && (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🔍</div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -278,7 +345,9 @@ const Products = () => {
                   <Button 
                     onClick={() => {
                       setSearchTerm('');
+                      setSelectedCategory('');
                       setSelectedSubcategory('');
+                      setPage(1);
                     }}
                     variant="outline"
                   >
