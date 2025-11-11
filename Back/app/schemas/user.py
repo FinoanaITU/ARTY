@@ -37,25 +37,33 @@ class BuyerRegisterIn(BaseModel):
 
 
 class ArtisanRegisterIn(BaseModel):
-    """Schema pour l'inscription d'un artisan"""
+    """
+    Schema pour l'inscription d'un artisan (formulaire multi-étapes - 5 étapes)
+    
+    Étape 1: Photos de l'atelier/créations (jusqu'à 5 images)
+    Étape 2: Langues parlées
+    Étape 3: Compte artisan (nom entreprise)
+    Étape 4: Informations artisanales (spécialité, expérience, description, histoire de la marque)
+    Étape 5: Offres (produits/ateliers/both) + Documents administratifs (NIF, STAT)
+    """
     email: EmailStr
     password: str = Field(..., min_length=6)
     name: str = Field(..., min_length=2, max_length=200)
     phone: Optional[str] = None
-    region: str
-    city: str
+    region: str  # Étape 1: Localisation
+    city: str  # Étape 1: Localisation
     address: Optional[str] = None
-    languages: List[str] = Field(default_factory=list)
-    company_name: str = Field(..., min_length=1)
-    main_specialty: str
-    other_skills: List[str] = Field(default_factory=list)
-    years_experience: Optional[str] = None
-    activity_description: str = Field(..., min_length=10)
-    brand_story: Optional[str] = None
-    offerings: List[str] = Field(..., description="Liste: ['products', 'workshops', 'both']")
-    nif: Optional[str] = None
-    stat: Optional[str] = None
-    documents_not_available: bool = False
+    languages: List[str] = Field(default_factory=list)  # Étape 2: Langues parlées
+    company_name: str = Field(..., min_length=1)  # Étape 3: Nom entreprise
+    main_specialty: str  # Étape 4: Spécialité principale
+    other_skills: List[str] = Field(default_factory=list)  # Étape 4: Autres compétences
+    years_experience: Optional[str] = None  # Étape 4: Années d'expérience
+    activity_description: str = Field(..., min_length=10)  # Étape 4: Description de l'activité
+    brand_story: Optional[str] = None  # Étape 4: Histoire de la marque (optionnel)
+    offerings: List[str] = Field(..., description="Étape 5: ['products', 'workshops', 'both']")  # Étape 5: Offres
+    nif: Optional[str] = None  # Étape 5: Document administratif (optionnel)
+    stat: Optional[str] = None  # Étape 5: Document administratif (optionnel)
+    documents_not_available: bool = False  # Étape 5: Si les documents ne sont pas disponibles
     
     @model_validator(mode='after')
     def validate_offerings(self):

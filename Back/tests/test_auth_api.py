@@ -205,6 +205,11 @@ class TestArtisanRegistrationAPI:
             data=form_data
         )
         
+        # Vérifier le statut de la réponse
+        if response.status_code != status.HTTP_201_CREATED:
+            print(f"Response status: {response.status_code}")
+            print(f"Response body: {response.text}")
+        
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
         
@@ -220,9 +225,13 @@ class TestArtisanRegistrationAPI:
         user = db.query(User).filter(User.email == test_artisan_data["email"]).first()
         assert user is not None
         assert user.role == UserRole.ARTISAN
-        assert user.artisan_profile is not None
-        assert user.artisan_profile.company_name == test_artisan_data["company_name"]
-        assert user.artisan_profile.main_specialty == test_artisan_data["main_specialty"]
+        
+        # Vérifier que le profil artisan existe (interroger directement la table)
+        from app.models.user import ArtisanProfile
+        artisan_profile = db.query(ArtisanProfile).filter(ArtisanProfile.user_id == user.id).first()
+        assert artisan_profile is not None, f"Profil artisan non trouvé pour l'utilisateur {user.id}"
+        assert artisan_profile.company_name == test_artisan_data["company_name"]
+        assert artisan_profile.main_specialty == test_artisan_data["main_specialty"]
     
     def test_register_artisan_duplicate_email(
         self, client: TestClient, created_artisan: User, test_artisan_data: dict
