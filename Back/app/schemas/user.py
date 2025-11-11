@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -8,55 +8,70 @@ from app.models.user import UserRole, BuyerType, Nationality, ProfileStatus
 # ============ INPUT SCHEMAS ============
 
 class BuyerRegisterIn(BaseModel):
-    """Schema pour l'inscription d'un acheteur"""
+    """
+    Schema pour l'inscription d'un acheteur (particulier ou entreprise)
+    
+    Formulaire multi-étapes pour particuliers et entreprises:
+    - Informations: nom, email, password, téléphone, adresse, ville, pays
+    - Pour entreprises: nom entreprise, SIRET
+    - Détection automatique du type de tarif (local/étranger) basée sur le pays
+    """
     email: EmailStr
     password: str = Field(..., min_length=6, description="Mot de passe minimum 6 caractères")
     name: str = Field(..., min_length=2, max_length=200)
     phone: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
-    country: str = Field(default="madagascar")
+    country: str = Field(default="madagascar", description="Pays de l'acheteur (détermine la nationalité)")
     buyer_type: BuyerType = BuyerType.PARTICULIER
     company_name: Optional[str] = None
     siret: Optional[str] = None
     
-    @validator('company_name', 'siret')
-    def validate_company_fields(cls, v, values):
-        """Si buyer_type est entreprise, company_name est requis"""
-        if 'buyer_type' in values and values['buyer_type'] == BuyerType.ENTREPRISE:
-            if not v:
+    @model_validator(mode='after')
+    def validate_company_fields(self):
+        """Valide que les champs entreprise sont remplis si buyer_type est ENTREPRISE"""
+        if self.buyer_type == BuyerType.ENTREPRISE:
+            if not self.company_name or not self.company_name.strip():
                 raise ValueError("company_name est requis pour les entreprises")
-        return v
+        return self
 
 
 class ArtisanRegisterIn(BaseModel):
-    """Schema pour l'inscription d'un artisan"""
+    """
+    Schema pour l'inscription d'un artisan (formulaire multi-étapes - 5 étapes)
+    
+    Étape 1: Photos de l'atelier/créations (jusqu'à 5 images)
+    Étape 2: Langues parlées
+    Étape 3: Compte artisan (nom entreprise)
+    Étape 4: Informations artisanales (spécialité, expérience, description, histoire de la marque)
+    Étape 5: Offres (produits/ateliers/both) + Documents administratifs (NIF, STAT)
+    """
     email: EmailStr
     password: str = Field(..., min_length=6)
     name: str = Field(..., min_length=2, max_length=200)
     phone: Optional[str] = None
-    region: str
-    city: str
+    region: str  # Étape 1: Localisation
+    city: str  # Étape 1: Localisation
     address: Optional[str] = None
-    languages: List[str] = Field(default_factory=list)
-    company_name: str = Field(..., min_length=1)
-    main_specialty: str
-    other_skills: List[str] = Field(default_factory=list)
-    years_experience: Optional[str] = None
-    activity_description: str = Field(..., min_length=10)
-    brand_story: Optional[str] = None
-    offerings: List[str] = Field(..., description="Liste: ['products', 'workshops', 'both']")
-    nif: Optional[str] = None
-    stat: Optional[str] = None
-    documents_not_available: bool = False
+    languages: List[str] = Field(default_factory=list)  # Étape 2: Langues parlées
+    company_name: str = Field(..., min_length=1)  # Étape 3: Nom entreprise
+    main_specialty: str  # Étape 4: Spécialité principale
+    other_skills: List[str] = Field(default_factory=list)  # Étape 4: Autres compétences
+    years_experience: Optional[str] = None  # Étape 4: Années d'expérience
+    activity_description: str = Field(..., min_length=10)  # Étape 4: Description de l'activité
+    brand_story: Optional[str] = None  # Étape 4: Histoire de la marque (optionnel)
+    offerings: List[str] = Field(..., description="Étape 5: ['products', 'workshops', 'both']")  # Étape 5: Offres
+    nif: Optional[str] = None  # Étape 5: Document administratif (optionnel)
+    stat: Optional[str] = None  # Étape 5: Document administratif (optionnel)
+    documents_not_available: bool = False  # Étape 5: Si les documents ne sont pas disponibles
     
-    @validator('offerings')
-    def validate_offerings(cls, v):
+    @model_validator(mode='after')
+    def validate_offerings(self):
         """Valider que offerings contient des valeurs valides"""
         valid_values = ['products', 'workshops', 'both']
-        if not v or not all(item in valid_values for item in v):
+        if not self.offerings or not all(item in valid_values for item in self.offerings):
             raise ValueError(f"offerings doit contenir au moins un élément parmi: {valid_values}")
-        return v
+        return self
 
 
 class LoginIn(BaseModel):

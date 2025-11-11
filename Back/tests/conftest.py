@@ -15,21 +15,53 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.main import app
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models.user import User, ArtisanProfile, ArtisanPhoto, UserSession, UserRole, BuyerType, Nationality, ProfileStatus
 from app.models.base import BaseModel
 import uuid
 
-# Base de données de test SQLite en mémoire
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+# Configuration de la base de données de test
+# Utiliser PostgreSQL si disponible (recommandé), sinon SQLite en fallback
+TEST_DB_URL = os.getenv("TEST_DATABASE_URL", settings.DATABASE_TEST_URL)
+USE_POSTGRESQL = "postgresql" in TEST_DB_URL.lower()
+
+# Tester la connexion PostgreSQL, fallback vers SQLite si échec
+if USE_POSTGRESQL:
+    try:
+        # Tester la connexion PostgreSQL
+        from sqlalchemy import text
+        test_engine = create_engine(TEST_DB_URL, pool_pre_ping=True)
+        with test_engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        USE_POSTGRESQL = True
+        print(f"✅ Utilisation de PostgreSQL pour les tests: {TEST_DB_URL.split('@')[-1] if '@' in TEST_DB_URL else TEST_DB_URL}")
+    except Exception as e:
+        # Fallback vers SQLite si PostgreSQL n'est pas disponible
+        USE_POSTGRESQL = False
+        TEST_DB_URL = "sqlite:///:memory:"
+        print(f"⚠️  PostgreSQL non disponible ({e}), utilisation de SQLite pour les tests")
+else:
+    TEST_DB_URL = "sqlite:///:memory:"
+    print("⚠️  Utilisation de SQLite pour les tests (PostgreSQL recommandé)")
 
 # Créer un engine de test
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-    echo=False  # Désactiver les logs SQL pour les tests
-)
+if USE_POSTGRESQL:
+    # Configuration PostgreSQL
+    engine = create_engine(
+        TEST_DB_URL,
+        pool_pre_ping=True,
+        pool_recycle=300,
+        echo=False
+    )
+else:
+    # Configuration SQLite
+    engine = create_engine(
+        TEST_DB_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False
+    )
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -37,16 +69,10 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @event.listens_for(engine, "connect")
 def set_sqlite_pragma(dbapi_conn, connection_record):
     """Active le support JSON et les clés étrangères pour SQLite"""
-    cursor = dbapi_conn.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
-
-
-# Patcher les types PostgreSQL pour SQLite
-from sqlalchemy.dialects import registry
-
-# Enregistrer un dialect SQLite personnalisé qui convertit ARRAY en JSON
-# Pour l'instant, on utilise une approche plus simple : créer les tables manuellement
+    if not USE_POSTGRESQL:
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 
 @pytest.fixture(scope="function")
@@ -64,9 +90,14 @@ def db() -> Generator[Session, None, None]:
         BaseModel.metadata.drop_all(bind=engine)
         BaseModel.metadata.create_all(bind=engine)
     except Exception as e:
-        # Si ça échoue (par exemple à cause d'ARRAY), créer les tables manuellement
-        print(f"Warning: Could not create tables with models: {e}")
-        _create_tables_manually(engine)
+        # Si ça échoue (par exemple à cause d'ARRAY avec SQLite), créer les tables manuellement
+        if not USE_POSTGRESQL:
+            print(f"Warning: Could not create tables with models: {e}")
+            print("Creating tables manually for SQLite compatibility...")
+            _create_tables_manually(engine)
+        else:
+            # Avec PostgreSQL, cela ne devrait pas échouer
+            raise e
     
     # Créer une session de test
     session = TestingSessionLocal()
@@ -176,6 +207,93 @@ def _create_tables_manually(engine):
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """))
+        
+        # Table categories
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id VARCHAR(36) PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                slug VARCHAR(100) UNIQUE NOT NULL,
+                description TEXT,
+                parent_id VARCHAR(36),
+                image_url VARCHAR(500),
+                icon VARCHAR(50),
+                sort_order INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT 1,
+                meta_title VARCHAR(160),
+                meta_description VARCHAR(320),
+                level INTEGER DEFAULT 0,
+                path VARCHAR(255),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (parent_id) REFERENCES categories(id)
+            )
+        """))
+        
+        # Table products
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS products (
+                id VARCHAR(36) PRIMARY KEY,
+                title VARCHAR(200) NOT NULL,
+                slug VARCHAR(200) UNIQUE NOT NULL,
+                description TEXT NOT NULL,
+                short_description VARCHAR(500),
+                price NUMERIC(10, 2) NOT NULL,
+                compare_at_price NUMERIC(10, 2),
+                cost_price NUMERIC(10, 2),
+                category_id VARCHAR(36) NOT NULL,
+                artisan_id VARCHAR(36) NOT NULL,
+                stock_quantity INTEGER DEFAULT 0,
+                track_inventory BOOLEAN DEFAULT 1,
+                allow_backorders BOOLEAN DEFAULT 0,
+                low_stock_threshold INTEGER DEFAULT 5,
+                weight_grams INTEGER,
+                dimensions TEXT,
+                materials TEXT,
+                colors TEXT,
+                techniques TEXT,
+                origin_region VARCHAR(100),
+                status VARCHAR(20) DEFAULT 'draft',
+                visibility VARCHAR(20) DEFAULT 'public',
+                featured BOOLEAN DEFAULT 0,
+                handmade BOOLEAN DEFAULT 1,
+                customizable BOOLEAN DEFAULT 0,
+                made_to_order BOOLEAN DEFAULT 0,
+                production_time_days INTEGER,
+                meta_title VARCHAR(160),
+                meta_description VARCHAR(320),
+                tags TEXT,
+                view_count INTEGER DEFAULT 0,
+                favorite_count INTEGER DEFAULT 0,
+                sales_count INTEGER DEFAULT 0,
+                rating_average NUMERIC(3, 2) DEFAULT 0,
+                rating_count INTEGER DEFAULT 0,
+                published_at DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES categories(id),
+                FOREIGN KEY (artisan_id) REFERENCES users(id)
+            )
+        """))
+        
+        # Table product_images
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS product_images (
+                id VARCHAR(36) PRIMARY KEY,
+                product_id VARCHAR(36) NOT NULL,
+                image_url VARCHAR(500) NOT NULL,
+                alt_text VARCHAR(200),
+                sort_order INTEGER DEFAULT 0,
+                is_primary BOOLEAN DEFAULT 0,
+                width INTEGER,
+                height INTEGER,
+                file_size INTEGER,
+                format VARCHAR(10),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (product_id) REFERENCES products(id)
             )
         """))
         
@@ -376,3 +494,119 @@ def auth_headers_artisan(client: TestClient, created_artisan: User, test_artisan
     assert response.status_code == 200
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def test_category(db: Session):
+    """Crée une catégorie de test"""
+    from app.models.product import Category
+    from sqlalchemy import text
+    
+    category_id = uuid.uuid4()
+    db.execute(
+        text("""
+            INSERT INTO categories (id, name, slug, is_active, created_at, updated_at)
+            VALUES (:id, :name, :slug, :is_active, datetime('now'), datetime('now'))
+        """),
+        {
+            "id": str(category_id),
+            "name": "Sculpture et Bois",
+            "slug": "sculpture-et-bois",
+            "is_active": True
+        }
+    )
+    db.commit()
+    
+    # Récupérer la catégorie créée en utilisant le bon type d'ID
+    category = db.query(Category).filter(Category.id == str(category_id)).first()
+    if not category:
+        # Essayer avec UUID directement
+        try:
+            category = db.query(Category).filter(Category.id == category_id).first()
+        except:
+            pass
+    
+    return category
+
+
+@pytest.fixture
+def test_product_data():
+    """Données de test pour un produit"""
+    return {
+        "name": "Masque traditionnel",
+        "description": "Masque en bois sculpté à la main avec peinture naturelle",
+        "category": "Sculpture et Bois",
+        "subcategory": "Masques traditionnels",
+        "price": "45000",
+        "materials": "Bois,Peinture naturelle",
+        "available_colors": "Rouge,Bleu",
+        "stock": "3",
+        "customizable": "true",
+        "production_time_days": "15",
+        "bulk_order_enabled": "true",
+        "min_bulk_quantity": "5"
+    }
+
+
+@pytest.fixture
+def created_product(db: Session, created_artisan: User, test_category):
+    """Crée un produit dans la base de données de test"""
+    from app.models.product import Product, ProductImage
+    from sqlalchemy import text
+    import json
+    
+    product_id = uuid.uuid4()
+    
+    # Créer le produit avec SQL brut
+    db.execute(
+        text("""
+            INSERT INTO products (id, title, slug, description, price, category_id, artisan_id, stock_quantity, materials, colors, customizable, production_time_days, made_to_order, status, created_at, updated_at)
+            VALUES (:id, :title, :slug, :description, :price, :category_id, :artisan_id, :stock_quantity, :materials, :colors, :customizable, :production_time_days, :made_to_order, :status, datetime('now'), datetime('now'))
+        """),
+        {
+            "id": str(product_id),
+            "title": "Masque traditionnel",
+            "slug": "masque-traditionnel",
+            "description": "Masque en bois sculpté à la main",
+            "price": 45000,
+            "category_id": str(test_category.id),
+            "artisan_id": str(created_artisan.id),
+            "stock_quantity": 3,
+            "materials": json.dumps(["Bois", "Peinture naturelle"]),
+            "colors": json.dumps(["Rouge", "Bleu"]),
+            "customizable": True,
+            "production_time_days": 15,
+            "made_to_order": True,
+            "status": "published"
+        }
+    )
+    
+    # Ajouter une image
+    image_id = uuid.uuid4()
+    db.execute(
+        text("""
+            INSERT INTO product_images (id, product_id, image_url, sort_order, is_primary, created_at, updated_at)
+            VALUES (:id, :product_id, :image_url, :sort_order, :is_primary, datetime('now'), datetime('now'))
+        """),
+        {
+            "id": str(image_id),
+            "product_id": str(product_id),
+            "image_url": "https://example.com/image.jpg",
+            "sort_order": 0,
+            "is_primary": True
+        }
+    )
+    
+    db.commit()
+    
+    # Récupérer le produit créé en utilisant le bon type d'ID
+    from app.models.product import Product
+    product = db.query(Product).filter(Product.id == str(product_id)).first()
+    if not product:
+        # Essayer avec UUID directement
+        try:
+            product = db.query(Product).filter(Product.id == product_id).first()
+        except:
+            pass
+    
+    return product
