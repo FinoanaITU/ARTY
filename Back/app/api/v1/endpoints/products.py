@@ -20,9 +20,13 @@ from app.schemas.product import (
     ProductListItem,
     CategoriesResponse,
     CategoryOut,
-    BulkOrderRequestIn
+    BulkOrderRequestIn,
+    BulkOrderRequestOut,
+    ArtisanBasic
 )
 from app.services.storage import StorageService
+from app.crud.bulk_order import bulk_order_crud
+from app.utils.id_utils import normalize_id, id_to_string, get_db_type
 
 
 router = APIRouter()
@@ -30,15 +34,31 @@ router = APIRouter()
 
 def _product_to_out(product: Product, db: Session) -> ProductOut:
     """Convertit un Product en ProductOut"""
-    # Récupérer les images
+    from uuid import UUID as UUIDType
+    
+    # Récupérer les images (le CRUD gère la conversion d'ID)
     images = [img.image_url for img in product_crud.get_images(db, product.id)]
     
     # Récupérer l'artisan
+    # Le GUID type devrait convertir automatiquement, mais on s'assure que c'est un UUID
     artisan = db.query(User).filter(User.id == product.artisan_id).first()
-    artisan_basic = {
-        "id": artisan.id,
-        "name": artisan.name
-    }
+    if not artisan:
+        raise ValueError(f"Artisan not found for product {product.id}")
+    
+    # S'assurer que les IDs sont des UUID objects pour Pydantic
+    product_id = product.id
+    if not isinstance(product_id, UUIDType):
+        product_id = UUIDType(str(product_id))
+    
+    artisan_id = artisan.id
+    if not isinstance(artisan_id, UUIDType):
+        artisan_id = UUIDType(str(artisan_id))
+    
+    # Créer l'objet ArtisanBasic avec validation Pydantic
+    artisan_basic = ArtisanBasic(
+        id=artisan_id,
+        name=artisan.name
+    )
     
     # Extraire les dimensions
     dimensions = None
@@ -52,27 +72,66 @@ def _product_to_out(product: Product, db: Session) -> ProductOut:
     
     # Récupérer la catégorie
     category_obj = db.query(Category).filter(Category.id == product.category_id).first()
-    category_name = category_obj.name if category_obj else "Non catégorisé"
+    if category_obj:
+        # Si la catégorie a un parent, c'est une sous-catégorie
+        if category_obj.parent_id:
+            parent_category = db.query(Category).filter(Category.id == category_obj.parent_id).first()
+            category_name = parent_category.name if parent_category else category_obj.name
+            subcategory_name = category_obj.name
+        else:
+            category_name = category_obj.name
+            subcategory_name = None
+    else:
+        category_name = "Non catégorisé"
+        subcategory_name = None
+    
+    # S'assurer que production_time_days n'est pas None (requis par le schema)
+    production_time_days = product.production_time_days if product.production_time_days is not None else 0
+    
+    # ArrayType gère automatiquement la conversion JSON <-> list pour SQLite/PostgreSQL
+    # Mais on s'assure que c'est toujours une liste (fallback si None)
+    materials_list = product.materials if product.materials is not None else []
+    if not isinstance(materials_list, list):
+        materials_list = []
+    
+    colors_list = product.colors if product.colors is not None else []
+    if not isinstance(colors_list, list):
+        colors_list = []
+    
+    # Convertir le prix en float pour la sérialisation JSON
+    # Le prix peut être Decimal, string, int ou float selon la base de données
+    price_value = product.price
+    if price_value is None:
+        price_value = 0.0
+    else:
+        try:
+            # Convertir en float (Decimal, string, int, float)
+            if isinstance(price_value, str):
+                price_value = float(price_value)
+            else:
+                price_value = float(price_value)
+        except (ValueError, TypeError, AttributeError):
+            price_value = 0.0
     
     return ProductOut(
-        id=product.id,
+        id=product_id,
         name=product.title,  # Le modèle utilise 'title' mais le schema utilise 'name'
-        description=product.description,
+        description=product.description or "",
         category=category_name,
-        subcategory=None,  # TODO: gérer les sous-catégories
-        price=product.price,
+        subcategory=subcategory_name,
+        price=price_value,
         images=images,
         artisan=artisan_basic,
-        materials=product.materials or [],
-        available_colors=product.colors or [],
+        materials=materials_list,
+        available_colors=colors_list,
         dimensions=dimensions,
-        stock=product.stock_quantity,
-        customizable=product.customizable,
-        production_time_days=product.production_time_days or 0,
-        bulk_order_enabled=product.made_to_order,
-        min_bulk_quantity=None,  # TODO: ajouter ce champ au modèle
-        status=product.status,
-        rating=float(product.rating_average) if product.rating_average else None,
+        stock=product.stock_quantity or 0,
+        customizable=product.customizable if product.customizable is not None else False,
+        production_time_days=production_time_days,
+        bulk_order_enabled=product.made_to_order if product.made_to_order is not None else False,
+        min_bulk_quantity=product.min_bulk_quantity,
+        status=product.status or "draft",
+        rating=float(product.rating_average) if product.rating_average is not None else None,
         review_count=product.rating_count or 0,
         created_at=product.created_at,
         updated_at=product.updated_at
@@ -81,25 +140,50 @@ def _product_to_out(product: Product, db: Session) -> ProductOut:
 
 def _product_to_list_item(product: Product, db: Session) -> ProductListItem:
     """Convertit un Product en ProductListItem"""
-    # Récupérer les images (seulement la première pour la liste)
+    from uuid import UUID as UUIDType
+    
+    # Récupérer les images (seulement la première pour la liste, le CRUD gère la conversion d'ID)
     images = [img.image_url for img in product_crud.get_images(db, product.id)[:1]]
     
     # Récupérer l'artisan
     artisan = db.query(User).filter(User.id == product.artisan_id).first()
-    artisan_basic = {
-        "id": artisan.id,
-        "name": artisan.name
-    }
+    if not artisan:
+        raise ValueError(f"Artisan not found for product {product.id}")
+    
+    # S'assurer que les IDs sont des UUID objects pour Pydantic
+    product_id = product.id
+    if not isinstance(product_id, UUIDType):
+        product_id = UUIDType(str(product_id))
+    
+    artisan_id = artisan.id
+    if not isinstance(artisan_id, UUIDType):
+        artisan_id = UUIDType(str(artisan_id))
+    
+    # Créer l'objet ArtisanBasic avec validation Pydantic
+    artisan_basic = ArtisanBasic(
+        id=artisan_id,
+        name=artisan.name
+    )
+    
+    # Convertir le prix en float pour la sérialisation JSON
+    price_value = product.price
+    if price_value is None:
+        price_value = 0.0
+    else:
+        try:
+            price_value = float(price_value)
+        except (ValueError, TypeError, AttributeError):
+            price_value = 0.0
     
     return ProductListItem(
-        id=product.id,
+        id=product_id,
         name=product.title,
-        price=product.price,
+        price=price_value,
         images=images,
         artisan=artisan_basic,
-        stock=product.stock_quantity,
-        status=product.status,
-        rating=float(product.rating_average) if product.rating_average else None,
+        stock=product.stock_quantity or 0,
+        status=product.status or "draft",
+        rating=float(product.rating_average) if product.rating_average is not None else None,
         review_count=product.rating_count or 0,
         created_at=product.created_at
     )
@@ -157,6 +241,37 @@ async def get_products(
     )
 
 
+@router.get("/categories", response_model=CategoriesResponse)
+async def get_categories(
+    db: Session = Depends(get_db)
+):
+    """
+    Liste des catégories avec leurs sous-catégories
+    """
+    from sqlalchemy import or_
+    # Récupérer toutes les catégories principales (sans parent)
+    # Utiliser is_(None) qui fonctionne avec SQLAlchemy pour tous les types
+    main_categories = db.query(Category).filter(
+        Category.parent_id.is_(None),
+        Category.is_active == True
+    ).all()
+    
+    categories_out = []
+    for cat in main_categories:
+        # Récupérer les sous-catégories
+        subcategories = db.query(Category).filter(
+            Category.parent_id == cat.id,
+            Category.is_active == True
+        ).all()
+        
+        categories_out.append(CategoryOut(
+            name=cat.name,
+            subcategories=[sub.name for sub in subcategories]
+        ))
+    
+    return CategoriesResponse(categories=categories_out)
+
+
 @router.get("/{product_id}", response_model=ProductOut)
 async def get_product(
     product_id: UUID,
@@ -210,7 +325,18 @@ async def create_product(
     - Statut par défaut: draft
     """
     # Vérifier que l'utilisateur a un profil artisan
-    if not current_user.artisan_profile:
+    # Le GUID TypeDecorator gère automatiquement la conversion UUID <-> string
+    from app.models.user import ArtisanProfile
+    # Utiliser directement current_user.id - le GUID TypeDecorator gère la conversion
+    artisan_profile = db.query(ArtisanProfile).filter(ArtisanProfile.user_id == current_user.id).first()
+    if not artisan_profile:
+        # Essayer aussi avec la relation si disponible (pour PostgreSQL)
+        try:
+            if hasattr(current_user, 'artisan_profile') and current_user.artisan_profile:
+                artisan_profile = current_user.artisan_profile
+        except:
+            pass
+    if not artisan_profile:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Vous devez avoir un profil artisan pour créer des produits"
@@ -243,22 +369,32 @@ async def create_product(
             weight=dimensions_weight
         )
     
-    # Créer le schema ProductCreate
-    product_data = ProductCreate(
-        name=name,
-        description=description,
-        category=category,
-        subcategory=subcategory,
-        price=price,
-        materials=materials_list,
-        available_colors=colors_list,
-        dimensions=dimensions,
-        stock=stock,
-        customizable=customizable,
-        production_time_days=production_time_days,
-        bulk_order_enabled=bulk_order_enabled,
-        min_bulk_quantity=min_bulk_quantity
-    )
+    # Créer le schema ProductCreate avec gestion des erreurs de validation
+    try:
+        product_data = ProductCreate(
+            name=name,
+            description=description,
+            category=category,
+            subcategory=subcategory,
+            price=float(price),  # Convertir Decimal en float pour la validation
+            materials=materials_list,
+            available_colors=colors_list,
+            dimensions=dimensions,
+            stock=stock,
+            customizable=customizable,
+            production_time_days=production_time_days,
+            bulk_order_enabled=bulk_order_enabled,
+            min_bulk_quantity=min_bulk_quantity
+        )
+    except Exception as e:
+        # Si c'est une ValidationError Pydantic, retourner un code 422
+        from pydantic import ValidationError
+        if isinstance(e, ValidationError):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(e)
+            )
+        raise
     
     # Upload des photos
     image_urls = []
@@ -302,7 +438,7 @@ async def update_product(
     production_time_days: Optional[int] = Form(None),
     bulk_order_enabled: Optional[bool] = Form(None),
     min_bulk_quantity: Optional[int] = Form(None),
-    status: Optional[str] = Form(None),
+    product_status: Optional[str] = Form(None, alias="status"),
     current_user: User = Depends(require_role([UserRole.ARTISAN])),
     db: Session = Depends(get_db)
 ):
@@ -318,7 +454,12 @@ async def update_product(
         )
     
     # Vérifier que l'utilisateur est le propriétaire ou admin
-    if product.artisan_id != current_user.id and current_user.role != UserRole.ADMIN:
+    # Normaliser les IDs pour la comparaison (pour compatibilité SQLite)
+    db_type = get_db_type(db)
+    product_artisan_id = id_to_string(product.artisan_id) if db_type == 'sqlite' else product.artisan_id
+    current_user_id = id_to_string(current_user.id) if db_type == 'sqlite' else current_user.id
+    
+    if product_artisan_id != current_user_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Vous n'avez pas la permission de modifier ce produit"
@@ -358,8 +499,8 @@ async def update_product(
         update_data["bulk_order_enabled"] = bulk_order_enabled
     if min_bulk_quantity is not None:
         update_data["min_bulk_quantity"] = min_bulk_quantity
-    if status is not None:
-        update_data["status"] = status
+    if product_status is not None:
+        update_data["status"] = product_status
     
     # Créer le ProductUpdate avec les données parsées
     product_update = ProductUpdate(**update_data)
@@ -388,7 +529,12 @@ async def delete_product(
         )
     
     # Vérifier que l'utilisateur est le propriétaire ou admin
-    if product.artisan_id != current_user.id and current_user.role != UserRole.ADMIN:
+    # Normaliser les IDs pour la comparaison (pour compatibilité SQLite)
+    db_type = get_db_type(db)
+    product_artisan_id = id_to_string(product.artisan_id) if db_type == 'sqlite' else product.artisan_id
+    current_user_id = id_to_string(current_user.id) if db_type == 'sqlite' else current_user.id
+    
+    if product_artisan_id != current_user_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Vous n'avez pas la permission de supprimer ce produit"
@@ -399,30 +545,85 @@ async def delete_product(
     return None
 
 
-@router.get("/categories/list", response_model=CategoriesResponse)
-async def get_categories(
+@router.get("/{product_id}/similar", response_model=ProductListResponse)
+async def get_similar_products(
+    product_id: UUID,
+    limit: int = Query(3, ge=1, le=20, description="Nombre de produits similaires"),
     db: Session = Depends(get_db)
 ):
     """
-    Liste des catégories avec leurs sous-catégories
+    Récupère des produits similaires à un produit donné
+    
+    - **product_id**: UUID du produit
+    - **limit**: Nombre de produits similaires à retourner (défaut: 3, max: 20)
     """
-    # Récupérer toutes les catégories principales (sans parent)
-    main_categories = db.query(Category).filter(
-        Category.parent_id.is_(None),
-        Category.is_active == True
-    ).all()
+    # Vérifier que le produit existe
+    product = product_crud.get_by_id(db, product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Produit non trouvé"
+        )
     
-    categories_out = []
-    for cat in main_categories:
-        # Récupérer les sous-catégories
-        subcategories = db.query(Category).filter(
-            Category.parent_id == cat.id,
-            Category.is_active == True
-        ).all()
-        
-        categories_out.append(CategoryOut(
-            name=cat.name,
-            subcategories=[sub.name for sub in subcategories]
-        ))
+    # Récupérer les produits similaires
+    similar_products = product_crud.get_similar_products(
+        db,
+        product_id=product_id,
+        limit=limit
+    )
     
-    return CategoriesResponse(categories=categories_out)
+    items = [_product_to_list_item(product, db) for product in similar_products]
+    
+    return ProductListResponse(
+        items=items,
+        total=len(items),
+        page=1,
+        pages=1,
+        limit=limit
+    )
+
+
+@router.post("/{product_id}/bulk-order-request", response_model=BulkOrderRequestOut, status_code=status.HTTP_201_CREATED)
+async def create_bulk_order_request(
+    product_id: UUID,
+    bulk_order: BulkOrderRequestIn,
+    db: Session = Depends(get_db)
+):
+    """
+    Crée une demande de commande en gros pour un produit
+    
+    - **product_id**: UUID du produit
+    - Calcule automatiquement les remises progressives selon la quantité
+    """
+    # Vérifier que le produit existe
+    product = product_crud.get_by_id(db, product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Produit non trouvé"
+        )
+    
+    # Vérifier que le produit autorise les commandes en gros
+    if not product.made_to_order:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ce produit n'accepte pas les commandes en gros"
+        )
+    
+    # Vérifier la quantité minimum
+    min_quantity = product.min_bulk_quantity if product.min_bulk_quantity else 5
+    if bulk_order.quantity < min_quantity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La quantité minimum pour une commande en gros est de {min_quantity} pièces"
+        )
+    
+    # Créer la demande de commande en gros
+    bulk_order_request = bulk_order_crud.create(
+        db,
+        product_id=product_id,
+        obj_in=bulk_order,
+        unit_price=product.price
+    )
+    
+    return bulk_order_request

@@ -142,6 +142,82 @@ class TestGetProduct:
         
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert "non trouvé" in response.json()["detail"].lower() or "not found" in response.json()["detail"].lower()
+    
+    def test_get_product_with_min_bulk_quantity(
+        self, client: TestClient, db: Session, created_product: Product
+    ):
+        """Test de récupération d'un produit avec min_bulk_quantity"""
+        # Mettre à jour le produit pour avoir min_bulk_quantity
+        from sqlalchemy import text
+        db.execute(
+            text("UPDATE products SET min_bulk_quantity = :min_bulk_quantity WHERE id = :id"),
+            {
+                "id": str(created_product.id),
+                "min_bulk_quantity": 10
+            }
+        )
+        db.commit()
+        
+        response = client.get(f"/api/v1/products/{created_product.id}")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert data["min_bulk_quantity"] == 10
+        assert data["bulk_order_enabled"] == True
+    
+    def test_get_product_with_subcategory(
+        self, client: TestClient, db: Session, created_artisan: User, test_category: Category
+    ):
+        """Test de récupération d'un produit avec sous-catégorie"""
+        from sqlalchemy import text
+        import uuid
+        
+        # Créer une sous-catégorie
+        subcategory_id = uuid.uuid4()
+        db.execute(
+            text("""
+                INSERT INTO categories (id, name, slug, parent_id, is_active, created_at, updated_at)
+                VALUES (:id, :name, :slug, :parent_id, :is_active, datetime('now'), datetime('now'))
+            """),
+            {
+                "id": str(subcategory_id),
+                "name": "Masques traditionnels",
+                "slug": "masques-traditionnels",
+                "parent_id": str(test_category.id),
+                "is_active": True
+            }
+        )
+        db.commit()
+        
+        # Créer un produit avec la sous-catégorie
+        product_id = uuid.uuid4()
+        db.execute(
+            text("""
+                INSERT INTO products (id, title, slug, description, price, category_id, artisan_id, stock_quantity, status, created_at, updated_at)
+                VALUES (:id, :title, :slug, :description, :price, :category_id, :artisan_id, :stock_quantity, :status, datetime('now'), datetime('now'))
+            """),
+            {
+                "id": str(product_id),
+                "title": "Masque avec sous-catégorie",
+                "slug": "masque-avec-sous-categorie",
+                "description": "Masque dans une sous-catégorie",
+                "price": 50000,
+                "category_id": str(subcategory_id),
+                "artisan_id": str(created_artisan.id),
+                "stock_quantity": 5,
+                "status": "published"
+            }
+        )
+        db.commit()
+        
+        response = client.get(f"/api/v1/products/{product_id}")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert data["category"] == test_category.name
+        assert data["subcategory"] == "Masques traditionnels"
 
 
 class TestCreateProduct:
@@ -227,6 +303,31 @@ class TestCreateProduct:
         )
         
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    
+    def test_create_product_with_min_bulk_quantity(
+        self, client: TestClient, db: Session, auth_headers_artisan: dict, test_product_data: dict
+    ):
+        """Test de création d'un produit avec min_bulk_quantity"""
+        form_data = test_product_data.copy()
+        form_data["min_bulk_quantity"] = "10"
+        
+        response = client.post(
+            "/api/v1/products",
+            headers=auth_headers_artisan,
+            data=form_data
+        )
+        
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        
+        assert data["min_bulk_quantity"] == 10
+        assert data["bulk_order_enabled"] == True
+        
+        # Vérifier dans la base de données
+        product = db.query(Product).filter(Product.title == test_product_data["name"]).first()
+        assert product is not None
+        assert product.min_bulk_quantity == 10
+        assert product.made_to_order == True
 
 
 class TestUpdateProduct:
@@ -279,6 +380,7 @@ class TestUpdateProduct:
     ):
         """Test de mise à jour d'un produit inexistant"""
         import uuid
+        from fastapi import status as http_status
         fake_id = uuid.uuid4()
         update_data = {"name": "Test"}
         
@@ -288,7 +390,30 @@ class TestUpdateProduct:
             data=update_data
         )
         
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.status_code == 404
+    
+    def test_update_product_min_bulk_quantity(
+        self, client: TestClient, db: Session, created_product: Product, auth_headers_artisan: dict
+    ):
+        """Test de mise à jour de min_bulk_quantity"""
+        update_data = {
+            "min_bulk_quantity": "15"
+        }
+        
+        response = client.patch(
+            f"/api/v1/products/{created_product.id}",
+            headers=auth_headers_artisan,
+            data=update_data
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert data["min_bulk_quantity"] == 15
+        
+        # Vérifier dans la base de données
+        db.refresh(created_product)
+        assert created_product.min_bulk_quantity == 15
 
 
 class TestDeleteProduct:
@@ -338,13 +463,13 @@ class TestDeleteProduct:
 
 
 class TestGetCategories:
-    """Tests pour GET /api/v1/products/categories/list"""
+    """Tests pour GET /api/v1/products/categories"""
     
     def test_get_categories_success(
         self, client: TestClient, db: Session, test_category: Category
     ):
         """Test de récupération de la liste des catégories"""
-        response = client.get("/api/v1/products/categories/list")
+        response = client.get("/api/v1/products/categories")
         
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -355,3 +480,139 @@ class TestGetCategories:
         # Vérifier que la catégorie de test est présente
         category_names = [cat["name"] for cat in data["categories"]]
         assert test_category.name in category_names
+    
+    def test_get_categories_with_subcategories(
+        self, client: TestClient, db: Session, test_category: Category
+    ):
+        """Test de récupération des catégories avec sous-catégories"""
+        from app.models.product import Category
+        from sqlalchemy import text
+        import uuid
+        
+        # Créer une sous-catégorie
+        subcategory_id = uuid.uuid4()
+        db.execute(
+            text("""
+                INSERT INTO categories (id, name, slug, parent_id, is_active, created_at, updated_at)
+                VALUES (:id, :name, :slug, :parent_id, :is_active, datetime('now'), datetime('now'))
+            """),
+            {
+                "id": str(subcategory_id),
+                "name": "Masques traditionnels",
+                "slug": "masques-traditionnels",
+                "parent_id": str(test_category.id),
+                "is_active": True
+            }
+        )
+        db.commit()
+        
+        response = client.get("/api/v1/products/categories")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Trouver la catégorie principale
+        main_category = next(
+            (cat for cat in data["categories"] if cat["name"] == test_category.name),
+            None
+        )
+        assert main_category is not None
+        assert "Masques traditionnels" in main_category["subcategories"]
+
+
+class TestGetSimilarProducts:
+    """Tests pour GET /api/v1/products/{product_id}/similar"""
+    
+    def test_get_similar_products_success(
+        self, client: TestClient, db: Session, created_product: Product, test_category: Category
+    ):
+        """Test de récupération de produits similaires"""
+        from sqlalchemy import text
+        import uuid
+        from app.models.user import User
+        
+        # Créer un autre produit dans la même catégorie
+        artisan = db.query(User).filter(User.role == "artisan").first()
+        similar_product_id = uuid.uuid4()
+        
+        db.execute(
+            text("""
+                INSERT INTO products (id, title, slug, description, price, category_id, artisan_id, stock_quantity, status, created_at, updated_at)
+                VALUES (:id, :title, :slug, :description, :price, :category_id, :artisan_id, :stock_quantity, :status, datetime('now'), datetime('now'))
+            """),
+            {
+                "id": str(similar_product_id),
+                "title": "Masque similaire",
+                "slug": "masque-similaire",
+                "description": "Autre masque traditionnel",
+                "price": 50000,
+                "category_id": str(test_category.id),
+                "artisan_id": str(artisan.id),
+                "stock_quantity": 5,
+                "status": "published"
+            }
+        )
+        db.commit()
+        
+        response = client.get(f"/api/v1/products/{created_product.id}/similar")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert "items" in data
+        assert "total" in data
+        assert data["total"] >= 1
+        assert len(data["items"]) >= 1
+    
+    def test_get_similar_products_not_found(
+        self, client: TestClient, db: Session
+    ):
+        """Test de récupération de produits similaires pour un produit inexistant"""
+        import uuid
+        fake_id = uuid.uuid4()
+        
+        response = client.get(f"/api/v1/products/{fake_id}/similar")
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+    
+    def test_get_similar_products_with_limit(
+        self, client: TestClient, db: Session, created_product: Product, test_category: Category
+    ):
+        """Test de récupération de produits similaires avec limite"""
+        from sqlalchemy import text
+        import uuid
+        from app.models.user import User
+        
+        # Créer plusieurs produits similaires
+        artisan = db.query(User).filter(User.role == "artisan").first()
+        for i in range(5):
+            product_id = uuid.uuid4()
+            db.execute(
+                text("""
+                    INSERT INTO products (id, title, slug, description, price, category_id, artisan_id, stock_quantity, status, created_at, updated_at)
+                    VALUES (:id, :title, :slug, :description, :price, :category_id, :artisan_id, :stock_quantity, :status, datetime('now'), datetime('now'))
+                """),
+                {
+                    "id": str(product_id),
+                    "title": f"Produit similaire {i}",
+                    "slug": f"produit-similaire-{i}",
+                    "description": f"Description {i}",
+                    "price": 40000 + i * 1000,
+                    "category_id": str(test_category.id),
+                    "artisan_id": str(artisan.id),
+                    "stock_quantity": 5,
+                    "status": "published"
+                }
+            )
+        db.commit()
+        
+        response = client.get(
+            f"/api/v1/products/{created_product.id}/similar",
+            params={"limit": 3}
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert len(data["items"]) <= 3
+        assert data["limit"] == 3

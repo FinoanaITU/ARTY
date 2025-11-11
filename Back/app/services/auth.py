@@ -439,8 +439,21 @@ class AuthService:
             return None
         
         # Mettre à jour la date de dernière connexion
-        user.last_login_at = datetime.utcnow()
-        db.commit()
+        # Vérifier si l'utilisateur est attaché à la session avant de le modifier
+        try:
+            user.last_login_at = datetime.utcnow()
+            db.commit()
+            # Refresh pour s'assurer que les changements sont persistés
+            try:
+                db.refresh(user)
+            except:
+                # Si refresh échoue (objet non attaché), ce n'est pas grave
+                pass
+        except Exception as e:
+            # En cas d'erreur, ne pas faire échouer l'authentification
+            # L'utilisateur peut quand même être authentifié même si la mise à jour de last_login_at échoue
+            print(f"Warning: Could not update last_login_at: {e}")
+            db.rollback()
         
         return user
     
@@ -486,15 +499,31 @@ class AuthService:
             raise ValueError("Token invalide")
         
         try:
-            user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
-            user = db.query(User).filter(User.id == user_uuid).first()
+            # Vérifier si on est en SQLite
+            is_sqlite = AuthService._is_sqlite(db)
+            
+            if is_sqlite:
+                # Pour SQLite, utiliser string directement
+                user = db.query(User).filter(User.id == user_id).first()
+            else:
+                # Pour PostgreSQL, convertir en UUID
+                user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+                user = db.query(User).filter(User.id == user_uuid).first()
+            
             if not user or not user.is_active:
                 raise ValueError("Utilisateur introuvable ou inactif")
             
             # Générer de nouveaux tokens
             return AuthService.generate_tokens(user)
         except (ValueError, TypeError, AttributeError) as e:
-            raise ValueError(f"Erreur lors du rafraîchissement: {str(e)}")
+            # En cas d'erreur, essayer avec string
+            try:
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user or not user.is_active:
+                    raise ValueError("Utilisateur introuvable ou inactif")
+                return AuthService.generate_tokens(user)
+            except:
+                raise ValueError(f"Erreur lors du rafraîchissement: {str(e)}")
     
     @staticmethod
     def get_current_user(db: Session, token: str) -> Optional[User]:
@@ -508,11 +537,25 @@ class AuthService:
             return None
         
         try:
-            user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
-            user = db.query(User).filter(User.id == user_uuid).first()
+            # Vérifier si on est en SQLite
+            is_sqlite = AuthService._is_sqlite(db)
+            
+            if is_sqlite:
+                # Pour SQLite, utiliser string directement
+                user = db.query(User).filter(User.id == user_id).first()
+            else:
+                # Pour PostgreSQL, convertir en UUID
+                user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+                user = db.query(User).filter(User.id == user_uuid).first()
+            
             return user if user and user.is_active else None
-        except (ValueError, TypeError, AttributeError):
-            return None
+        except (ValueError, TypeError, AttributeError) as e:
+            # En cas d'erreur, essayer avec string
+            try:
+                user = db.query(User).filter(User.id == user_id).first()
+                return user if user and user.is_active else None
+            except:
+                return None
 
 
 # Instance pour import facile

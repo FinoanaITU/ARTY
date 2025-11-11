@@ -11,7 +11,7 @@ from app.models.user import User, ArtisanProfile, ArtisanPhoto, UserSession, Soc
 
 # Import other models (optional, for Alembic autogenerate)
 try:
-    from app.models.product import Product, ProductVariant, ProductImage, Category
+    from app.models.product import Product, ProductVariant, ProductImage, Category, BulkOrderRequest, ProductFavorite
 except ImportError:
     pass
 

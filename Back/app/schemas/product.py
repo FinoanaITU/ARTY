@@ -1,7 +1,7 @@
 """
 Schemas Pydantic pour les produits artisanaux
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -24,7 +24,7 @@ class ProductCreate(BaseModel):
     description: str = Field(..., min_length=10, description="Description détaillée")
     category: str = Field(..., description="Catégorie du produit")
     subcategory: Optional[str] = Field(None, description="Sous-catégorie (optionnel)")
-    price: Decimal = Field(..., gt=0, description="Prix en Ariary")
+    price: float = Field(..., gt=0, description="Prix en Ariary")
     materials: List[str] = Field(default_factory=list, description="Liste des matériaux")
     available_colors: List[str] = Field(default_factory=list, description="Couleurs disponibles")
     dimensions: Optional[ProductDimensions] = None
@@ -57,7 +57,7 @@ class BulkOrderRequestIn(BaseModel):
     """Schema pour une demande de commande en gros"""
     quantity: int = Field(..., ge=1, description="Quantité demandée")
     customer_name: str = Field(..., min_length=2)
-    customer_email: str = Field(..., description="Email du client")
+    customer_email: EmailStr = Field(..., description="Email du client")
     customer_phone: str = Field(..., description="Téléphone du client")
     company: Optional[str] = None
     message: Optional[str] = None
@@ -81,7 +81,7 @@ class ProductOut(BaseModel):
     description: str
     category: str
     subcategory: Optional[str] = None
-    price: Decimal
+    price: float
     images: List[str] = Field(default_factory=list, description="URLs des images")
     artisan: ArtisanBasic
     materials: List[str] = Field(default_factory=list)
@@ -106,7 +106,7 @@ class ProductListItem(BaseModel):
     """Schema pour un produit dans une liste (version allégée)"""
     id: UUID
     name: str
-    price: Decimal
+    price: float
     images: List[str] = Field(default_factory=list)
     artisan: ArtisanBasic
     stock: int
@@ -140,3 +140,28 @@ class CategoryOut(BaseModel):
 class CategoriesResponse(BaseModel):
     """Schema de réponse pour les catégories"""
     categories: List[CategoryOut]
+
+
+class BulkOrderRequestOut(BaseModel):
+    """Schema de sortie pour une demande de commande en gros"""
+    id: UUID
+    product_id: UUID
+    quantity: int
+    unit_price: float
+    discount_percentage: float
+    discount_amount: float
+    total_amount: float
+    customer_name: str
+    customer_email: str
+    customer_phone: str
+    company: Optional[str] = None
+    message: Optional[str] = None
+    status: str
+    artisan_notes: Optional[str] = None
+    contacted_at: Optional[datetime] = None
+    confirmed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True

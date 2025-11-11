@@ -261,6 +261,7 @@ def _create_tables_manually(engine):
                 handmade BOOLEAN DEFAULT 1,
                 customizable BOOLEAN DEFAULT 0,
                 made_to_order BOOLEAN DEFAULT 0,
+                min_bulk_quantity INTEGER,
                 production_time_days INTEGER,
                 meta_title VARCHAR(160),
                 meta_description VARCHAR(320),
@@ -291,6 +292,31 @@ def _create_tables_manually(engine):
                 height INTEGER,
                 file_size INTEGER,
                 format VARCHAR(10),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (product_id) REFERENCES products(id)
+            )
+        """))
+        
+        # Table bulk_order_requests
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS bulk_order_requests (
+                id VARCHAR(36) PRIMARY KEY,
+                product_id VARCHAR(36) NOT NULL,
+                quantity INTEGER NOT NULL,
+                unit_price NUMERIC(10, 2) NOT NULL,
+                discount_percentage NUMERIC(5, 2) DEFAULT 0,
+                discount_amount NUMERIC(10, 2) DEFAULT 0,
+                total_amount NUMERIC(10, 2) NOT NULL,
+                customer_name VARCHAR(200) NOT NULL,
+                customer_email VARCHAR(255) NOT NULL,
+                customer_phone VARCHAR(50) NOT NULL,
+                company VARCHAR(200),
+                message TEXT,
+                status VARCHAR(20) DEFAULT 'pending',
+                artisan_notes TEXT,
+                contacted_at DATETIME,
+                confirmed_at DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (product_id) REFERENCES products(id)
@@ -382,25 +408,42 @@ def test_artisan_data():
 @pytest.fixture
 def created_buyer(db: Session, test_buyer_data: dict) -> User:
     """Crée un acheteur dans la base de données de test"""
-    # Utiliser directement les modèles SQLAlchemy
-    # Les IDs seront stockés comme UUID mais SQLite les convertira en string
-    user = User(
-        id=uuid.uuid4(),
-        email=test_buyer_data["email"],
-        password_hash=get_password_hash(test_buyer_data["password"]),
-        name=test_buyer_data["name"],
-        phone=test_buyer_data.get("phone"),
-        city=test_buyer_data["city"],
-        country=test_buyer_data["country"],
-        role=UserRole.BUYER,
-        buyer_type=BuyerType.PARTICULIER,
-        nationality=Nationality.LOCAL,
-        is_active=True,
-        is_email_verified=False
+    # Utiliser SQL brut pour SQLite pour éviter les problèmes d'ID
+    from sqlalchemy import text
+    
+    user_id = uuid.uuid4()
+    
+    # Créer l'utilisateur avec SQL brut
+    db.execute(
+        text("""
+            INSERT INTO users (id, email, password_hash, name, phone, city, country, role, buyer_type, nationality, is_active, is_email_verified, created_at, updated_at)
+            VALUES (:id, :email, :password_hash, :name, :phone, :city, :country, :role, :buyer_type, :nationality, :is_active, :is_email_verified, datetime('now'), datetime('now'))
+        """),
+        {
+            "id": str(user_id),
+            "email": test_buyer_data["email"],
+            "password_hash": get_password_hash(test_buyer_data["password"]),
+            "name": test_buyer_data["name"],
+            "phone": test_buyer_data.get("phone"),
+            "city": test_buyer_data["city"],
+            "country": test_buyer_data["country"],
+            "role": UserRole.BUYER.value,
+            "buyer_type": BuyerType.PARTICULIER.value,
+            "nationality": Nationality.LOCAL.value,
+            "is_active": True,
+            "is_email_verified": False
+        }
     )
-    db.add(user)
     db.commit()
-    db.refresh(user)
+    
+    # Récupérer l'utilisateur créé
+    user = db.query(User).filter(User.id == str(user_id)).first()
+    if not user:
+        # Essayer avec UUID directement
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+        except:
+            pass
     return user
 
 
@@ -461,8 +504,14 @@ def created_artisan(db: Session, test_artisan_data: dict) -> User:
     
     db.commit()
     
-    # Récupérer l'utilisateur créé
-    user = db.query(User).filter(User.id == user_id).first()
+    # Récupérer l'utilisateur créé (utiliser string pour SQLite)
+    user = db.query(User).filter(User.id == str(user_id)).first()
+    if not user:
+        # Essayer avec UUID directement
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+        except:
+            pass
     return user
 
 
@@ -560,8 +609,8 @@ def created_product(db: Session, created_artisan: User, test_category):
     # Créer le produit avec SQL brut
     db.execute(
         text("""
-            INSERT INTO products (id, title, slug, description, price, category_id, artisan_id, stock_quantity, materials, colors, customizable, production_time_days, made_to_order, status, created_at, updated_at)
-            VALUES (:id, :title, :slug, :description, :price, :category_id, :artisan_id, :stock_quantity, :materials, :colors, :customizable, :production_time_days, :made_to_order, :status, datetime('now'), datetime('now'))
+            INSERT INTO products (id, title, slug, description, price, category_id, artisan_id, stock_quantity, materials, colors, customizable, production_time_days, made_to_order, min_bulk_quantity, status, created_at, updated_at)
+            VALUES (:id, :title, :slug, :description, :price, :category_id, :artisan_id, :stock_quantity, :materials, :colors, :customizable, :production_time_days, :made_to_order, :min_bulk_quantity, :status, datetime('now'), datetime('now'))
         """),
         {
             "id": str(product_id),
@@ -577,6 +626,7 @@ def created_product(db: Session, created_artisan: User, test_category):
             "customizable": True,
             "production_time_days": 15,
             "made_to_order": True,
+            "min_bulk_quantity": 5,
             "status": "published"
         }
     )
