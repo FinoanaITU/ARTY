@@ -137,6 +137,38 @@ class TestBuyerRegistrationAPI:
         assert response.status_code == status.HTTP_201_CREATED
         user = db.query(User).filter(User.email == test_buyer_data["email"]).first()
         assert user.nationality == Nationality.FOREIGN
+    
+    def test_register_buyer_entreprise_without_company_name(
+        self, client: TestClient, test_buyer_data: dict
+    ):
+        """Test d'inscription entreprise sans company_name (doit échouer)"""
+        invalid_data = test_buyer_data.copy()
+        invalid_data["buyer_type"] = "entreprise"
+        invalid_data["company_name"] = None  # Manquant
+        invalid_data["siret"] = "12345678901234"
+        
+        response = client.post(
+            "/api/v1/auth/register/buyer",
+            json=invalid_data
+        )
+        
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    
+    def test_register_buyer_entreprise_with_empty_company_name(
+        self, client: TestClient, test_buyer_data: dict
+    ):
+        """Test d'inscription entreprise avec company_name vide (doit échouer)"""
+        invalid_data = test_buyer_data.copy()
+        invalid_data["buyer_type"] = "entreprise"
+        invalid_data["company_name"] = "   "  # Espaces seulement
+        invalid_data["siret"] = "12345678901234"
+        
+        response = client.post(
+            "/api/v1/auth/register/buyer",
+            json=invalid_data
+        )
+        
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 class TestArtisanRegistrationAPI:

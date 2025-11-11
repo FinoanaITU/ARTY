@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -8,25 +8,32 @@ from app.models.user import UserRole, BuyerType, Nationality, ProfileStatus
 # ============ INPUT SCHEMAS ============
 
 class BuyerRegisterIn(BaseModel):
-    """Schema pour l'inscription d'un acheteur"""
+    """
+    Schema pour l'inscription d'un acheteur (particulier ou entreprise)
+    
+    Formulaire multi-étapes pour particuliers et entreprises:
+    - Informations: nom, email, password, téléphone, adresse, ville, pays
+    - Pour entreprises: nom entreprise, SIRET
+    - Détection automatique du type de tarif (local/étranger) basée sur le pays
+    """
     email: EmailStr
     password: str = Field(..., min_length=6, description="Mot de passe minimum 6 caractères")
     name: str = Field(..., min_length=2, max_length=200)
     phone: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
-    country: str = Field(default="madagascar")
+    country: str = Field(default="madagascar", description="Pays de l'acheteur (détermine la nationalité)")
     buyer_type: BuyerType = BuyerType.PARTICULIER
     company_name: Optional[str] = None
     siret: Optional[str] = None
     
-    @validator('company_name', 'siret')
-    def validate_company_fields(cls, v, values):
-        """Si buyer_type est entreprise, company_name est requis"""
-        if 'buyer_type' in values and values['buyer_type'] == BuyerType.ENTREPRISE:
-            if not v:
+    @model_validator(mode='after')
+    def validate_company_fields(self):
+        """Valide que les champs entreprise sont remplis si buyer_type est ENTREPRISE"""
+        if self.buyer_type == BuyerType.ENTREPRISE:
+            if not self.company_name or not self.company_name.strip():
                 raise ValueError("company_name est requis pour les entreprises")
-        return v
+        return self
 
 
 class ArtisanRegisterIn(BaseModel):
@@ -50,13 +57,13 @@ class ArtisanRegisterIn(BaseModel):
     stat: Optional[str] = None
     documents_not_available: bool = False
     
-    @validator('offerings')
-    def validate_offerings(cls, v):
+    @model_validator(mode='after')
+    def validate_offerings(self):
         """Valider que offerings contient des valeurs valides"""
         valid_values = ['products', 'workshops', 'both']
-        if not v or not all(item in valid_values for item in v):
+        if not self.offerings or not all(item in valid_values for item in self.offerings):
             raise ValueError(f"offerings doit contenir au moins un élément parmi: {valid_values}")
-        return v
+        return self
 
 
 class LoginIn(BaseModel):

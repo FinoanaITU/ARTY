@@ -73,6 +73,40 @@ class TestBuyerRegisterIn:
                 country="madagascar",
                 buyer_type="particulier"
             )
+    
+    def test_entreprise_without_company_name(self):
+        """Test qu'une entreprise sans company_name lève une erreur"""
+        with pytest.raises(ValidationError) as exc_info:
+            BuyerRegisterIn(
+                email="company@example.com",
+                password="testpassword123",
+                name="Test Company",
+                city="Antananarivo",
+                country="madagascar",
+                buyer_type="entreprise",
+                # company_name manquant
+                siret="12345678901234"
+            )
+        # Vérifier que l'erreur mentionne company_name
+        error_str = str(exc_info.value)
+        assert "company_name" in error_str.lower() or "requis" in error_str.lower()
+    
+    def test_entreprise_with_empty_company_name(self):
+        """Test qu'une entreprise avec company_name vide lève une erreur"""
+        with pytest.raises(ValidationError) as exc_info:
+            BuyerRegisterIn(
+                email="company@example.com",
+                password="testpassword123",
+                name="Test Company",
+                city="Antananarivo",
+                country="madagascar",
+                buyer_type="entreprise",
+                company_name="   ",  # Espaces seulement
+                siret="12345678901234"
+            )
+        # Vérifier que l'erreur mentionne company_name
+        error_str = str(exc_info.value)
+        assert "company_name" in error_str.lower() or "requis" in error_str.lower()
 
 
 class TestArtisanRegisterIn:
