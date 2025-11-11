@@ -80,7 +80,7 @@ class AuthService:
             return False
     
     @staticmethod
-    def create_artisan(
+    async def create_artisan(
         db: Session, 
         artisan_data: ArtisanRegisterIn,
         photos: Optional[list] = None
@@ -353,8 +353,8 @@ class AuthService:
             storage_service = StorageService()
             for index, photo_file in enumerate(photos[:5]):  # Max 5 photos
                 try:
-                    # Upload la photo
-                    photo_url = storage_service.upload_file(
+                    # Upload la photo (await car upload_file est async)
+                    photo_url = await storage_service.upload_file(
                         file=photo_file,
                         folder="artisans",
                         allowed_extensions=["jpg", "jpeg", "png", "webp"]
@@ -386,7 +386,11 @@ class AuthService:
                         db.add(artisan_photo)
                 except Exception as e:
                     # Log l'erreur mais continue
+                    import traceback
                     print(f"Erreur lors de l'upload de la photo {index}: {e}")
+                    traceback.print_exc()
+                    # Ne pas échouer complètement si une photo ne peut pas être uploadée
+                    continue
         
         # Commit final pour les photos (si nécessaire)
         # Note: Pour SQLite, les objets user et artisan_profile ont déjà été récupérés/créés plus haut

@@ -146,7 +146,7 @@ async def register_artisan(
         
         # Créer l'utilisateur et le profil
         photos_list = photos[:5] if photos else None  # Max 5 photos
-        user, artisan_profile = auth_service.create_artisan(db, artisan_data, photos_list)
+        user, artisan_profile = await auth_service.create_artisan(db, artisan_data, photos_list)
         
         tokens = auth_service.generate_tokens(user)
         
