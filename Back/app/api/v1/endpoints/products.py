@@ -402,7 +402,8 @@ async def create_product(
         storage_service = StorageService()
         for photo_file in photos[:10]:  # Max 10 photos
             try:
-                photo_url = storage_service.upload_file(
+                # upload_file is async - await so we get the URL string, not a coroutine
+                photo_url = await storage_service.upload_file(
                     file=photo_file,
                     folder="products",
                     allowed_extensions=["jpg", "jpeg", "png", "webp"]
