@@ -278,7 +278,9 @@ async def get_products(
         limit=limit
     )
     
-    items = [_product_to_list_item(product, db, request) for product in products]
+    # Return full product objects so the frontend's edit modal can consume
+    # all expected fields (materials, available_colors, dimensions, etc.)
+    items = [_product_to_out(product, db, request) for product in products]
     pages = (total + limit - 1) // limit if total > 0 else 1
     
     return ProductListResponse(

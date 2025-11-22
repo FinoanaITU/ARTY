@@ -121,7 +121,9 @@ class ProductListItem(BaseModel):
 
 class ProductListResponse(BaseModel):
     """Schema de réponse pour la liste paginée de produits"""
-    items: List[ProductListItem]
+    # Return full ProductOut items so frontends that open an edit modal
+    # (which expects all product fields) receive complete objects.
+    items: List[ProductOut]
     total: int
     page: int
     pages: int
