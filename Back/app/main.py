@@ -8,6 +8,8 @@ from app.core.database import engine
 from app.models.base import BaseModel
 # Import user models to ensure they are registered
 from app.models.user import User, ArtisanProfile, ArtisanPhoto, UserSession, SocialAccount
+from fastapi.staticfiles import StaticFiles
+import os
 
 
 @asynccontextmanager
@@ -42,6 +44,13 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan
 )
+
+# Mount static files so uploaded files under `static/uploads` are served
+# Determine the absolute static directory based on project layout
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+static_dir = os.path.join(base_dir, 'static')
+if os.path.isdir(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # CORS middleware
 app.add_middleware(
@@ -83,4 +92,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=settings.DEBUG
-    ) 
+    )

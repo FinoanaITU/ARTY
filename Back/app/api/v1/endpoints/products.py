@@ -1,7 +1,7 @@
 """
 Endpoints pour les produits artisanaux
 """
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Query
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Query, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
@@ -27,17 +27,29 @@ from app.schemas.product import (
 from app.services.storage import StorageService
 from app.crud.bulk_order import bulk_order_crud
 from app.utils.id_utils import normalize_id, id_to_string, get_db_type
+from app.core.config import settings
 
 
 router = APIRouter()
 
 
-def _product_to_out(product: Product, db: Session) -> ProductOut:
+def _product_to_out(product: Product, db: Session, request: Request) -> ProductOut:
     """Convertit un Product en ProductOut"""
     from uuid import UUID as UUIDType
     
     # Récupérer les images (le CRUD gère la conversion d'ID)
-    images = [img.image_url for img in product_crud.get_images(db, product.id)]
+    # Build absolute URLs for images so frontend can load them directly
+    raw_images = [img.image_url for img in product_crud.get_images(db, product.id)]
+    upload_prefix = settings.UPLOAD_DIR.lstrip('./')
+    images = []
+    for img_path in raw_images:
+        if not img_path:
+            continue
+        if img_path.startswith('http'):
+            images.append(img_path)
+        else:
+            # request.base_url includes scheme+host+port
+            images.append(f"{str(request.base_url).rstrip('/')}/{upload_prefix}/{img_path}")
     
     # Récupérer l'artisan
     # Le GUID type devrait convertir automatiquement, mais on s'assure que c'est un UUID
@@ -138,12 +150,21 @@ def _product_to_out(product: Product, db: Session) -> ProductOut:
     )
 
 
-def _product_to_list_item(product: Product, db: Session) -> ProductListItem:
+def _product_to_list_item(product: Product, db: Session, request: Request) -> ProductListItem:
     """Convertit un Product en ProductListItem"""
     from uuid import UUID as UUIDType
     
     # Récupérer les images (seulement la première pour la liste, le CRUD gère la conversion d'ID)
-    images = [img.image_url for img in product_crud.get_images(db, product.id)[:1]]
+    raw_images = [img.image_url for img in product_crud.get_images(db, product.id)[:1]]
+    upload_prefix = settings.UPLOAD_DIR.lstrip('./')
+    images = []
+    for img_path in raw_images:
+        if not img_path:
+            continue
+        if img_path.startswith('http'):
+            images.append(img_path)
+        else:
+            images.append(f"{str(request.base_url).rstrip('/')}/{upload_prefix}/{img_path}")
     
     # Récupérer l'artisan
     artisan = db.query(User).filter(User.id == product.artisan_id).first()
@@ -200,7 +221,8 @@ async def get_products(
     in_stock: Optional[bool] = Query(None, description="Filtrer par disponibilité"),
     page: int = Query(1, ge=1, description="Numéro de page"),
     limit: int = Query(20, ge=1, le=100, description="Nombre d'éléments par page"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    request: Request = None
 ):
     """
     Liste des produits avec filtres et pagination
@@ -229,7 +251,7 @@ async def get_products(
         limit=limit
     )
     
-    items = [_product_to_list_item(product, db) for product in products]
+    items = [_product_to_list_item(product, db, request) for product in products]
     pages = (total + limit - 1) // limit if total > 0 else 1
     
     return ProductListResponse(
@@ -275,7 +297,8 @@ async def get_categories(
 @router.get("/{product_id}", response_model=ProductOut)
 async def get_product(
     product_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    request: Request = None
 ):
     """
     Détails complets d'un produit
@@ -293,7 +316,7 @@ async def get_product(
     # Vérifier que le produit est publié (sauf si l'utilisateur est l'artisan ou admin)
     # TODO: Ajouter cette vérification avec get_current_active_user optionnel
     
-    return _product_to_out(product, db)
+    return _product_to_out(product, db, request)
 
 
 @router.post("/", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
@@ -316,7 +339,8 @@ async def create_product(
     dimensions_weight: Optional[float] = Form(None),
     photos: Optional[List[UploadFile]] = File(None),
     current_user: User = Depends(require_role([UserRole.ARTISAN])),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    request: Request = None
 ):
     """
     Crée un nouveau produit (Artisan seulement)
@@ -421,7 +445,7 @@ async def create_product(
         images=image_urls
     )
     
-    return _product_to_out(product, db)
+    return _product_to_out(product, db, request)
 
 
 @router.patch("/{product_id}", response_model=ProductOut)

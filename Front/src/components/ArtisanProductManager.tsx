@@ -155,6 +155,14 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     setEditingProduct(product);
     setSelectedCategory(product.category);
     setSelectedSubcategory(product.subcategory || '');
+    // Normalize any returned image URLs to absolute URLs for the dev server
+    const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+    const normalizedImages = (product.images || []).map(img => {
+      if (!img) return img;
+      if (img.startsWith('http')) return img;
+      return `${backendBase}${img.startsWith('/') ? '' : '/'}${img}`;
+    });
+
     setFormData({
       name: product.name,
       description: product.description,
@@ -170,7 +178,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       bulk_order_enabled: product.bulk_order_enabled || false,
       min_bulk_quantity: product.min_bulk_quantity || 0
     });
-    setImagePreviews(product.images || []);
+    setImagePreviews(normalizedImages || []);
     setIsCreateModalOpen(true);
   };
 
