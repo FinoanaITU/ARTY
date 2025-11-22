@@ -111,14 +111,23 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       return;
     }
 
+    // Normalize numeric fields that may be temporarily empty while typing
+    const parsedPrice = (formData as any).price === '' ? 0 : Number((formData as any).price);
+    const parsedStock = (formData as any).stock === '' ? 0 : Number((formData as any).stock);
+    const parsedProductionTime = (formData as any).productionTime === '' ? 1 : Number((formData as any).productionTime);
+    const parsedMinBulk = (formData as any).min_bulk_quantity === '' ? 0 : Number((formData as any).min_bulk_quantity);
+
     const productData = {
       ...formData,
+      price: parsedPrice,
+      stock: parsedStock,
+      productionTime: parsedProductionTime,
+      min_bulk_quantity: formData.bulk_order_enabled && parsedMinBulk > 0 ? parsedMinBulk : undefined,
       category: selectedCategory,
       subcategory: selectedSubcategory || undefined,
       materials: formData.materials.filter(mat => mat.trim() !== ''),
       availableColors: formData.availableColors.filter(color => color.trim() !== ''),
-      dimensions: Object.values(formData.dimensions).some(v => v > 0) ? formData.dimensions : undefined,
-      min_bulk_quantity: formData.bulk_order_enabled && formData.min_bulk_quantity > 0 ? formData.min_bulk_quantity : undefined
+      dimensions: Object.values(formData.dimensions).some(v => v > 0) ? formData.dimensions : undefined
     };
 
     try {
@@ -146,7 +155,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       price: product.price,
       materials: product.materials.length > 0 ? product.materials : [''],
       availableColors: product.available_colors?.length > 0 ? product.available_colors : [''],
-      dimensions: product.dimensions || { length: 0, width: 0, height: 0, weight: 0 },
+      dimensions: (product.dimensions as any) || { length: 0, width: 0, height: 0, weight: 0 },
       stock: product.stock,
       customizable: product.customizable || false,
       productionTime: product.production_time_days,
@@ -313,7 +322,20 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                     type="number"
                     min="0"
                     value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
+                    onFocus={() => {
+                      if (formData.price === 0) {
+                        setFormData(prev => ({ ...prev, price: '' as any }));
+                      }
+                    }}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFormData(prev => ({ ...prev, price: v === '' ? '' as any : parseInt(v) }));
+                    }}
+                    onBlur={() => {
+                      if ((formData as any).price === '') {
+                        setFormData(prev => ({ ...prev, price: 0 }));
+                      }
+                    }}
                   />
                 </div>
                 <div>
@@ -323,7 +345,20 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                     type="number"
                     min="0"
                     value={formData.stock}
-                    onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                    onFocus={() => {
+                      if (formData.stock === 0) {
+                        setFormData(prev => ({ ...prev, stock: '' as any }));
+                      }
+                    }}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFormData(prev => ({ ...prev, stock: v === '' ? '' as any : parseInt(v) }));
+                    }}
+                    onBlur={() => {
+                      if ((formData as any).stock === '') {
+                        setFormData(prev => ({ ...prev, stock: 0 }));
+                      }
+                    }}
                   />
                 </div>
                 <div>
@@ -333,7 +368,20 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                     type="number"
                     min="1"
                     value={formData.productionTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, productionTime: parseInt(e.target.value) || 1 }))}
+                    onFocus={() => {
+                      if (formData.productionTime === 0) {
+                        setFormData(prev => ({ ...prev, productionTime: '' as any }));
+                      }
+                    }}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFormData(prev => ({ ...prev, productionTime: v === '' ? '' as any : parseInt(v) }));
+                    }}
+                    onBlur={() => {
+                      if ((formData as any).productionTime === '') {
+                        setFormData(prev => ({ ...prev, productionTime: 1 }));
+                      }
+                    }}
                   />
                 </div>
               </div>

@@ -21,7 +21,7 @@ class ProductDimensions(BaseModel):
 class ProductCreate(BaseModel):
     """Schema pour la création d'un produit"""
     name: str = Field(..., min_length=1, max_length=200, description="Nom du produit")
-    description: str = Field(..., min_length=10, description="Description détaillée")
+    description: str = Field(..., min_length=0, description="Description détaillée")
     category: str = Field(..., description="Catégorie du produit")
     subcategory: Optional[str] = Field(None, description="Sous-catégorie (optionnel)")
     price: float = Field(..., gt=0, description="Prix en Ariary")
