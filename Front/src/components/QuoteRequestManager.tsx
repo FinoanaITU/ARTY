@@ -284,7 +284,9 @@ export const QuoteRequestManager: React.FC<QuoteRequestManagerProps> = ({
                 id="finalPrice"
                 type="number"
                 value={finalPrice}
+                onFocus={() => { if (finalPrice === '0') setFinalPrice(''); }}
                 onChange={(e) => setFinalPrice(e.target.value)}
+                onBlur={() => { if (finalPrice === '') setFinalPrice('0'); }}
                 placeholder="Entrez le prix final"
               />
             </div>

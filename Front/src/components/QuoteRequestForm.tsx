@@ -335,6 +335,14 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
               min="1"
               max="50"
               {...register('nbPersonnes', { valueAsNumber: true })}
+              onFocus={() => {
+                const current = watch('nbPersonnes');
+                if (current === 1) setValue('nbPersonnes', '' as any);
+              }}
+              onBlur={() => {
+                const current = watch('nbPersonnes');
+                if (current === '' || current === undefined || Number(current) < 1) setValue('nbPersonnes', 1);
+              }}
               className="w-24"
             />
             <span className="text-sm text-gray-500">personnes</span>
@@ -666,6 +674,14 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
                 min="1"
                 max="100"
                 {...register('nbPersonnes', { valueAsNumber: true })}
+                onFocus={() => {
+                  const current = watch('nbPersonnes');
+                  if (current === 1) setValue('nbPersonnes', '' as any);
+                }}
+                onBlur={() => {
+                  const current = watch('nbPersonnes');
+                  if (current === '' || current === undefined || Number(current) < 1) setValue('nbPersonnes', 1);
+                }}
                 className="w-24"
               />
               <span className="text-sm text-gray-500">personnes</span>

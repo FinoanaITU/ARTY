@@ -285,6 +285,18 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
                 min="1"
                 max={isPrivate ? (privatizationOption?.maxParticipants || 50) : maxParticipants}
                 {...register('participants', { valueAsNumber: true })}
+                onFocus={() => {
+                  if (participants === 1) {
+                    setValue('participants', '' as any);
+                    // participants is from watch(); no local state to set here
+                  }
+                }}
+                onBlur={() => {
+                  const current = watch('participants');
+                  if (current === '' || current === undefined || Number(current) < 1) {
+                    setValue('participants', 1);
+                  }
+                }}
                 className="w-24"
               />
               <span className="text-sm text-gray-500">

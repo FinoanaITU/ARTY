@@ -247,10 +247,25 @@ const WorkshopSubscriptionForm = ({ workshop, onCancel }: WorkshopSubscriptionFo
                 min="1"
                 max={Math.min(workshop.maxParticipants, subscription?.creditsRemaining || 0)}
                 {...register('participants', { valueAsNumber: true })}
+                onFocus={() => {
+                  const current = watch('participants');
+                  if (current === 1) {
+                    setValue('participants', '' as any);
+                    setParticipants('' as any);
+                  }
+                }}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value) || 1;
-                  setValue('participants', value);
-                  setParticipants(value);
+                  const v = e.target.value;
+                  const value = v === '' ? '' as any : (parseInt(v) || 1);
+                  setValue('participants', value as any);
+                  setParticipants(value as any);
+                }}
+                onBlur={() => {
+                  const current = watch('participants');
+                  if (current === '' || current === undefined || Number(current) < 1) {
+                    setValue('participants', 1);
+                    setParticipants(1);
+                  }
                 }}
               />
               <p className="text-sm text-muted-foreground mt-1">

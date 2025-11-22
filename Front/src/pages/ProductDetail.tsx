@@ -101,20 +101,21 @@ const ProductDetail = () => {
       toast.error('Ce produit est en rupture de stock');
       return;
     }
-    
-    if (quantity > product.stock) {
+    const q = Number(quantity) || 1;
+
+    if (q > product.stock) {
       toast.error(`Quantité disponible: ${product.stock}`);
       setQuantity(product.stock);
       return;
     }
-    
+
     addItem({
       type: 'product',
       productId: product.id,
       name: product.name,
       artisan: product.artisan.name,
       price: selectedPriceVariation?.discountedPrice || product.price,
-      quantity,
+      quantity: q,
       image: product.images && product.images.length > 0 ? product.images[0] : '',
       priceVariation: selectedPriceVariation || undefined
     });
@@ -293,17 +294,20 @@ const ProductDetail = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        onClick={() => setQuantity(Math.max(1, Number(quantity) - 1))}
                       >
                         -
                       </Button>
                       <Input 
                         type="number" 
-                        value={quantity} 
+                        value={quantity as any} 
+                        onFocus={() => { if (Number(quantity) === 1) setQuantity('' as any); }}
                         onChange={(e) => {
-                          const val = Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1));
-                          setQuantity(val);
+                          const v = e.target.value;
+                          const val = v === '' ? '' as any : Math.max(1, Math.min(product.stock, parseInt(v) || 1));
+                          setQuantity(val as any);
                         }}
+                        onBlur={() => { if ((quantity as any) === '') setQuantity(1); }}
                         className="w-20 text-center"
                         min="1"
                         max={product.stock}
@@ -311,8 +315,8 @@ const ProductDetail = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                        disabled={quantity >= product.stock}
+                        onClick={() => setQuantity(Math.min(product.stock, Number(quantity) + 1))}
+                        disabled={Number(quantity) >= product.stock}
                       >
                         +
                       </Button>

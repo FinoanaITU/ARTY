@@ -117,6 +117,14 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     const parsedProductionTime = (formData as any).productionTime === '' ? 1 : Number((formData as any).productionTime);
     const parsedMinBulk = (formData as any).min_bulk_quantity === '' ? 0 : Number((formData as any).min_bulk_quantity);
 
+    // Parse dimensions (allow empty while typing -> coerce to numbers here)
+    const parsedDimensions = {
+      length: Number((formData.dimensions as any).length) || 0,
+      width: Number((formData.dimensions as any).width) || 0,
+      height: Number((formData.dimensions as any).height) || 0,
+      weight: Number((formData.dimensions as any).weight) || 0
+    };
+
     const productData = {
       ...formData,
       price: parsedPrice,
@@ -127,7 +135,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       subcategory: selectedSubcategory || undefined,
       materials: formData.materials.filter(mat => mat.trim() !== ''),
       availableColors: formData.availableColors.filter(color => color.trim() !== ''),
-      dimensions: Object.values(formData.dimensions).some(v => v > 0) ? formData.dimensions : undefined
+      dimensions: Object.values(parsedDimensions).some(v => v > 0) ? parsedDimensions : undefined
     };
 
     try {
@@ -497,11 +505,18 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                       id="length"
                       type="number"
                       min="0"
-                      value={formData.dimensions.length}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dimensions: { ...prev.dimensions, length: parseFloat(e.target.value) || 0 }
-                      }))}
+                      value={(formData as any).dimensions.length}
+                      onFocus={() => {
+                        if ((formData as any).dimensions.length === 0) {
+                          setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, length: '' } as any }));
+                        }
+                      }}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, length: e.target.value } as any }))}
+                      onBlur={() => {
+                        if ((formData as any).dimensions.length === '') {
+                          setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, length: 0 } as any }));
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -510,11 +525,18 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                       id="width"
                       type="number"
                       min="0"
-                      value={formData.dimensions.width}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dimensions: { ...prev.dimensions, width: parseFloat(e.target.value) || 0 }
-                      }))}
+                      value={(formData as any).dimensions.width}
+                      onFocus={() => {
+                        if ((formData as any).dimensions.width === 0) {
+                          setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, width: '' } as any }));
+                        }
+                      }}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, width: e.target.value } as any }))}
+                      onBlur={() => {
+                        if ((formData as any).dimensions.width === '') {
+                          setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, width: 0 } as any }));
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -523,11 +545,18 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                       id="height"
                       type="number"
                       min="0"
-                      value={formData.dimensions.height}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dimensions: { ...prev.dimensions, height: parseFloat(e.target.value) || 0 }
-                      }))}
+                      value={(formData as any).dimensions.height}
+                      onFocus={() => {
+                        if ((formData as any).dimensions.height === 0) {
+                          setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, height: '' } as any }));
+                        }
+                      }}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, height: e.target.value } as any }))}
+                      onBlur={() => {
+                        if ((formData as any).dimensions.height === '') {
+                          setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, height: 0 } as any }));
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -536,11 +565,18 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                       id="weight"
                       type="number"
                       min="0"
-                      value={formData.dimensions.weight}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dimensions: { ...prev.dimensions, weight: parseFloat(e.target.value) || 0 }
-                      }))}
+                      value={(formData as any).dimensions.weight}
+                      onFocus={() => {
+                        if ((formData as any).dimensions.weight === 0) {
+                          setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, weight: '' } as any }));
+                        }
+                      }}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, weight: e.target.value } as any }))}
+                      onBlur={() => {
+                        if ((formData as any).dimensions.weight === '') {
+                          setFormData(prev => ({ ...prev, dimensions: { ...prev.dimensions, weight: 0 } as any }));
+                        }
+                      }}
                     />
                   </div>
                 </div>

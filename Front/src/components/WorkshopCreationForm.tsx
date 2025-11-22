@@ -459,8 +459,10 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                   min="0.5"
                   step="0.5"
                   max="12"
-                  value={formData.duration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, duration: parseFloat(e.target.value) || 0.5 }))}
+                  value={formData.duration as any}
+                  onFocus={() => { if (formData.duration === 0.5) setFormData(prev => ({ ...prev, duration: '' as any })); }}
+                  onChange={(e) => { const v = e.target.value; setFormData(prev => ({ ...prev, duration: v === '' ? '' as any : parseFloat(v) })); }}
+                  onBlur={() => { if ((formData.duration as any) === '') setFormData(prev => ({ ...prev, duration: 0.5 })); }}
                 />
               </div>
 
@@ -471,11 +473,10 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                     id="basePrice"
                     type="number"
                     min="0"
-                    value={formData.pricing.basePrice}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      pricing: { ...prev.pricing, basePrice: parseInt(e.target.value) || 0 }
-                    }))}
+                    value={formData.pricing.basePrice as any}
+                    onFocus={() => { if (formData.pricing.basePrice === 0) setFormData(prev => ({ ...prev, pricing: { ...prev.pricing, basePrice: '' as any } })); }}
+                    onChange={(e) => { const v = e.target.value; setFormData(prev => ({ ...prev, pricing: { ...prev.pricing, basePrice: v === '' ? '' as any : parseInt(v) } })); }}
+                    onBlur={() => { if ((formData.pricing.basePrice as any) === '') setFormData(prev => ({ ...prev, pricing: { ...prev.pricing, basePrice: 0 } })); }}
                   />
                 </div>
                 <div>
@@ -484,11 +485,10 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                     id="foreignPrice"
                     type="number"
                     min="0"
-                    value={formData.pricing.foreignPrice || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      pricing: { ...prev.pricing, foreignPrice: parseInt(e.target.value) || undefined }
-                    }))}
+                    value={formData.pricing.foreignPrice as any || ''}
+                    onFocus={() => { if (!formData.pricing.foreignPrice) setFormData(prev => ({ ...prev, pricing: { ...prev.pricing, foreignPrice: '' as any } })); }}
+                    onChange={(e) => { const v = e.target.value; setFormData(prev => ({ ...prev, pricing: { ...prev.pricing, foreignPrice: v === '' ? '' as any : parseInt(v) } })); }}
+                    onBlur={() => { if ((formData.pricing.foreignPrice as any) === '') setFormData(prev => ({ ...prev, pricing: { ...prev.pricing, foreignPrice: undefined } })); }}
                   />
                 </div>
               </div>
@@ -635,11 +635,10 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                     type="number"
                     min="0"
                     max="100"
-                    value={formData.importantInfo.minimumAge}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      importantInfo: { ...prev.importantInfo, minimumAge: parseInt(e.target.value) || 0 }
-                    }))}
+                    value={formData.importantInfo.minimumAge as any}
+                    onFocus={() => { if (formData.importantInfo.minimumAge === 0) setFormData(prev => ({ ...prev, importantInfo: { ...prev.importantInfo, minimumAge: '' as any } })); }}
+                    onChange={(e) => { const v = e.target.value; setFormData(prev => ({ ...prev, importantInfo: { ...prev.importantInfo, minimumAge: v === '' ? '' as any : parseInt(v) } })); }}
+                    onBlur={() => { if ((formData.importantInfo.minimumAge as any) === '') setFormData(prev => ({ ...prev, importantInfo: { ...prev.importantInfo, minimumAge: 0 } })); }}
                   />
                 </div>
                 <div>

@@ -309,7 +309,9 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
                         id="payment-amount"
                         type="number"
                         value={newPaymentAmount}
+                        onFocus={() => { if (newPaymentAmount === '0') setNewPaymentAmount(''); }}
                         onChange={(e) => setNewPaymentAmount(e.target.value)}
+                        onBlur={() => { if (newPaymentAmount === '') setNewPaymentAmount('0'); }}
                         placeholder="Montant en Ar"
                         max={selectedPayment.remainingAmount}
                       />

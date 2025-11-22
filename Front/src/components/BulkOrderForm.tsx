@@ -22,7 +22,7 @@ interface BulkOrderFormProps {
 }
 
 const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
-  const [quantity, setQuantity] = useState(product.minBulkQuantity || 5);
+  const [quantity, setQuantity] = useState<number | string>(product.minBulkQuantity || 5);
   const [loading, setLoading] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -119,8 +119,21 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
                 </label>
                 <Input
                   type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(product.minBulkQuantity || 5, parseInt(e.target.value) || 0))}
+                  value={quantity as any}
+                  onFocus={() => {
+                    if (Number(quantity) === (product.minBulkQuantity || 5)) {
+                      setQuantity('' as any);
+                    }
+                  }}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setQuantity(v === '' ? '' as any : Math.max(product.minBulkQuantity || 5, parseInt(v) || 0));
+                  }}
+                  onBlur={() => {
+                    if ((quantity as any) === '') {
+                      setQuantity(product.minBulkQuantity || 5);
+                    }
+                  }}
                   min={product.minBulkQuantity || 5}
                 />
               </div>

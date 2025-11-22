@@ -292,8 +292,17 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                       type="number"
                       min="1"
                       max="8"
-                      value={formData.duration}
-                      onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
+                      value={formData.duration as any}
+                      onFocus={() => {
+                        if (formData.duration === 1) setFormData(prev => ({ ...prev, duration: '' as any }));
+                      }}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setFormData(prev => ({ ...prev, duration: v === '' ? '' as any : parseInt(v) }));
+                      }}
+                      onBlur={() => {
+                        if ((formData.duration as any) === '') setFormData(prev => ({ ...prev, duration: 1 }));
+                      }}
                     />
                   </div>
                   <div>
@@ -302,8 +311,17 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                       id="maxParticipants"
                       type="number"
                       min="1"
-                      value={formData.maxParticipants}
-                      onChange={(e) => setFormData(prev => ({ ...prev, maxParticipants: parseInt(e.target.value) || 1 }))}
+                      value={formData.maxParticipants as any}
+                      onFocus={() => {
+                        if (formData.maxParticipants === 1) setFormData(prev => ({ ...prev, maxParticipants: '' as any }));
+                      }}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setFormData(prev => ({ ...prev, maxParticipants: v === '' ? '' as any : parseInt(v) }));
+                      }}
+                      onBlur={() => {
+                        if ((formData.maxParticipants as any) === '') setFormData(prev => ({ ...prev, maxParticipants: 1 }));
+                      }}
                     />
                   </div>
                 </div>
@@ -315,8 +333,10 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                       id="basePrice"
                       type="number"
                       min="0"
-                      value={formData.basePrice}
-                      onChange={(e) => setFormData(prev => ({ ...prev, basePrice: parseInt(e.target.value) || 0 }))}
+                      value={formData.basePrice as any}
+                      onFocus={() => { if (formData.basePrice === 0) setFormData(prev => ({ ...prev, basePrice: '' as any })); }}
+                      onChange={(e) => { const v = e.target.value; setFormData(prev => ({ ...prev, basePrice: v === '' ? '' as any : parseInt(v) })); }}
+                      onBlur={() => { if ((formData.basePrice as any) === '') setFormData(prev => ({ ...prev, basePrice: 0 })); }}
                     />
                   </div>
                   <div>
@@ -325,8 +345,10 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                       id="foreignPrice"
                       type="number"
                       min="0"
-                      value={formData.foreignPrice}
-                      onChange={(e) => setFormData(prev => ({ ...prev, foreignPrice: parseInt(e.target.value) || 0 }))}
+                      value={formData.foreignPrice as any}
+                      onFocus={() => { if (formData.foreignPrice === 0) setFormData(prev => ({ ...prev, foreignPrice: '' as any })); }}
+                      onChange={(e) => { const v = e.target.value; setFormData(prev => ({ ...prev, foreignPrice: v === '' ? '' as any : parseInt(v) })); }}
+                      onBlur={() => { if ((formData.foreignPrice as any) === '') setFormData(prev => ({ ...prev, foreignPrice: 0 })); }}
                     />
                   </div>
                 </div>
