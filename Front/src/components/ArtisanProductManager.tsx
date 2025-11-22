@@ -273,18 +273,23 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                 <div>
                   <Label htmlFor="subcategory">Sous-catégorie (optionnel)</Label>
                   <Select value={selectedSubcategory} onValueChange={(value) => {
-                    setSelectedSubcategory(value);
-                    setFormData(prev => ({ ...prev, subcategory: value }));
+                    if (value === '__none') {
+                      setSelectedSubcategory('');
+                      setFormData(prev => ({ ...prev, subcategory: '' }));
+                    } else {
+                      setSelectedSubcategory(value);
+                      setFormData(prev => ({ ...prev, subcategory: value }));
+                    }
                   }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionnez une sous-catégorie" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Aucune sous-catégorie</SelectItem>
-                      {getSubcategories().map(subcategory => (
-                        <SelectItem key={subcategory} value={subcategory}>{subcategory}</SelectItem>
-                      ))}
-                    </SelectContent>
+                      <SelectContent>
+                        <SelectItem value="__none">Aucune sous-catégorie</SelectItem>
+                        {getSubcategories().map(subcategory => (
+                          <SelectItem key={subcategory} value={subcategory}>{subcategory}</SelectItem>
+                        ))}
+                      </SelectContent>
                   </Select>
                 </div>
               )}

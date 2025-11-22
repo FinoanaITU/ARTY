@@ -7,3 +7,5 @@ Front/node_modules/
 Front/node_module/
 Front/package-lock.json
 
+.github/
+.pytest_cache/
