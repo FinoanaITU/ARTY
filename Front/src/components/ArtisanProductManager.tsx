@@ -26,6 +26,12 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
   onUpdateProduct,
   onDeleteProduct
 }) => {
+  const [allProducts, setAllProducts] = useState<ProductOut[]>(products || []);
+  const [page, setPage] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(20);
+  const [total, setTotal] = useState<number>(0);
+  const [pages, setPages] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductOut | null>(null);
   const [categories, setCategories] = useState<CategoryOut[]>([]);
@@ -65,6 +71,30 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       }
     };
     loadCategories();
+  }, []);
+
+  // Load all products when this manager mounts (e.g. when user clicks Products tab)
+  const loadProducts = async (p: number = page, l: number = limit) => {
+    try {
+      setLoading(true);
+      const response = await apiService.getProducts({ page: p, limit: l });
+      setAllProducts(response.items || []);
+      setTotal(response.total || 0);
+      setPages(response.pages || 1);
+      setPage(response.page || p);
+    } catch (err) {
+      console.error('Error loading products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // initial load of products for this view
+    loadProducts(1, limit);
+    // also keep initial prop in sync if provided
+    setAllProducts(products || []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Obtenir les sous-catégories de la catégorie sélectionnée
@@ -144,6 +174,8 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       } else {
         await onCreateProduct(productData, uploadedFiles.length > 0 ? uploadedFiles : undefined);
       }
+      // refresh product list to show latest
+      await loadProducts();
       resetForm();
       setIsCreateModalOpen(false);
     } catch (error) {
@@ -238,6 +270,17 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       rejected: { label: 'Rejeté', variant: 'destructive' }
     };
     return statusConfig[status] || { label: status, variant: 'secondary' as const };
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await onDeleteProduct(id);
+      await loadProducts(page, limit);
+      toast({ title: 'Produit supprimé', description: 'Produit supprimé avec succès' });
+    } catch (err: any) {
+      console.error('Error deleting product:', err);
+      toast({ title: 'Erreur', description: err?.response?.data?.detail || 'Erreur lors de la suppression', variant: 'destructive' });
+    }
   };
 
   return (
@@ -612,7 +655,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
         </Dialog>
       </div>
 
-      {products.length === 0 ? (
+      {allProducts.length === 0 ? (
         <div className="text-center py-12">
           <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-4">Aucun produit créé pour le moment</p>
@@ -622,8 +665,9 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
           </Button>
         </div>
       ) : (
+        <>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => {
+          {allProducts.map((product) => {
             const statusConfig = getStatusBadge(product.status);
             return (
               <Card key={product.id}>
@@ -670,7 +714,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onDeleteProduct(product.id)}
+                      onClick={() => handleDelete(product.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -680,6 +724,29 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
             );
           })}
         </div>
+
+        {/* Pagination controls */}
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => { if (page > 1) loadProducts(page - 1, limit); }} disabled={page <= 1 || loading}>
+              Précédent
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { if (page < pages) loadProducts(page + 1, limit); }} disabled={page >= pages || loading}>
+              Suivant
+            </Button>
+            <span className="text-sm text-gray-600 ml-3">Page {page} / {pages} — {total} produits</span>
+          </div>
+          <div>
+            <Label className="text-sm mr-2">Par page</Label>
+            <select value={limit} onChange={(e) => { const l = Number(e.target.value); setLimit(l); loadProducts(1, l); }} className="border rounded px-2 py-1">
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+        </div>
+        </>
       )}
     </div>
   );

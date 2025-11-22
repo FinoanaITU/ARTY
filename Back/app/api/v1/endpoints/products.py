@@ -220,7 +220,7 @@ async def get_products(
     max_price: Optional[float] = Query(None, ge=0, description="Prix maximum"),
     in_stock: Optional[bool] = Query(None, description="Filtrer par disponibilité"),
     page: int = Query(1, ge=1, description="Numéro de page"),
-    limit: int = Query(20, ge=1, le=100, description="Nombre d'éléments par page"),
+    limit: int = Query(20, ge=1, le=1000, description="Nombre d'éléments par page"),
     db: Session = Depends(get_db),
     request: Request = None
 ):
