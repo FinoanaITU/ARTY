@@ -206,7 +206,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       category: product.category,
       subcategory: product.subcategory || '',
       price: product.price,
-      materials: product.materials.length > 0 ? product.materials : [''],
+      materials: (product.materials?.length > 0) ? product.materials : [''],
       availableColors: product.available_colors?.length > 0 ? product.available_colors : [''],
       dimensions: (product.dimensions as any) || { length: 0, width: 0, height: 0, weight: 0 },
       stock: product.stock,
