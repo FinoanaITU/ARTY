@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Edit, Trash2, Image as ImageIcon, Upload, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import apiService from '@/services/api';
+import { useUser } from '@/contexts/UserContext';
 import type { ProductOut, CategoryOut } from '@/types/product';
 
 interface ArtisanProductManagerProps {
@@ -26,6 +27,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
   onUpdateProduct,
   onDeleteProduct
 }) => {
+  const { user } = useUser();
   const [allProducts, setAllProducts] = useState<ProductOut[]>(products || []);
   const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(20);
@@ -77,7 +79,10 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
   const loadProducts = async (p: number = page, l: number = limit) => {
     try {
       setLoading(true);
-      const response = await apiService.getProducts({ page: p, limit: l });
+      // If we have a logged-in artisan, fetch their products (includes drafts)
+      const params: any = { page: p, limit: l };
+      if (user && (user.role === 'artisan' || user.role === 'admin')) params.artisan_id = user.id;
+      const response = await apiService.getProducts(params);
       setAllProducts(response.items || []);
       setTotal(response.total || 0);
       setPages(response.pages || 1);

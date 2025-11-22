@@ -272,8 +272,15 @@ class ProductCRUD(CRUDBase):
             else:
                 query = query.filter(Product.stock_quantity == 0)
         
-        # Filtrer par statut (par défaut, seulement les produits publiés pour les utilisateurs publics)
-        if status:
+        # Filtrer par statut.
+        # Behavior:
+        # - If status is a special value '__all__' -> do not filter by status (return all statuses)
+        # - If status is provided (e.g. 'published') -> filter by that status
+        # - If status is None -> default to returning only published products
+        if status == '__all__':
+            # Do not apply any status filter
+            pass
+        elif status:
             query = query.filter(Product.status == status)
         else:
             # Par défaut, seulement les produits publiés

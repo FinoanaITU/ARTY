@@ -238,6 +238,32 @@ async def get_products(
     """
     skip = (page - 1) * limit
     
+    # If an artisan_id is provided we may need to include unpublished products
+    # Only allow returning all statuses when the requester is the same artisan or an admin.
+    status_param = None
+    if artisan_id:
+        # Check Authorization header for a bearer token
+        auth_header = None
+        if request is not None:
+            auth_header = request.headers.get('authorization')
+        if auth_header and auth_header.lower().startswith('bearer '):
+            token = auth_header.split(' ', 1)[1]
+            from app.core.security import verify_token
+            payload = verify_token(token)
+            if payload:
+                sub = payload.get('sub')
+                # If token subject matches the requested artisan_id, allow all statuses
+                try:
+                    if str(sub) == str(artisan_id):
+                        status_param = '__all__'
+                    else:
+                        # Check user role from DB to allow admins
+                        user = db.query(User).filter(User.id == sub).first()
+                        if user and user.role == UserRole.ADMIN:
+                            status_param = '__all__'
+                except Exception:
+                    pass
+
     products, total = product_crud.get_multi_with_filters(
         db,
         category=category,
@@ -247,6 +273,7 @@ async def get_products(
         min_price=min_price,
         max_price=max_price,
         in_stock=in_stock,
+        status=status_param,
         skip=skip,
         limit=limit
     )
