@@ -286,7 +286,8 @@ class ApiService {
       };
       status?: string;
     },
-    photos?: File[]
+    photos?: File[],
+    delete_image_ids?: string[]
   ): Promise<ProductOut> {
     const formData = new FormData();
     
@@ -309,11 +310,15 @@ class ApiService {
       }
     });
 
-    // Ajouter les photos
     if (photos && photos.length > 0) {
       photos.slice(0, 10).forEach((photo) => {
         formData.append('photos', photo);
       });
+    }
+
+    // Image deletions (sent as JSON)
+    if (delete_image_ids && delete_image_ids.length > 0) {
+      formData.append('delete_image_ids', JSON.stringify(delete_image_ids));
     }
 
     const response = await this.api.patch(`/products/${productId}`, formData, {

@@ -40,6 +40,7 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
     # Récupérer les images (le CRUD gère la conversion d'ID)
     # Build absolute URLs for images so frontend can load them directly
     raw_images = [img.image_url for img in product_crud.get_images(db, product.id)]
+    raw_image_objs = product_crud.get_images(db, product.id)
     upload_prefix = settings.UPLOAD_DIR.lstrip('./')
     images = []
     for img_path in raw_images:
@@ -50,6 +51,23 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
         else:
             # request.base_url includes scheme+host+port
             images.append(f"{str(request.base_url).rstrip('/')}/{upload_prefix}/{img_path}")
+
+    # Build image items with IDs so frontend can perform delete/reorder actions
+    image_items = []
+    for img in raw_image_objs:
+        img_path = img.image_url
+        if not img_path:
+            continue
+        if img_path.startswith('http'):
+            url = img_path
+        else:
+            url = f"{str(request.base_url).rstrip('/')}/{upload_prefix}/{img_path}"
+        # Ensure id is a UUID for Pydantic
+        try:
+            img_id = img.id
+        except Exception:
+            img_id = None
+        image_items.append({"id": img_id, "url": url})
     
     # Récupérer l'artisan
     # Le GUID type devrait convertir automatiquement, mais on s'assure que c'est un UUID
@@ -133,6 +151,7 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
         subcategory=subcategory_name,
         price=price_value,
         images=images,
+        image_items=image_items,
         artisan=artisan_basic,
         materials=materials_list,
         available_colors=colors_list,
@@ -493,8 +512,11 @@ async def update_product(
     bulk_order_enabled: Optional[bool] = Form(None),
     min_bulk_quantity: Optional[int] = Form(None),
     product_status: Optional[str] = Form(None, alias="status"),
+    delete_image_ids: Optional[str] = Form(None),
+    photos: Optional[List[UploadFile]] = File(None),
     current_user: User = Depends(require_role([UserRole.ARTISAN])),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    request: Request = None
 ):
     """
     Met à jour un produit (Artisan - son produit seulement)
@@ -560,9 +582,73 @@ async def update_product(
     product_update = ProductUpdate(**update_data)
     
     # Mettre à jour le produit
+    # Process requested image deletions (sent as JSON array or comma-separated)
+    if delete_image_ids:
+        import json
+        try:
+            ids: List[str] = json.loads(delete_image_ids) if delete_image_ids.strip().startswith('[') else [s.strip() for s in delete_image_ids.split(',') if s.strip()]
+        except Exception:
+            ids = [s.strip() for s in delete_image_ids.split(',') if s.strip()]
+
+        if ids:
+            storage_service = StorageService()
+            # Attempt to delete files first; if any deletion fails, abort the update
+            image_rows = []
+            for img_id in ids:
+                # Try to find the image row
+                try:
+                    img_row = db.query(ProductImage).filter(ProductImage.id == img_id).first()
+                except Exception:
+                    img_row = db.query(ProductImage).filter(ProductImage.id == id_to_string(img_id)).first()
+                if not img_row:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Image {img_id} non trouvée")
+                # Verify ownership
+                img_product_id = img_row.product_id
+                prod_id_comp = id_to_string(product.id) if get_db_type(db) == 'sqlite' else product.id
+                if str(img_product_id) != str(prod_id_comp):
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Une image ne correspond pas au produit")
+                image_rows.append(img_row)
+
+            # Delete files from storage
+            for img_row in image_rows:
+                try:
+                    storage_service.delete_file(img_row.image_url)
+                except Exception as e:
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erreur lors de la suppression du fichier: {e}")
+
+            # Delete DB rows
+            for img_row in image_rows:
+                try:
+                    db.delete(img_row)
+                except Exception as e:
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erreur lors de la suppression en base: {e}")
+            db.commit()
+
+    # Update product fields
     updated_product = product_crud.update(db, db_obj=product, obj_in=product_update)
+
+    # If new photos were uploaded, save them and attach to the product
+    if photos:
+        storage_service = StorageService()
+        image_urls = []
+        for photo_file in photos[:10]:
+            try:
+                photo_url = await storage_service.upload_file(
+                    file=photo_file,
+                    folder="products",
+                    allowed_extensions=["jpg", "jpeg", "png", "webp"]
+                )
+                image_urls.append(photo_url)
+            except Exception as e:
+                print(f"Erreur lors de l'upload de la photo (update): {e}")
+
+        if image_urls:
+            # Append images to the product
+            product_crud.add_images(db, updated_product.id, image_urls)
+            # Refresh the product instance to include new images
+            updated_product = product_crud.get_by_id(db, product_id)
     
-    return _product_to_out(updated_product, db)
+    return _product_to_out(updated_product, db, request)
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -599,11 +685,71 @@ async def delete_product(
     return None
 
 
+@router.delete("/{product_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product_image(
+    product_id: UUID,
+    image_id: UUID,
+    current_user: User = Depends(require_role([UserRole.ARTISAN])),
+    db: Session = Depends(get_db)
+):
+    """
+    Supprime une image d'un produit (Artisan - son produit seulement)
+    """
+    product = product_crud.get_by_id(db, product_id)
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produit non trouvé")
+
+    # Vérifier que l'utilisateur est le propriétaire ou admin
+    db_type = get_db_type(db)
+    product_artisan_id = id_to_string(product.artisan_id) if db_type == 'sqlite' else product.artisan_id
+    current_user_id = id_to_string(current_user.id) if db_type == 'sqlite' else current_user.id
+
+    if product_artisan_id != current_user_id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vous n'avez pas la permission de modifier ce produit")
+
+    # Trouver l'image
+    # Gérer SQLite string ids vs UUID
+    img = None
+    try:
+        img = db.query(ProductImage).filter(ProductImage.id == image_id).first()
+    except Exception:
+        try:
+            img = db.query(ProductImage).filter(ProductImage.id == id_to_string(image_id)).first()
+        except Exception:
+            img = None
+
+    if not img:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image non trouvée")
+
+    # Vérifier qu'elle appartient bien au produit
+    img_product_id = img.product_id
+    if db_type == 'sqlite':
+        img_product_id = id_to_string(img_product_id)
+
+    prod_id_comp = id_to_string(product.id) if db_type == 'sqlite' else product.id
+    if str(img_product_id) != str(prod_id_comp):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cette image n'appartient pas à ce produit")
+
+    # Supprimer le fichier physique
+    try:
+        storage_service = StorageService()
+        storage_service.delete_file(img.image_url)
+    except Exception as e:
+        print(f"Erreur lors de la suppression du fichier image: {e}")
+
+    # Supprimer l'enregistrement DB
+    db.delete(img)
+    db.commit()
+
+    return None
+
+
 @router.get("/{product_id}/similar", response_model=ProductListResponse)
 async def get_similar_products(
     product_id: UUID,
     limit: int = Query(3, ge=1, le=20, description="Nombre de produits similaires"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    request: Request = None
 ):
     """
     Récupère des produits similaires à un produit donné
@@ -626,7 +772,8 @@ async def get_similar_products(
         limit=limit
     )
     
-    items = [_product_to_list_item(product, db) for product in similar_products]
+    # Return full product objects with request so images URLs are absolute
+    items = [_product_to_out(product, db, request) for product in similar_products]
     
     return ProductListResponse(
         items=items,

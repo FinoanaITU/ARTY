@@ -17,7 +17,7 @@ import type { ProductOut, CategoryOut } from '@/types/product';
 interface ArtisanProductManagerProps {
   products: ProductOut[];
   onCreateProduct: (productData: any, photos?: File[]) => Promise<void>;
-  onUpdateProduct: (id: string, productData: any, photos?: File[]) => Promise<void>;
+  onUpdateProduct: (id: string, productData: any, photos?: File[], deleteImageIds?: string[]) => Promise<void>;
   onDeleteProduct: (id: string) => Promise<void>;
 }
 
@@ -28,6 +28,59 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
   onDeleteProduct
 }) => {
   const { user } = useUser();
+
+  // Simple image gallery with thumbnails for product cards
+  const ImageGallery: React.FC<{ images: string[]; name?: string }> = ({ images, name }) => {
+    const [index, setIndex] = useState<number>(0);
+
+    useEffect(() => {
+      if (!images || images.length === 0) {
+        setIndex(0);
+        return;
+      }
+      if (index >= images.length) setIndex(0);
+    }, [images, index]);
+
+    const mainSrc = images && images.length > 0 ? images[index] : '';
+
+    return (
+      <div className="aspect-square bg-gray-100 relative">
+        {mainSrc ? (
+          <img
+            src={mainSrc}
+            alt={name || 'Product image'}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+non+disponible'; }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
+
+        {images && images.length > 1 && (
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2 px-2">
+            {images.slice(0, 6).map((src, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIndex(i)}
+                className={`rounded overflow-hidden border ${i === index ? 'ring-2 ring-orange-500' : ''}`}
+                aria-label={`Afficher l'image ${i + 1}`}
+              >
+                <img
+                  src={src}
+                  alt={`thumb-${i}`}
+                  className="w-12 h-12 object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48?text=-'; }}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
   const [allProducts, setAllProducts] = useState<ProductOut[]>(products || []);
   const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(20);
@@ -41,6 +94,8 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<Array<{ id?: string; url: string }>>([]);
+  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -134,6 +189,8 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     setSelectedSubcategory('');
     setUploadedFiles([]);
     setImagePreviews([]);
+    setExistingImages([]);
+    setDeletedImageIds([]);
   };
 
   const handleSubmit = async () => {
@@ -175,7 +232,12 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
 
     try {
       if (editingProduct) {
-        await onUpdateProduct(editingProduct.id, productData, uploadedFiles.length > 0 ? uploadedFiles : undefined);
+        await onUpdateProduct(
+          editingProduct.id,
+          productData,
+          uploadedFiles.length > 0 ? uploadedFiles : undefined,
+          deletedImageIds.length > 0 ? deletedImageIds : undefined
+        );
       } else {
         await onCreateProduct(productData, uploadedFiles.length > 0 ? uploadedFiles : undefined);
       }
@@ -194,12 +256,24 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     setSelectedSubcategory(product.subcategory || '');
     // Normalize any returned image URLs to absolute URLs for the dev server
     const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
-    const normalizedImages = (product.images || []).map(img => {
-      if (!img) return img;
-      if (img.startsWith('http')) return img;
-      return `${backendBase}${img.startsWith('/') ? '' : '/'}${img}`;
-    });
-
+    // Build existing images with ids when available (image_items) so we can delete specific images
+    const normalizedImages: string[] = [];
+    const existing: Array<{ id?: string; url: string }> = [];
+    if ((product as any).image_items && Array.isArray((product as any).image_items)) {
+      (product as any).image_items.forEach((it: any) => {
+        if (!it) return;
+        const imgUrl = it.url && it.url.startsWith('http') ? it.url : `${backendBase}${it.url.startsWith('/') ? '' : '/'}${it.url}`;
+        normalizedImages.push(imgUrl);
+        existing.push({ id: it.id, url: imgUrl });
+      });
+    } else {
+      (product.images || []).forEach((img) => {
+        if (!img) return;
+        const imgUrl = img.startsWith('http') ? img : `${backendBase}${img.startsWith('/') ? '' : '/'}${img}`;
+        normalizedImages.push(imgUrl);
+        existing.push({ id: undefined, url: imgUrl });
+      });
+    }
     setFormData({
       name: product.name,
       description: product.description,
@@ -215,7 +289,8 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       bulk_order_enabled: product.bulk_order_enabled || false,
       min_bulk_quantity: product.min_bulk_quantity || 0
     });
-    setImagePreviews(normalizedImages || []);
+    setImagePreviews([]); // clear previews for new uploads
+    setExistingImages(existing);
     setIsCreateModalOpen(true);
   };
 
@@ -452,40 +527,81 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
 
               <div>
                 <Label>Images du produit (max 10)</Label>
-                <div className="mt-2">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileChange}
-                    className="mb-2"
-                  />
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded border"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                  {uploadedFiles.length === 0 && imagePreviews.length === 0 && (
-                    <p className="text-sm text-gray-500 mt-2">
-                      Aucune image sélectionnée. Les images existantes seront conservées lors de la mise à jour.
-                    </p>
-                  )}
-                </div>
+                            <div className="mt-2">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleFileChange}
+                                className="mb-2"
+                              />
+
+                              {/* Existing images (stored on server) */}
+                              {existingImages.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                  {existingImages.map((img, index) => (
+                                    <div key={`existing-${index}`} className="relative">
+                                      <img
+                                        src={img.url}
+                                        alt={`Existing ${index + 1}`}
+                                        className="w-full h-24 object-cover rounded border"
+                                      />
+                                      {img.id ? (
+                                        <Button
+                                          type="button"
+                                          variant="destructive"
+                                          size="sm"
+                                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                                          onClick={() => {
+                                            // Mark for deletion and remove from UI until submit
+                                            if (img.id) {
+                                              setDeletedImageIds(prev => [...prev, String(img.id)]);
+                                            }
+                                            setExistingImages(prev => prev.filter((_, i) => i !== index));
+                                          }}
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      ) : null}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Previews for newly uploaded files */}
+                              {imagePreviews.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                  {imagePreviews.map((preview, index) => (
+                                    <div key={`new-${index}`} className="relative">
+                                      <img
+                                        src={preview}
+                                        alt={`Preview ${index + 1}`}
+                                        className="w-full h-24 object-cover rounded border"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        className="absolute top-1 right-1 h-6 w-6 p-0"
+                                        onClick={() => {
+                                          // remove uploaded file at index
+                                          setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+                                          setImagePreviews(prev => prev.filter((_, i) => i !== index));
+                                        }}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {uploadedFiles.length === 0 && existingImages.length === 0 && imagePreviews.length === 0 && (
+                                <p className="text-sm text-gray-500 mt-2">
+                                  Aucune image sélectionnée. Les images existantes seront conservées lors de la mise à jour.
+                                </p>
+                              )}
+                            </div>
               </div>
 
               <div>
@@ -676,21 +792,8 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
             const statusConfig = getStatusBadge(product.status);
             return (
               <Card key={product.id}>
-                <div className="aspect-square bg-gray-100 relative">
-                  {product.images && product.images.length > 0 && product.images[0] ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+non+disponible';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-12 h-12 text-gray-400" />
-                    </div>
-                  )}
+                <div className="relative">
+                  <ImageGallery images={product.images || []} name={product.name} />
                   <div className="absolute top-2 right-2">
                     <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                   </div>

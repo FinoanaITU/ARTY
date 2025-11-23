@@ -83,6 +83,16 @@ class ProductOut(BaseModel):
     subcategory: Optional[str] = None
     price: float
     images: List[str] = Field(default_factory=list, description="URLs des images")
+    # Detailed image objects with IDs to allow deletion/reordering from frontend
+
+    class ProductImageOut(BaseModel):
+        id: UUID
+        url: str
+
+        class Config:
+            from_attributes = True
+
+    image_items: List[ProductImageOut] = Field(default_factory=list)
     artisan: ArtisanBasic
     materials: List[str] = Field(default_factory=list)
     available_colors: List[str] = Field(default_factory=list)
@@ -93,7 +103,9 @@ class ProductOut(BaseModel):
     bulk_order_enabled: bool
     min_bulk_quantity: Optional[int] = None
     status: str  # draft, pending_approval, published, rejected
-    rating: Optional[float] = Field(None, ge=0, le=5, description="Note moyenne")
+    rating: Optional[float] = Field(
+        None, ge=0, le=5, description="Note moyenne"
+    )
     review_count: int = Field(default=0, ge=0)
     created_at: datetime
     updated_at: datetime

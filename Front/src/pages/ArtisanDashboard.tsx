@@ -141,7 +141,7 @@ const ArtisanDashboard = () => {
     }
   };
 
-  const handleUpdateProduct = async (id: string, productData: any, photos?: File[]) => {
+  const handleUpdateProduct = async (id: string, productData: any, photos?: File[], deleteImageIds?: string[]) => {
     try {
       const updatedProduct = await apiService.updateProduct(id, {
         name: productData.name,
@@ -158,7 +158,7 @@ const ArtisanDashboard = () => {
         min_bulk_quantity: productData.min_bulk_quantity,
         dimensions: productData.dimensions,
         status: productData.status
-      }, photos);
+      }, photos, deleteImageIds);
       
       setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
       toast({
