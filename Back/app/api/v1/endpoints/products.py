@@ -586,27 +586,49 @@ async def update_product(
     if delete_image_ids:
         import json
         try:
-            ids: List[str] = json.loads(delete_image_ids) if delete_image_ids.strip().startswith('[') else [s.strip() for s in delete_image_ids.split(',') if s.strip()]
+            # Support JSON array or comma-separated list
+            if delete_image_ids.strip().startswith('['):
+                ids = json.loads(delete_image_ids)
+            else:
+                parts = delete_image_ids.split(',')
+                ids = [s.strip() for s in parts if s.strip()]
         except Exception:
-            ids = [s.strip() for s in delete_image_ids.split(',') if s.strip()]
+            parts = delete_image_ids.split(',')
+            ids = [s.strip() for s in parts if s.strip()]
 
         if ids:
             storage_service = StorageService()
-            # Attempt to delete files first; if any deletion fails, abort the update
+            # Attempt to delete files from storage.
+            # If any deletion fails, abort the update.
             image_rows = []
             for img_id in ids:
                 # Try to find the image row
                 try:
-                    img_row = db.query(ProductImage).filter(ProductImage.id == img_id).first()
+                    q = db.query(ProductImage)
+                    img_row = q.filter(ProductImage.id == img_id).first()
                 except Exception:
-                    img_row = db.query(ProductImage).filter(ProductImage.id == id_to_string(img_id)).first()
+                    q = db.query(ProductImage)
+                    alt_id = id_to_string(img_id)
+                    img_row = q.filter(ProductImage.id == alt_id).first()
                 if not img_row:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Image {img_id} non trouvée")
+                    msg = f"Image {img_id} non trouvée"
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=msg,
+                    )
                 # Verify ownership
                 img_product_id = img_row.product_id
-                prod_id_comp = id_to_string(product.id) if get_db_type(db) == 'sqlite' else product.id
+                if get_db_type(db) == 'sqlite':
+                    prod_id_comp = id_to_string(product.id)
+                else:
+                    prod_id_comp = product.id
+
                 if str(img_product_id) != str(prod_id_comp):
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Une image ne correspond pas au produit")
+                    msg = "Une image ne correspond pas au produit"
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=msg,
+                    )
                 image_rows.append(img_row)
 
             # Delete files from storage
@@ -614,18 +636,32 @@ async def update_product(
                 try:
                     storage_service.delete_file(img_row.image_url)
                 except Exception as e:
-                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erreur lors de la suppression du fichier: {e}")
+                    prefix = "Erreur lors de la suppression du fichier: "
+                    detail_msg = prefix + str(e)
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=detail_msg,
+                    )
 
             # Delete DB rows
             for img_row in image_rows:
                 try:
                     db.delete(img_row)
                 except Exception as e:
-                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erreur lors de la suppression en base: {e}")
+                    prefix = "Erreur lors de la suppression en base: "
+                    detail_msg = prefix + str(e)
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=detail_msg,
+                    )
             db.commit()
 
     # Update product fields
-    updated_product = product_crud.update(db, db_obj=product, obj_in=product_update)
+    updated_product = product_crud.update(
+        db,
+        db_obj=product,
+        obj_in=product_update,
+    )
 
     # If new photos were uploaded, save them and attach to the product
     if photos:
@@ -671,13 +707,20 @@ async def delete_product(
     # Vérifier que l'utilisateur est le propriétaire ou admin
     # Normaliser les IDs pour la comparaison (pour compatibilité SQLite)
     db_type = get_db_type(db)
-    product_artisan_id = id_to_string(product.artisan_id) if db_type == 'sqlite' else product.artisan_id
-    current_user_id = id_to_string(current_user.id) if db_type == 'sqlite' else current_user.id
-    
-    if product_artisan_id != current_user_id and current_user.role != UserRole.ADMIN:
+    if db_type == 'sqlite':
+        product_artisan_id = id_to_string(product.artisan_id)
+        current_user_id = id_to_string(current_user.id)
+    else:
+        product_artisan_id = product.artisan_id
+        current_user_id = current_user.id
+
+    if (
+        product_artisan_id != current_user_id
+        and current_user.role != UserRole.ADMIN
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Vous n'avez pas la permission de supprimer ce produit"
+            detail="Vous n'avez pas la permission de supprimer ce produit",
         )
     
     product_crud.delete(db, product_id=product_id)

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +16,7 @@ import Workshops from "./pages/Workshops";
 import ArtisanProfile from "./pages/ArtisanProfile";
 import WorkshopDetail from "./pages/WorkshopDetail";
 import Dashboard from "./pages/Dashboard";
-import ArtisanDashboard from "./pages/ArtisanDashboard";
+const ArtisanDashboard = lazy(() => import("./pages/ArtisanDashboard"));
 import AdminPanel from "./pages/AdminPanel";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -44,7 +44,14 @@ const App = () => (
                 <Route path="/artisan/:id" element={<ArtisanProfile />} />
                 <Route path="/workshop/:id" element={<WorkshopDetail />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/artisan-dashboard" element={<ArtisanDashboard />} />
+                <Route
+                  path="/artisan-dashboard"
+                  element={
+                    <Suspense fallback={<div className="p-6 text-center">Chargement...</div>}>
+                      <ArtisanDashboard />
+                    </Suspense>
+                  }
+                />
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/login" element={<Login />} />
