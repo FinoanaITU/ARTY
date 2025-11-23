@@ -54,7 +54,7 @@ def get_db_type(db: Session) -> str:
                 return 'sqlite'
             elif dialect_name in ('postgresql', 'postgres'):
                 return 'postgresql'
-        except:
+        except Exception:
             pass
         # Par défaut, supposer SQLite pour les tests
         return 'sqlite'

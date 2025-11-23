@@ -105,21 +105,21 @@ async def register_artisan(
         if languages:
             try:
                 languages_list = json.loads(languages)
-            except:
+            except Exception:
                 languages_list = [l.strip() for l in languages.split(",") if l.strip()]
         
         other_skills_list = []
         if other_skills:
             try:
                 other_skills_list = json.loads(other_skills)
-            except:
+            except Exception:
                 other_skills_list = [s.strip() for s in other_skills.split(",") if s.strip()]
         
         offerings_list = []
         if offerings:
             try:
                 offerings_list = json.loads(offerings)
-            except:
+            except Exception:
                 offerings_list = [o.strip() for o in offerings.split(",") if o.strip()]
         
         # Créer l'objet ArtisanRegisterIn

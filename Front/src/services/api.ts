@@ -2,6 +2,7 @@
  * Service API pour les appels backend
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import type { ProductOut, ProductListResponse, CategoriesResponse, BulkOrderRequestOut } from '@/types/product';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 

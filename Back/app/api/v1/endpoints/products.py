@@ -406,7 +406,7 @@ async def create_product(
         try:
             if hasattr(current_user, 'artisan_profile') and current_user.artisan_profile:
                 artisan_profile = current_user.artisan_profile
-        except:
+        except Exception:
             pass
     if not artisan_profile:
         raise HTTPException(
@@ -420,14 +420,14 @@ async def create_product(
     if materials:
         try:
             materials_list = json.loads(materials)
-        except:
+        except Exception:
             materials_list = [m.strip() for m in materials.split(",") if m.strip()]
     
     colors_list = []
     if available_colors:
         try:
             colors_list = json.loads(available_colors)
-        except:
+        except Exception:
             colors_list = [c.strip() for c in available_colors.split(",") if c.strip()]
     
     # Préparer les dimensions
@@ -558,12 +558,12 @@ async def update_product(
     if materials is not None:
         try:
             update_data["materials"] = json.loads(materials)
-        except:
+        except Exception:
             update_data["materials"] = [m.strip() for m in materials.split(",") if m.strip()]
     if available_colors is not None:
         try:
             update_data["available_colors"] = json.loads(available_colors)
-        except:
+        except Exception:
             update_data["available_colors"] = [c.strip() for c in available_colors.split(",") if c.strip()]
     if stock is not None:
         update_data["stock"] = stock

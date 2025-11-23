@@ -180,7 +180,7 @@ class AuthService:
                 try:
                     db.execute(text("DELETE FROM users WHERE id = :id"), {"id": str(user_id)})
                     db.commit()
-                except:
+                except Exception:
                     pass
                 raise ValueError(f"Échec de la création du profil artisan: {e}")
             
@@ -274,20 +274,20 @@ class AuthService:
             # Pour les champs JSON, les parser depuis la string
             try:
                 artisan_profile.languages = json.loads(profile_dict['languages']) if profile_dict.get('languages') else []
-            except:
+            except Exception:
                 artisan_profile.languages = []
             artisan_profile.company_name = profile_dict['company_name']
             artisan_profile.main_specialty = profile_dict['main_specialty']
             try:
                 artisan_profile.other_skills = json.loads(profile_dict['other_skills']) if profile_dict.get('other_skills') else []
-            except:
+            except Exception:
                 artisan_profile.other_skills = []
             artisan_profile.years_experience = profile_dict.get('years_experience')
             artisan_profile.activity_description = profile_dict['activity_description']
             artisan_profile.brand_story = profile_dict.get('brand_story')
             try:
                 artisan_profile.offerings = json.loads(profile_dict['offerings']) if profile_dict.get('offerings') else []
-            except:
+            except Exception:
                 artisan_profile.offerings = []
             artisan_profile.nif = profile_dict.get('nif')
             artisan_profile.stat = profile_dict.get('stat')
@@ -446,7 +446,7 @@ class AuthService:
             # Refresh pour s'assurer que les changements sont persistés
             try:
                 db.refresh(user)
-            except:
+            except Exception:
                 # Si refresh échoue (objet non attaché), ce n'est pas grave
                 pass
         except Exception as e:
@@ -522,7 +522,7 @@ class AuthService:
                 if not user or not user.is_active:
                     raise ValueError("Utilisateur introuvable ou inactif")
                 return AuthService.generate_tokens(user)
-            except:
+            except Exception:
                 raise ValueError(f"Erreur lors du rafraîchissement: {str(e)}")
     
     @staticmethod
@@ -554,7 +554,7 @@ class AuthService:
             try:
                 user = db.query(User).filter(User.id == user_id).first()
                 return user if user and user.is_active else None
-            except:
+            except Exception:
                 return None
 
 
