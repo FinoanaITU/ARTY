@@ -10,3 +10,4 @@ Front/package-lock.json
 .github/
 .pytest_cache/
 Front/dist/
+/project_md
