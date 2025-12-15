@@ -3,7 +3,20 @@
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { ProductOut, ProductListResponse, CategoriesResponse, BulkOrderRequestOut } from '@/types/product';
+import type { 
+  WorkshopOut, 
+  WorkshopListResponse, 
+  WorkshopCreate, 
+  WorkshopUpdate,
+  WorkshopSessionOut,
+  WorkshopSessionCreate,
+  WorkshopBookingOut,
+  WorkshopBookingCreate,
+  BookingConfirmation,
+  AvailabilityResponse
+} from '@/types/workshop';
 
+// Base URL: prefer env var, fallback to FastAPI default '/api' (no version)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 class ApiService {
@@ -381,6 +394,119 @@ class ApiService {
     }
   ): Promise<BulkOrderRequestOut> {
     const response = await this.api.post(`/products/${productId}/bulk-order-request`, data);
+    return response.data;
+  }
+
+  // Workshop endpoints
+  async getWorkshops(params?: {
+    type?: string;
+    category?: string;
+    skill_level?: string;
+    search?: string;
+    artisan_id?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<WorkshopListResponse> {
+    // Backend expects 'skip' and 'limit'; map page to skip
+    const query: any = { ...params };
+    if (params?.page && params?.limit) {
+      query.skip = (params.page - 1) * params.limit;
+      delete query.page;
+    }
+    const response = await this.api.get('/workshops', { params: query });
+    return response.data;
+  }
+
+  async getWorkshop(workshopId: string): Promise<WorkshopOut> {
+    const response = await this.api.get(`/workshops/${workshopId}`);
+    return response.data;
+  }
+
+  async getWorkshopAvailability(
+    workshopId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<AvailabilityResponse> {
+    const params: any = {};
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    const response = await this.api.get(`/workshops/${workshopId}/availability`, { params });
+    return response.data;
+  }
+
+  async getWorkshopSessions(
+    workshopId: string,
+    params?: { date_from?: string; date_to?: string }
+  ): Promise<WorkshopSessionOut[]> {
+    const response = await this.api.get(`/workshops/${workshopId}/sessions`, { params });
+    return response.data;
+  }
+
+  async getWorkshopBookings(
+    workshopId: string,
+    params?: { status?: string; page?: number; limit?: number }
+  ): Promise<WorkshopBookingOut[]> {
+    const response = await this.api.get(`/workshops/${workshopId}/bookings`, { params });
+    return response.data;
+  }
+
+  async createWorkshop(data: WorkshopCreate): Promise<WorkshopOut> {
+    const response = await this.api.post('/workshops', data);
+    return response.data;
+  }
+
+  async updateWorkshop(workshopId: string, data: WorkshopUpdate): Promise<WorkshopOut> {
+    const response = await this.api.patch(`/workshops/${workshopId}`, data);
+    return response.data;
+  }
+
+  async deleteWorkshop(workshopId: string): Promise<void> {
+    await this.api.delete(`/workshops/${workshopId}`);
+  }
+
+  async publishWorkshop(workshopId: string): Promise<WorkshopOut> {
+    const response = await this.api.post(`/workshops/${workshopId}/publish`);
+    return response.data;
+  }
+
+  async unpublishWorkshop(workshopId: string): Promise<WorkshopOut> {
+    const response = await this.api.post(`/workshops/${workshopId}/unpublish`);
+    return response.data;
+  }
+
+  async archiveWorkshop(workshopId: string): Promise<WorkshopOut> {
+    const response = await this.api.post(`/workshops/${workshopId}/archive`);
+    return response.data;
+  }
+
+  async createWorkshopSession(
+    workshopId: string,
+    data: WorkshopSessionCreate
+  ): Promise<WorkshopSessionOut> {
+    const response = await this.api.post(`/workshops/${workshopId}/sessions`, data);
+    return response.data;
+  }
+
+  async deleteWorkshopSession(workshopId: string, sessionId: string): Promise<void> {
+    await this.api.delete(`/workshops/${workshopId}/sessions/${sessionId}`);
+  }
+
+  async bookWorkshop(workshopId: string, data: WorkshopBookingCreate): Promise<BookingConfirmation> {
+    const response = await this.api.post(`/workshops/${workshopId}/book`, data);
+    return response.data;
+  }
+
+  async cancelBooking(bookingId: string): Promise<void> {
+    await this.api.post(`/bookings/${bookingId}/cancel`);
+  }
+
+  async confirmBooking(bookingId: string): Promise<WorkshopBookingOut> {
+    const response = await this.api.post(`/bookings/${bookingId}/confirm`);
+    return response.data;
+  }
+
+  async getUserBookings(): Promise<WorkshopBookingOut[]> {
+    const response = await this.api.get('/bookings/user');
     return response.data;
   }
 

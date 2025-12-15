@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
 import WorkshopBookingCalendar from '@/components/WorkshopBookingCalendar';
 import WorkshopRegistrationForm from '@/components/WorkshopRegistrationForm';
 import ArtisanUnavailabilityDisplay from '@/components/ArtisanUnavailabilityDisplay';
+import { useWorkshops } from '@/hooks/useWorkshops';
 
 const WorkshopDetail = () => {
   const { id } = useParams();
@@ -15,11 +17,21 @@ const WorkshopDetail = () => {
   const [showBookingCalendar, setShowBookingCalendar] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [showUnavailabilityCalendar, setShowUnavailabilityCalendar] = useState(false);
+  
+  // Use the workshop hook
+  const { currentWorkshop: apiWorkshop, loading: apiLoading, error: apiError, getWorkshop } = useWorkshops();
+  
+  // Load workshop data on mount
+  useEffect(() => {
+    if (id) {
+      getWorkshop(id);
+    }
+  }, [id, getWorkshop]);
 
   // Mock data - in real app, fetch based on id
   const workshopType: 'inscription' | 'reservation' = (id === '2' || id === '4' || id === '6') ? 'reservation' : 'inscription';
   
-  const workshop = {
+  const mockWorkshop = {
     id: parseInt(id || '1'),
     title: workshopType === 'reservation' ? 'Tissage traditionnel Malagasy' : 'Initiation à la sculpture sur bois',
     instructor: workshopType === 'reservation' ? 'Voahangy Razafy' : 'Hery Rakoto',
@@ -125,6 +137,9 @@ const WorkshopDetail = () => {
     setShowBookingCalendar(true);
   };
 
+  // Use API workshop if available, otherwise use mock
+  const workshop = apiWorkshop || mockWorkshop;
+
   const isWorkshopFull = workshop.type === 'inscription' && workshop.participants! >= workshop.maxParticipants;
 
   return (
@@ -133,6 +148,22 @@ const WorkshopDetail = () => {
       
       <div className="px-4 py-6">
         <div className="max-w-4xl mx-auto">
+          {/* Loading State */}
+          {apiLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <span className="text-muted-foreground">Chargement de l'atelier...</span>
+            </div>
+          )}
+          
+          {/* Error State */}
+          {apiError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm mb-6">
+              <p>Erreur lors du chargement: {apiError}</p>
+              <p className="text-xs text-red-600 mt-2">Affichage de l'atelier en attente...</p>
+            </div>
+          )}
+          
           {/* Back Button */}
           <Link to="/workshops" className="inline-flex items-center text-brand-brown hover:text-brand-terracotta mb-6">
             ← Retour aux ateliers

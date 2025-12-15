@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useWorkshops } from '@/hooks/useWorkshops';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Calendar as CalendarIcon, Upload, X } from 'lucide-react';
+import { Plus, Trash2, Calendar as CalendarIcon, Upload, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
@@ -111,6 +112,8 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   onCancel,
   initialData
 }) => {
+  const { createWorkshop, loading: apiLoading, error: apiError } = useWorkshops();
+  
   const [formData, setFormData] = useState<WorkshopFormData>({
     photos: [],
     name: '',
@@ -145,6 +148,52 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   });
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialData?.date);
+  
+  // Submit handler that integrates with API
+  const handleFormSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    try {
+      // Transform form data to API schema
+      const workshopData = {
+        title: formData.name,
+        description: formData.description,
+        short_description: formData.description.substring(0, 100),
+        category: formData.category,
+        workshop_type: formData.availabilityTypes.inscription ? 'inscription' : 'reservation',
+        skill_level: formData.importantInfo.requiredLevel as any,
+        base_price: formData.pricing.basePrice,
+        foreign_price: formData.pricing.foreignPrice,
+        min_participants: 1,
+        max_participants: 20,
+        duration_minutes: formData.duration * 60,
+        location: formData.location.artisanPlaceOnly ? 'Artisan' : 'Flexible',
+        materials_included: formData.includedMaterials,
+        what_you_will_learn: formData.learningObjectives,
+        program: formData.schedule,
+        privatization_enabled: formData.importantInfo.privatization,
+        cancellation_policy: formData.importantInfo.cancellationPolicy,
+        refund_policy: formData.importantInfo.cancellationPolicy,
+      };
+      
+      // Call API
+      const result = await createWorkshop(workshopData);
+      
+      if (result) {
+        toast?.({
+          title: "Succès",
+          description: "L'atelier a été créé avec succès!",
+        });
+        onSubmit(formData);
+      }
+    } catch (error) {
+      toast?.({
+        title: "Erreur",
+        description: apiError || "Erreur lors de la création de l'atelier",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handlePhotoUpload = () => {
     // Simulation d'upload de photo

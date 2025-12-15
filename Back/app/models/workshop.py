@@ -13,17 +13,17 @@ class Workshop(BaseModel):
     short_description = Column(String(500))
     artisan_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), index=True)
-    category = Column(String(100), nullable=False)  # Category name for now
+    # category = Column(String(100), nullable=False)  # Temporarily disabled - not in DB
     workshop_type = Column(String(20), default='group', index=True)
     skill_level = Column(String(20), default='beginner')
     base_price = Column(Numeric(10, 2), nullable=False)
-    foreign_price = Column(Numeric(10, 2))  # Price for foreign participants
+    # foreign_price = Column(Numeric(10, 2))  # Price for foreign participants - not in DB
     private_price = Column(Numeric(10, 2))
     currency = Column(String(3), default='MGA')
     min_participants = Column(Integer, default=1)
     max_participants = Column(Integer, nullable=False)
     duration_minutes = Column(Integer, nullable=False)
-    location = Column(String(200), nullable=False)  # Location for filtering
+    # location = Column(String(200), nullable=False)  # Location for filtering - not in DB
     location_type = Column(String(20), default='physical', index=True)
     address = Column(Text)
     room_details = Column(Text)
@@ -33,12 +33,12 @@ class Workshop(BaseModel):
     materials_to_bring = Column(ARRAY(Text))
     prerequisites = Column(Text)
     what_you_will_learn = Column(ARRAY(Text))
-    program = Column(JSON)  # Stores program items with times and activities
-    privatization_enabled = Column(Boolean, default=False)
-    privatization_min_participants = Column(Integer)
-    privatization_max_participants = Column(Integer)
-    privatization_base_price = Column(Numeric(10, 2))
-    privatization_price_per_participant = Column(Numeric(10, 2))
+    # program = Column(JSON)  # Stores program items with times and activities - not in DB
+    # privatization_enabled = Column(Boolean, default=False) - not in DB
+    # privatization_min_participants = Column(Integer) - not in DB
+    # privatization_max_participants = Column(Integer) - not in DB
+    # privatization_base_price = Column(Numeric(10, 2)) - not in DB
+    # privatization_price_per_participant = Column(Numeric(10, 2)) - not in DB
     featured_image_url = Column(String(500))
     gallery_images = Column(ARRAY(Text))
     video_preview_url = Column(String(500))

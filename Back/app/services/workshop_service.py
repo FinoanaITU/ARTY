@@ -26,7 +26,6 @@ from app.schemas.workshop import (
     WorkshopSessionOut,
     WorkshopBookingOut,
     BookingConfirmation,
-    WorkshopStatus,
     SessionStatus,
     BookingStatus,
     PaymentStatus,
@@ -86,7 +85,7 @@ class WorkshopService:
             gallery_images=workshop_create.gallery_images,
             video_preview_url=workshop_create.video_preview_url,
             tags=workshop_create.tags,
-            status=WorkshopStatus.DRAFT,
+            status="draft",
         )
 
         # Gérer les options de privatisation
@@ -132,7 +131,7 @@ class WorkshopService:
             raise PermissionDenied("You don't have permission to update this workshop")
 
         # Vérifier le statut (ne peut éditer que les brouillons et publiés)
-        if workshop.status not in [WorkshopStatus.DRAFT, WorkshopStatus.PUBLISHED]:
+        if workshop.status not in ["draft", "published"]:
             raise ValidationError("Cannot edit workshop in this status")
 
         # Mettre à jour les champs
@@ -168,7 +167,7 @@ class WorkshopService:
             raise PermissionDenied("You don't have permission to delete this workshop")
 
         # Vérifier le statut
-        if workshop.status != WorkshopStatus.DRAFT:
+        if workshop.status != "draft":
             raise ValidationError("Can only delete draft workshops")
 
         db.delete(workshop)
@@ -206,7 +205,7 @@ class WorkshopService:
             query = query.filter(Workshop.status == status)
         else:
             # Par défaut, afficher seulement les publiés
-            query = query.filter(Workshop.status == WorkshopStatus.PUBLISHED)
+            query = query.filter(Workshop.status == "published")
 
         # Filtrage prix
         if min_price is not None:
@@ -247,10 +246,10 @@ class WorkshopService:
         if workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to publish this workshop")
 
-        if workshop.status != WorkshopStatus.DRAFT:
+        if workshop.status != "draft":
             raise ValidationError("Can only publish draft workshops")
 
-        workshop.status = WorkshopStatus.PUBLISHED
+        workshop.status = "published"
         workshop.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(workshop)
@@ -268,10 +267,10 @@ class WorkshopService:
         if workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to unpublish this workshop")
 
-        if workshop.status != WorkshopStatus.PUBLISHED:
+        if workshop.status != "published":
             raise ValidationError("Can only unpublish published workshops")
 
-        workshop.status = WorkshopStatus.DRAFT
+        workshop.status = "draft"
         workshop.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(workshop)
@@ -289,7 +288,7 @@ class WorkshopService:
         if workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to archive this workshop")
 
-        workshop.status = WorkshopStatus.ARCHIVED
+        workshop.status = "archived"
         workshop.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(workshop)
