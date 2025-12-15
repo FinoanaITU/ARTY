@@ -451,7 +451,47 @@ class ApiService {
   }
 
   async createWorkshop(data: WorkshopCreate): Promise<WorkshopOut> {
-    const response = await this.api.post('/workshops', data);
+    const response = await this.api.post('/workshops/json', data);
+    return response.data;
+  }
+
+  async createWorkshopWithPhotos(data: WorkshopCreate, photos?: File[]): Promise<WorkshopOut> {
+    const formData = new FormData();
+    
+    // Ajouter les données du formulaire
+    formData.append('title', data.title);
+    formData.append('description', data.description);
+    if (data.short_description) formData.append('short_description', data.short_description);
+    formData.append('category', data.category);
+    formData.append('workshop_type', data.workshop_type);
+    formData.append('skill_level', data.skill_level);
+    formData.append('base_price', data.base_price.toString());
+    if (data.foreign_price) formData.append('foreign_price', data.foreign_price.toString());
+    formData.append('max_participants', data.max_participants.toString());
+    formData.append('min_participants', (data.min_participants || 1).toString());
+    formData.append('duration_minutes', data.duration_minutes.toString());
+    formData.append('location', data.location);
+    if (data.address) formData.append('address', data.address);
+    
+    // Ajouter les listes JSON
+    if (data.materials_included) formData.append('materials_included', JSON.stringify(data.materials_included));
+    if (data.materials_to_bring) formData.append('materials_to_bring', JSON.stringify(data.materials_to_bring));
+    if (data.prerequisites) formData.append('prerequisites', data.prerequisites);
+    if (data.what_you_will_learn) formData.append('what_you_will_learn', JSON.stringify(data.what_you_will_learn));
+    if (data.tags) formData.append('tags', JSON.stringify(data.tags));
+    
+    // Ajouter les photos
+    if (photos) {
+      photos.forEach((photo, index) => {
+        formData.append('photos', photo);
+      });
+    }
+    
+    const response = await this.api.post('/workshops', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   }
 

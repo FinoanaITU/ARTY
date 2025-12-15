@@ -3,12 +3,13 @@ Endpoints pour la gestion des ateliers
 Routes: /api/v1/workshops
 """
 
-from fastapi import APIRouter, Depends, Query, Path, HTTPException
+from fastapi import APIRouter, Depends, Query, Path, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from decimal import Decimal
 from uuid import UUID
 from datetime import datetime
+import json
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
@@ -16,6 +17,7 @@ from app.models.user import User
 from app.models.workshop import Workshop, WorkshopSession
 from app.models.workshop_time_slot import WorkshopTimeSlot
 from app.services.workshop_service import WorkshopService
+from app.services.storage import StorageService
 from app.schemas.workshop import (
     WorkshopCreate,
     WorkshopUpdate,
@@ -145,12 +147,106 @@ async def get_artisan_unavailability(
 
 @router.post("", response_model=WorkshopOut, status_code=201)
 async def create_workshop(
+    # Données du formulaire
+    title: str = Form(...),
+    description: str = Form(...),
+    short_description: Optional[str] = Form(None),
+    category: str = Form(...),
+    workshop_type: str = Form(...),
+    skill_level: str = Form(...),
+    base_price: float = Form(...),
+    foreign_price: Optional[float] = Form(None),
+    max_participants: int = Form(...),
+    min_participants: int = Form(1),
+    duration_minutes: int = Form(...),
+    location: str = Form(...),
+    address: Optional[str] = Form(None),
+    materials_included: Optional[str] = Form(None),  # JSON string
+    materials_to_bring: Optional[str] = Form(None),  # JSON string
+    prerequisites: Optional[str] = Form(None),
+    what_you_will_learn: Optional[str] = Form(None),  # JSON string
+    tags: Optional[str] = Form(None),  # JSON string
+    # Photos
+    photos: Optional[List[UploadFile]] = File(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Créer un nouvel atelier avec upload de photos
+    Réservé aux artisans authentifiés
+    """
+    if current_user.role.value != "artisan":
+        raise PermissionDenied("Only artisans can create workshops")
+    
+    # Parse les champs JSON
+    try:
+        materials_included_list = json.loads(materials_included) if materials_included else None
+        materials_to_bring_list = json.loads(materials_to_bring) if materials_to_bring else None
+        what_you_will_learn_list = json.loads(what_you_will_learn) if what_you_will_learn else None
+        tags_list = json.loads(tags) if tags else None
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON format in array fields")
+    
+    # Upload des photos
+    image_urls = []
+    gallery_images = []
+    if photos:
+        storage_service = StorageService()
+        for i, photo_file in enumerate(photos[:5]):  # Max 5 photos
+            try:
+                photo_url = await storage_service.upload_file(
+                    file=photo_file,
+                    folder="workshops",
+                    allowed_extensions=["jpg", "jpeg", "png", "webp"]
+                )
+                if i == 0:
+                    image_urls.append(photo_url)  # Première photo comme featured
+                else:
+                    gallery_images.append(photo_url)
+            except Exception as e:
+                print(f"Erreur lors de l'upload de la photo: {e}")
+    
+    # Créer l'objet WorkshopCreate
+    workshop_create = WorkshopCreate(
+        title=title,
+        description=description,
+        short_description=short_description,
+        category=category,
+        workshop_type=workshop_type,
+        skill_level=skill_level,
+        base_price=base_price,
+        foreign_price=foreign_price,
+        max_participants=max_participants,
+        min_participants=min_participants,
+        duration_minutes=duration_minutes,
+        location=location,
+        address=address,
+        materials_included=materials_included_list,
+        materials_to_bring=materials_to_bring_list,
+        prerequisites=prerequisites,
+        what_you_will_learn=what_you_will_learn_list,
+        featured_image_url=image_urls[0] if image_urls else None,
+        gallery_images=gallery_images if gallery_images else None,
+        tags=tags_list,
+    )
+    
+    workshop = WorkshopService.create_workshop(
+        db=db,
+        workshop_create=workshop_create,
+        artisan_id=current_user.id,
+    )
+    
+    return WorkshopOut.model_validate(workshop)
+
+
+@router.post("/json", response_model=WorkshopOut, status_code=201)
+async def create_workshop_json(
     workshop_create: WorkshopCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Créer un nouvel atelier
+    Créer un nouvel atelier via JSON (sans photos)
     Réservé aux artisans authentifiés
     """
     if current_user.role.value != "artisan":

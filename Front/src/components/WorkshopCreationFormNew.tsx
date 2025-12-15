@@ -73,6 +73,8 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   initialData = {}
 }) => {
   const [loading, setLoading] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [formData, setFormData] = useState<WorkshopFormData>({
     title: '',
     description: '',
@@ -125,6 +127,33 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
     }));
   };
 
+  // Gestionnaires pour les photos
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files).slice(0, 5 - photos.length); // Max 5 photos
+    const newPhotos = [...photos, ...newFiles];
+    setPhotos(newPhotos);
+
+    // Créer les aperçus
+    newFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreviews(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset l'input
+    event.target.value = '';
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -174,8 +203,10 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
         tags: formData.tags?.filter(t => t.trim() !== ''),
       };
 
-      // Appel API
-      const result = await apiService.createWorkshop(workshopData);
+      // Appel API avec photos
+      const result = photos.length > 0 
+        ? await apiService.createWorkshopWithPhotos(workshopData, photos)
+        : await apiService.createWorkshop(workshopData);
 
       toast({
         title: "Atelier créé",
@@ -280,6 +311,77 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                 className="min-h-32"
                 required
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Photos */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Photos de l'atelier</CardTitle>
+            <CardDescription>Ajoutez des photos pour illustrer votre atelier (max 5 photos)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Aperçu des photos */}
+              {photoPreviews.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {photoPreviews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={preview}
+                          alt={`Photo ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removePhoto(index)}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                      {index === 0 && (
+                        <Badge className="absolute bottom-2 left-2 bg-orange-600">
+                          Photo principale
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Upload de photos */}
+              {photos.length < 5 && (
+                <div>
+                  <Label htmlFor="photos">Ajouter des photos</Label>
+                  <div className="mt-2">
+                    <input
+                      id="photos"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('photos')?.click()}
+                      className="w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Choisir des photos ({photos.length}/5)
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formats acceptés: JPG, PNG, WebP. Taille max: 5MB par photo.
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
