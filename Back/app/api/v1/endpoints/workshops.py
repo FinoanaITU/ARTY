@@ -5,13 +5,15 @@ Routes: /api/v1/workshops
 
 from fastapi import APIRouter, Depends, Query, Path, HTTPException
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from decimal import Decimal
 from uuid import UUID
+from datetime import datetime
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
+from app.models.workshop import Workshop, WorkshopSession
 from app.models.workshop_time_slot import WorkshopTimeSlot
 from app.services.workshop_service import WorkshopService
 from app.schemas.workshop import (
@@ -461,3 +463,88 @@ async def get_workshop_time_slots(
         result.append(summary.model_dump())
     
     return result
+
+
+# ============ ATELIERS SUR INSCRIPTION ============
+
+@router.get("/inscription/upcoming", response_model=List[dict])
+async def get_upcoming_inscription_workshops(
+    db: Session = Depends(get_db),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+):
+    """
+    Récupérer tous les ateliers sur inscription avec leurs sessions à venir
+    """
+    from app.models.workshop import WorkshopSession
+    from sqlalchemy import and_
+    from datetime import datetime
+    
+    # Récupérer les ateliers sur inscription avec leurs sessions futures
+    query = (
+        db.query(Workshop, WorkshopSession)
+        .join(WorkshopSession, Workshop.id == WorkshopSession.workshop_id)
+        .filter(
+            and_(
+                Workshop.workshop_type == "inscription",
+                Workshop.status == "published",
+                WorkshopSession.start_datetime > datetime.now(),
+                WorkshopSession.status == "scheduled"
+            )
+        )
+        .order_by(WorkshopSession.start_datetime)
+        .offset(skip)
+        .limit(limit)
+    )
+    
+    results = query.all()
+    
+    # Grouper par atelier
+    workshops_data = {}
+    for workshop, session in results:
+        if workshop.id not in workshops_data:
+            # Récupérer l'artisan
+            artisan = db.query(User).filter(User.id == workshop.artisan_id).first()
+            
+            workshops_data[workshop.id] = {
+                "id": str(workshop.id),
+                "title": workshop.title,
+                "description": workshop.description,
+                "short_description": workshop.short_description,
+                "skill_level": workshop.skill_level,
+                "base_price": float(workshop.base_price),
+                "currency": workshop.currency,
+                "min_participants": workshop.min_participants,
+                "max_participants": workshop.max_participants,
+                "duration_minutes": workshop.duration_minutes,
+                "address": workshop.address,
+                "featured_image_url": workshop.featured_image_url,
+                "gallery_images": workshop.gallery_images or [],
+                "materials_included": workshop.materials_included or [],
+                "what_you_will_learn": workshop.what_you_will_learn or [],
+                "tags": workshop.tags or [],
+                "artisan": {
+                    "id": str(artisan.id) if artisan else None,
+                    "name": artisan.name if artisan else "Artisan inconnu",
+                    "avatar": getattr(artisan, 'avatar_url', None) if artisan else None
+                },
+                "sessions": []
+            }
+        
+        # Ajouter la session
+        session_data = {
+            "id": str(session.id),
+            "start_datetime": session.start_datetime.isoformat(),
+            "end_datetime": session.end_datetime.isoformat(),
+            "current_bookings": session.current_bookings,
+            "max_participants": session.max_participants or workshop.max_participants,
+            "available_spots": session.available_spots,
+            "session_price": float(session.session_price or workshop.base_price),
+            "status": session.status,
+            "is_full": session.current_bookings >= (session.max_participants or workshop.max_participants),
+            "needs_min_participants": session.current_bookings < workshop.min_participants
+        }
+        
+        workshops_data[workshop.id]["sessions"].append(session_data)
+    
+    return list(workshops_data.values())
