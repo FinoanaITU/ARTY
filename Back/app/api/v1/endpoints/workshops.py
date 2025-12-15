@@ -12,6 +12,7 @@ from uuid import UUID
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
+from app.models.workshop_time_slot import WorkshopTimeSlot
 from app.services.workshop_service import WorkshopService
 from app.schemas.workshop import (
     WorkshopCreate,
@@ -422,3 +423,41 @@ async def confirm_booking(
     )
     
     return WorkshopBookingOut.model_validate(booking)
+
+
+@router.get("/{workshop_id}/time-slots")
+async def get_workshop_time_slots(
+    workshop_id: UUID = Path(...),
+    date_param: Optional[str] = Query(None, alias="date"),
+    db: Session = Depends(get_db),
+):
+    """
+    Récupérer les créneaux horaires pour un atelier à une date donnée
+    """
+    from datetime import datetime
+    from app.schemas.workshop_time_slot import TimeSlotSummary, WorkshopTimeSlotOut
+    
+    # Parser la date depuis le paramètre
+    if date_param:
+        try:
+            target_date = datetime.strptime(date_param, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    else:
+        from datetime import date as date_type
+        target_date = date_type.today()
+    
+    # Récupérer les créneaux depuis la base de données
+    time_slots = db.query(WorkshopTimeSlot).filter(
+        WorkshopTimeSlot.workshop_id == workshop_id,
+        WorkshopTimeSlot.date == target_date
+    ).order_by(WorkshopTimeSlot.start_time).all()
+    
+    # Convertir au format attendu par le frontend
+    result = []
+    for slot in time_slots:
+        slot_out = WorkshopTimeSlotOut.model_validate(slot)
+        summary = TimeSlotSummary.from_time_slot(slot_out)
+        result.append(summary.model_dump())
+    
+    return result

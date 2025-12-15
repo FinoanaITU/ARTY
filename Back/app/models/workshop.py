@@ -135,3 +135,16 @@ class WorkshopAvailability(BaseModel):
     
     # Relationships
     artisan = relationship("User")
+
+
+# Configure relationships after class definitions to avoid circular imports
+def _configure_workshop_relationships():
+    """Configure Workshop relationships after all models are defined"""
+    try:
+        from app.models.workshop_time_slot import WorkshopTimeSlot
+        Workshop.time_slots = relationship("WorkshopTimeSlot", back_populates="workshop", cascade="all, delete-orphan", lazy="dynamic")
+    except ImportError:
+        pass
+
+# Call the configuration function
+_configure_workshop_relationships()

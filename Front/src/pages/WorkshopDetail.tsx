@@ -388,7 +388,7 @@ const WorkshopDetail = () => {
           {showBookingCalendar && (
             <div className="mb-6">
               <WorkshopBookingCalendar
-                workshopId={typeof workshop.id === 'string' ? parseInt(workshop.id, 10) : workshop.id}
+                workshopId={workshop.id}
                 workshopType={workshop.type}
                 duration={workshop.duration}
                 maxParticipants={workshop.maxParticipants}

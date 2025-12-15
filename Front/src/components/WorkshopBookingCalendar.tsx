@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarIcon, Clock, Users, Plus, AlertTriangle, Info } from 'lucide-react';
+import { CalendarIcon, Clock, Users, Plus, AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { isReservationAllowed } from '@/utils/dateValidation';
@@ -24,7 +24,7 @@ interface TimeSlot {
 }
 
 interface WorkshopBookingCalendarProps {
-  workshopId: number;
+  workshopId: string | number;
   workshopType: 'inscription' | 'reservation';
   duration: string;
   maxParticipants: number;
@@ -80,19 +80,48 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     return period?.reason;
   };
 
-  // Mock time slots - in real app, this would come from backend
+  // Get real time slots from API
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [loadingTimeSlots, setLoadingTimeSlots] = useState(false);
+
+  // Fetch time slots when date changes
+  useEffect(() => {
+    if (selectedDate && isDateSelectable(selectedDate)) {
+      setLoadingTimeSlots(true);
+      const dateStr = selectedDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+      
+      fetch(`http://localhost:8000/api/v1/workshops/${workshopId}/time-slots?date=${dateStr}`)
+        .then(response => response.json())
+        .then(data => {
+          // Convert API response to TimeSlot format
+          const slots: TimeSlot[] = data.map((slot: any) => ({
+            time: slot.time,
+            available: slot.available,
+            maxParticipants: slot.maxParticipants,
+            currentParticipants: slot.currentParticipants,
+            minParticipants: slot.minParticipants
+          }));
+          setTimeSlots(slots);
+        })
+        .catch(error => {
+          console.error('Error fetching time slots:', error);
+          setTimeSlots([]);
+        })
+        .finally(() => {
+          setLoadingTimeSlots(false);
+        });
+    } else {
+      setTimeSlots([]);
+    }
+  }, [selectedDate, workshopId]);
+
   const getAvailableTimeSlots = (date: Date): TimeSlot[] => {
     // If artisan is unavailable, return empty array
     if (isDateUnavailable(date)) {
       return [];
     }
-
-    return [
-      { time: '09:00', available: true, maxParticipants, currentParticipants: 2, minParticipants: 4 },
-      { time: '11:00', available: true, maxParticipants, currentParticipants: 6, minParticipants: 4 },
-      { time: '14:00', available: true, maxParticipants, currentParticipants: 3, minParticipants: 4 },
-      { time: '16:00', available: false, maxParticipants, currentParticipants: maxParticipants, minParticipants: 4 }
-    ];
+    
+    return timeSlots;
   };
 
   // Get slot status and styling
@@ -143,7 +172,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     };
   };
 
-  const timeSlots = selectedDate ? getAvailableTimeSlots(selectedDate) : [];
+  const availableSlots = selectedDate ? getAvailableTimeSlots(selectedDate) : [];
 
   const handleBooking = () => {
     if (selectedDate && selectedTime && selectedPriceVariation) {
@@ -498,7 +527,17 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {timeSlots.map((slot) => {
+                {loadingTimeSlots ? (
+                  <div className="col-span-2 flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="ml-2">Chargement des créneaux...</span>
+                  </div>
+                ) : availableSlots.length === 0 ? (
+                  <div className="col-span-2 text-center py-8 text-gray-500">
+                    Aucun créneau disponible pour cette date
+                  </div>
+                ) : (
+                  availableSlots.map((slot) => {
                   const slotInfo = getSlotStatus(slot);
                   return (
                     <button
@@ -532,22 +571,11 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
                       </div>
                     </button>
                   );
-                })}
+                  })
+                )}
               </div>
 
-              {timeSlots.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="mb-4">Aucun créneau disponible pour cette date</p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowCustomRequest(true)}
-                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Demander un autre créneau
-                  </Button>
-                </div>
-              )}
+
             </CardContent>
           </Card>
         </>
