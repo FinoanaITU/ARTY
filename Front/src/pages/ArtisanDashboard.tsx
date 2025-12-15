@@ -7,8 +7,8 @@ import { ArtisanOrderManager } from '@/components/ArtisanOrderManager';
 import ArtisanAvailabilityCalendar from '@/components/ArtisanAvailabilityCalendar';
 import { ArtisanProfileEditor } from '@/components/ArtisanProfileEditor';
 import { ArtisanProductManager } from '@/components/ArtisanProductManager';
-import { WorkshopManager } from '@/components/WorkshopManager';
-import { WorkshopCreationForm } from '@/components/WorkshopCreationForm';
+
+import WorkshopCreationForm from '@/components/WorkshopCreationFormNew';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -548,12 +548,13 @@ const ArtisanDashboard = () => {
               {showWorkshopCreation ? (
                 <WorkshopCreationForm
                   onSubmit={(workshopData) => {
-                    console.log('Create workshop:', workshopData);
+                    console.log('Workshop created:', workshopData);
                     setShowWorkshopCreation(false);
                     toast({
                       title: "Atelier créé",
-                      description: "L'atelier a été créé avec succès.",
+                      description: "L'atelier a été créé avec succès et est en attente d'approbation.",
                     });
+                    // Ici vous pourriez recharger la liste des ateliers
                   }}
                   onCancel={() => setShowWorkshopCreation(false)}
                 />
@@ -573,34 +574,26 @@ const ArtisanDashboard = () => {
                     </Button>
                   </div>
                   
-                  <WorkshopManager
-                    workshops={[]}
-                    artisans={[
-                      { id: '1', name: 'Jean Rakotozafy', specialty: 'Sculpture sur bois' },
-                      { id: '2', name: 'Marie Razafy', specialty: 'Tissage traditionnel' }
-                    ]}
-                    onCreateWorkshop={(workshop) => {
-                      console.log('Workshop created:', workshop);
-                      toast({
-                        title: "Atelier créé",
-                        description: "L'atelier a été créé avec succès"
-                      });
-                    }}
-                    onUpdateWorkshop={(id, workshop) => {
-                      console.log('Workshop updated:', id, workshop);
-                      toast({
-                        title: "Atelier mis à jour",
-                        description: "L'atelier a été mis à jour avec succès"
-                      });
-                    }}
-                    onDeleteWorkshop={(id) => {
-                      console.log('Workshop deleted:', id);
-                      toast({
-                        title: "Atelier supprimé",
-                        description: "L'atelier a été supprimé avec succès"
-                      });
-                    }}
-                  />
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Vos ateliers</CardTitle>
+                      <CardDescription>
+                        Gérez vos ateliers créés et publiés
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 mb-4">Vous n'avez pas encore créé d'atelier</p>
+                        <Button 
+                          variant="outline"
+                          onClick={() => setShowWorkshopCreation(true)}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Créer votre premier atelier
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
             </TabsContent>

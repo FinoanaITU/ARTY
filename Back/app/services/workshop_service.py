@@ -65,22 +65,22 @@ class WorkshopService:
             description=workshop_create.description,
             short_description=workshop_create.short_description,
             artisan_id=artisan_id,
-            category=workshop_create.category,
-            workshop_type=workshop_create.workshop_type,
-            skill_level=workshop_create.skill_level,
+            # category_id sera géré plus tard si nécessaire
+            workshop_type=workshop_create.workshop_type.value if hasattr(workshop_create.workshop_type, 'value') else workshop_create.workshop_type,
+            skill_level=workshop_create.skill_level.value if hasattr(workshop_create.skill_level, 'value') else workshop_create.skill_level,
             base_price=workshop_create.base_price,
-            foreign_price=workshop_create.foreign_price,
+            # foreign_price=workshop_create.foreign_price,  # Column doesn't exist
             max_participants=workshop_create.max_participants,
-            min_participants=workshop_create.min_participants,
+            min_participants=workshop_create.min_participants or 1,
             duration_minutes=workshop_create.duration_minutes,
-            location=workshop_create.location,
+            address=workshop_create.location,  # Map location to address
             room_details=workshop_create.room_details,
             materials_included=workshop_create.materials_included,
             materials_to_bring=workshop_create.materials_to_bring,
             prerequisites=workshop_create.prerequisites,
             what_you_will_learn=workshop_create.what_you_will_learn,
-            program=workshop_create.program,
-            privatization_enabled=workshop_create.privatization_enabled,
+            # program=workshop_create.program,  # Column doesn't exist
+            # privatization_enabled=workshop_create.privatization_enabled,  # Column doesn't exist
             featured_image_url=workshop_create.featured_image_url,
             gallery_images=workshop_create.gallery_images,
             video_preview_url=workshop_create.video_preview_url,
@@ -88,20 +88,8 @@ class WorkshopService:
             status="draft",
         )
 
-        # Gérer les options de privatisation
-        if workshop_create.privatization_enabled and workshop_create.privatization_options:
-            workshop.privatization_min_participants = (
-                workshop_create.privatization_options.min_participants
-            )
-            workshop.privatization_max_participants = (
-                workshop_create.privatization_options.max_participants
-            )
-            workshop.privatization_base_price = (
-                workshop_create.privatization_options.base_price
-            )
-            workshop.privatization_price_per_participant = (
-                workshop_create.privatization_options.price_per_participant
-            )
+        # Les options de privatisation ne sont pas encore implémentées dans le modèle
+        # Elles seront ajoutées dans une future migration
 
         db.add(workshop)
         db.commit()
