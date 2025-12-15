@@ -114,10 +114,10 @@ const ProductDetail = () => {
       productId: product.id,
       name: product.name,
       artisan: product.artisan.name,
-      price: selectedPriceVariation?.discountedPrice || product.price,
+      price: product.price,
       quantity: q,
       image: product.images && product.images.length > 0 ? product.images[0] : '',
-      priceVariation: selectedPriceVariation || undefined
+      priceVariation: undefined
     });
     
     toast.success('Produit ajouté au panier !');
@@ -169,7 +169,21 @@ const ProductDetail = () => {
                     </>
                   )}
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+                  <div className="flex gap-2 flex-shrink-0">
+                    {product.customizable && (
+                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                        Personnalisable
+                      </span>
+                    )}
+                    {product.bulk_order_enabled && (
+                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                        Commande en gros
+                      </span>
+                    )}
+                  </div>
+                </div>
                 {product.rating && (
                   <div className="flex items-center gap-4 mb-4">
                     <div className="flex items-center gap-1">
@@ -190,40 +204,53 @@ const ProductDetail = () => {
                   </div>
                 )}
                 
-                {/* Prix de base pour les non-connectés */}
-                {!isLoggedIn && (
-                  <p className="text-2xl font-bold text-orange-600 mb-4">
-                    À partir de {product.price.toLocaleString('fr-FR')} Ar
-                  </p>
-                )}
+                {/* Prix pour tous les utilisateurs */}
+                <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200 mb-4">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-orange-600">
+                      {product.price.toLocaleString('fr-FR')} Ar
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Product Details */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-orange-600" />
-                  <span>Temps de fabrication: {product.production_time_days} jour{product.production_time_days > 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-green-600" />
-                  <span>Stock: {product.stock} pièce{product.stock > 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-blue-600" />
-                  <span>Expédition: 3-5 jours</span>
-                </div>
-                {product.dimensions && (product.dimensions.length || product.dimensions.width || product.dimensions.height) && (
-                  <div className="flex items-center gap-2">
-                    <Ruler className="w-4 h-4 text-purple-600" />
-                    <span>
-                      {product.dimensions.length && `${product.dimensions.length} cm`}
-                      {product.dimensions.width && ` × ${product.dimensions.width} cm`}
-                      {product.dimensions.height && ` × ${product.dimensions.height} cm`}
-                      {product.dimensions.weight && ` (${product.dimensions.weight} kg)`}
-                    </span>
+              <Card className="border-gray-200">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-gray-900 mb-3">Informations produit</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                      <span>Fabrication: {product.production_time_days} jour{product.production_time_days > 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Package className={`w-4 h-4 flex-shrink-0 ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`} />
+                      <span className={product.stock === 0 ? 'text-red-600 font-medium' : ''}>
+                        {product.stock > 0 ? `${product.stock} pièce${product.stock > 1 ? 's' : ''} en stock` : 'Rupture de stock'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Truck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      <span>Livraison: 3-5 jours ouvrés</span>
+                    </div>
+                    {product.dimensions && (product.dimensions.length || product.dimensions.width || product.dimensions.height || product.dimensions.weight) && (
+                      <div className="flex items-start gap-2">
+                        <Ruler className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex flex-col">
+                          {(product.dimensions.length || product.dimensions.width || product.dimensions.height) && (
+                            <span>
+                              Dimensions: {product.dimensions.length || 0} × {product.dimensions.width || 0} × {product.dimensions.height || 0} cm
+                            </span>
+                          )}
+                          {product.dimensions.weight && (
+                            <span className="text-gray-600">Poids: {product.dimensions.weight} g</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Materials */}
               {product.materials && product.materials.length > 0 && (
@@ -253,20 +280,40 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              {/* Price Variation Selector - Only for logged in users */}
-              {isLoggedIn ? (
-                <PriceVariationSelector
-                  basePrice={product.price}
-                  onPriceChange={setSelectedPriceVariation}
-                />
-              ) : (
+              {/* Code promo section - Only for logged in users */}
+              {isLoggedIn && (
+                <Card className="border-orange-200">
+                  <CardContent className="pt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Code promo (optionnel)
+                      </label>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Entrez votre code"
+                          disabled
+                        />
+                        <Button
+                          disabled
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          Appliquer
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Fonctionnalité bientôt disponible</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {!isLoggedIn && (
                 <Card className="border-orange-200 bg-orange-50">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3 text-orange-700">
                       <Lock className="w-5 h-5" />
                       <div>
-                        <p className="font-medium">Connectez-vous pour voir vos tarifs personnalisés</p>
-                        <p className="text-sm">Les prix varient selon votre profil (particulier, entreprise, résident local)</p>
+                        <p className="font-medium">Connectez-vous pour accéder à toutes les fonctionnalités</p>
+                        <p className="text-sm">Ajouter au panier, codes promo et bien plus encore</p>
                       </div>
                     </div>
                     <div className="mt-3 flex gap-2">
@@ -375,7 +422,34 @@ const ProductDetail = () => {
               <CardTitle>Description</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 leading-relaxed">{product.description}</p>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">{product.description}</p>
+              
+              {/* Metadata */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                  <div>
+                    <span className="font-medium">Ajouté le:</span>{' '}
+                    {new Date(product.created_at).toLocaleDateString('fr-FR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </div>
+                  {product.updated_at !== product.created_at && (
+                    <div>
+                      <span className="font-medium">Mis à jour le:</span>{' '}
+                      {new Date(product.updated_at).toLocaleDateString('fr-FR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium">Réf:</span> #{product.id.slice(0, 8)}
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -383,17 +457,19 @@ const ProductDetail = () => {
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>À propos de l'artisan</CardTitle>
+              <CardDescription>Découvrez l'artisan derrière ce produit unique</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-semibold text-xl">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
                   {product.artisan.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1">{product.artisan.name}</h3>
+                  <h3 className="font-semibold text-xl mb-2">{product.artisan.name}</h3>
+                  <p className="text-gray-600 text-sm mb-3">Artisan certifié • Savoir-faire traditionnel malgache</p>
                   <Link to={`/artisan/${product.artisan.id}`}>
-                    <Button variant="outline" size="sm" className="mt-2">
-                      Voir le profil complet
+                    <Button variant="outline" size="sm" className="hover:bg-orange-50 hover:border-orange-600 hover:text-orange-600">
+                      Voir tous les produits de cet artisan
                     </Button>
                   </Link>
                 </div>

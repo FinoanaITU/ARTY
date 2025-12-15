@@ -106,18 +106,11 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
   return (
     <div className="space-y-4">
       {/* Affichage du prix final simplifié */}
-      <div className="bg-orange-50 p-4 rounded-lg">
+      <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
         <div className="text-center">
           <div className="text-3xl font-bold text-orange-600">
-            {priceVariation.discountedPrice.toLocaleString()} Ar
+            {priceVariation.discountedPrice.toLocaleString('fr-FR')} Ar
           </div>
-          {appliedPromoCode && (
-            <div className="mt-2">
-              <Badge className="bg-green-600 text-white">
-                Code promo appliqué
-              </Badge>
-            </div>
-          )}
         </div>
       </div>
 
