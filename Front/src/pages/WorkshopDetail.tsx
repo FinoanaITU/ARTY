@@ -10,6 +10,7 @@ import WorkshopBookingCalendar from '@/components/WorkshopBookingCalendar';
 import WorkshopRegistrationForm from '@/components/WorkshopRegistrationForm';
 import ArtisanUnavailabilityDisplay from '@/components/ArtisanUnavailabilityDisplay';
 import { useWorkshops } from '@/hooks/useWorkshops';
+import { UnavailabilityPeriod } from '@/types/artisan';
 
 interface Unavailability {
   id: string;
@@ -111,6 +112,19 @@ const WorkshopDetail = () => {
     }
   }, [apiWorkshop]);
 
+  // Convert API unavailabilities to the format expected by the calendar
+  const artisanUnavailability = unavailabilities.map(unavail => ({
+    id: unavail.id,
+    artisanId: unavail.artisan_id,
+    startDate: new Date(unavail.start_date),
+    endDate: unavail.end_date ? new Date(unavail.end_date) : undefined,
+    reason: unavail.reason,
+    type: unavail.type === 'single_day' ? 'single' as const : 'range' as const,
+    status: unavail.status as 'draft' | 'pending_approval' | 'approved' | 'rejected',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }));
+
   // Mock data - in real app, fetch based on id
   const workshopType: 'inscription' | 'reservation' = (id === '2' || id === '4' || id === '6') ? 'reservation' : 'inscription';
   
@@ -178,41 +192,7 @@ const WorkshopDetail = () => {
     setShowBookingCalendar(false);
   };
 
-  // Mock données d'indisponibilité de l'artisan
-  const artisanUnavailability = [
-    {
-      id: '1',
-      artisanId: 'artisan-1',
-      startDate: new Date('2024-08-15'),
-      endDate: new Date('2024-08-20'),
-      reason: 'Congés d\'été',
-      type: 'range' as const,
-      status: 'approved' as const,
-      createdAt: new Date('2024-08-01'),
-      updatedAt: new Date('2024-08-01')
-    },
-    {
-      id: '2',
-      artisanId: 'artisan-1',
-      startDate: new Date('2024-08-25'),
-      reason: 'Salon d\'artisanat',
-      type: 'single' as const,
-      status: 'approved' as const,
-      createdAt: new Date('2024-08-01'),
-      updatedAt: new Date('2024-08-01')
-    },
-    {
-      id: '3',
-      artisanId: 'artisan-1',
-      startDate: new Date('2024-09-01'),
-      endDate: new Date('2024-09-03'),
-      reason: 'Formation technique',
-      type: 'range' as const,
-      status: 'approved' as const,
-      createdAt: new Date('2024-08-01'),
-      updatedAt: new Date('2024-08-01')
-    }
-  ];
+
 
   const handleCustomDateRequest = (requestedDate: Date) => {
     console.log('Date requested:', requestedDate);
