@@ -335,6 +335,28 @@ class ApiService {
     return response.data;
   }
 
+  async publishProduct(productId: string): Promise<ProductOut> {
+    const formData = new FormData();
+    formData.append('status', 'published');
+    const response = await this.api.patch(`/products/${productId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  async unpublishProduct(productId: string): Promise<ProductOut> {
+    const formData = new FormData();
+    formData.append('status', 'draft');
+    const response = await this.api.patch(`/products/${productId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
   async getCategories(): Promise<CategoriesResponse> {
     const response = await this.api.get('/products/categories');
     return response.data;

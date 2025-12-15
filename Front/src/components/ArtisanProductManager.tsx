@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Image as ImageIcon, Upload, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Image as ImageIcon, Upload, X, Send } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import apiService from '@/services/api';
 import { useUser } from '@/contexts/UserContext';
@@ -360,6 +360,32 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     } catch (err: any) {
       console.error('Error deleting product:', err);
       toast({ title: 'Erreur', description: err?.response?.data?.detail || 'Erreur lors de la suppression', variant: 'destructive' });
+    }
+  };
+
+  const handleTogglePublish = async (product: ProductOut) => {
+    try {
+      if (product.status === 'published') {
+        await apiService.unpublishProduct(product.id);
+        toast({
+          title: 'Produit dépublié',
+          description: 'Votre produit a été remis en brouillon'
+        });
+      } else {
+        await apiService.publishProduct(product.id);
+        toast({
+          title: 'Produit publié',
+          description: 'Votre produit est maintenant visible par tous'
+        });
+      }
+      await loadProducts(page, limit);
+    } catch (err: any) {
+      console.error('Error toggling publish status:', err);
+      toast({
+        title: 'Erreur',
+        description: err?.response?.data?.detail || 'Erreur lors de la modification du statut',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -809,23 +835,35 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                       Stock: {product.stock}
                     </span>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(product)}
-                      className="flex-1"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Modifier
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(product.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(product)}
+                        className="flex-1"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Modifier
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(product.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {(product.status === 'draft' || product.status === 'published') && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleTogglePublish(product)}
+                        className={product.status === 'published' ? 'bg-gray-600 hover:bg-gray-700 w-full' : 'bg-orange-600 hover:bg-orange-700 w-full'}
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        {product.status === 'published' ? 'Remettre en brouillon' : 'Publier'}
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
