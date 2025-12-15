@@ -284,20 +284,20 @@ class WorkshopListItem(BaseModel):
     id: UUID
     title: str
     description: str
-    artisan: ArtisanBasic
-    category: str
-    workshop_type: WorkshopType
-    skill_level: SkillLevel
+    # artisan: ArtisanBasic  # Temporarily disabled - requires join
+    workshop_type: Optional[str] = None  # Changed to optional string to match DB
+    skill_level: Optional[str] = None  # Changed to optional string to match DB
     base_price: Decimal
-    foreign_price: Optional[Decimal]
+    # foreign_price: Optional[Decimal] = None  # Column doesn't exist in DB
     max_participants: int
     duration_minutes: int
-    location: str
-    featured_image_url: Optional[str]
-    total_bookings: int
-    rating_average: Optional[Decimal]
-    rating_count: int
-    status: WorkshopStatus
+    # location: str  # Column doesn't exist in DB
+    address: Optional[str] = None  # Use address instead of location
+    featured_image_url: Optional[str] = None
+    total_bookings: Optional[int] = 0
+    rating_average: Optional[Decimal] = None
+    rating_count: Optional[int] = 0
+    status: Optional[str] = None  # Changed to string to match DB
 
     class Config:
         from_attributes = True

@@ -365,7 +365,9 @@ const Workshops = () => {
     setShowSubscriptionForm(true);
   };
 
-  const filteredReservationWorkshops = filterWorkshops(reservationWorkshops);
+  // Use API workshops if available, fallback to mock data
+  const workshopsToUse = apiWorkshops.length > 0 ? apiWorkshops : reservationWorkshops;
+  const filteredReservationWorkshops = filterWorkshops(workshopsToUse);
 
   const ReservationWorkshopsComponent = () => (
     <div className="space-y-6">
