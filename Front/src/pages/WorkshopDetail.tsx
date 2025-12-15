@@ -11,12 +11,76 @@ import WorkshopRegistrationForm from '@/components/WorkshopRegistrationForm';
 import ArtisanUnavailabilityDisplay from '@/components/ArtisanUnavailabilityDisplay';
 import { useWorkshops } from '@/hooks/useWorkshops';
 
+interface Unavailability {
+  id: string;
+  artisan_id: string;
+  start_date: string;
+  end_date: string | null;
+  reason: string;
+  type: 'single_day' | 'range';
+  status: 'approved' | 'pending' | 'rejected';
+}
+
+// Type pour les données de workshop unifiées
+interface WorkshopData {
+  id: string | number;
+  title: string;
+  description: string;
+  instructor_name?: string;
+  instructor?: string;
+  instructor_image?: string;
+  instructorImage?: string;
+  instructor_bio?: string;
+  type?: 'inscription' | 'reservation';
+  date?: string;
+  duration?: string;
+  duration_minutes?: number;
+  price?: number;
+  base_price?: number;
+  participants?: number;
+  maxParticipants?: number;
+  available_spots?: number;
+  total_spots?: number;
+  image?: string;
+  address?: string;
+  location?: string;
+  difficulty?: string;
+  whatYouWillLearn?: string[];
+  materials?: string[];
+  schedule?: Array<{ time: string; activity: string }>;
+  privatizationOption?: any;
+}
+
+// Fonction pour normaliser les données du workshop
+const normalizeWorkshopData = (apiWorkshop: any, mockWorkshop: any): WorkshopData => {
+  if (apiWorkshop) {
+    // Utiliser les données de l'API
+    return {
+      ...apiWorkshop,
+      // Ajouter des propriétés pour la compatibilité avec le mock
+      type: 'reservation', // Par défaut pour les ateliers API
+      instructor: apiWorkshop.instructor_name,
+      instructorImage: apiWorkshop.instructor_image,
+      location: apiWorkshop.address,
+      price: apiWorkshop.base_price,
+      duration: apiWorkshop.duration_minutes ? `${Math.floor(apiWorkshop.duration_minutes / 60)}h${apiWorkshop.duration_minutes % 60 > 0 ? ` ${apiWorkshop.duration_minutes % 60}min` : ''}` : undefined,
+      maxParticipants: apiWorkshop.total_spots || 10,
+      participants: apiWorkshop.available_spots ? (apiWorkshop.total_spots - apiWorkshop.available_spots) : 0
+    };
+  } else {
+    // Utiliser les données mock
+    return mockWorkshop;
+  }
+};
+
 const WorkshopDetail = () => {
   const { id } = useParams();
   const { t } = useLanguage();
   const [showBookingCalendar, setShowBookingCalendar] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [showUnavailabilityCalendar, setShowUnavailabilityCalendar] = useState(false);
+  const [unavailabilities, setUnavailabilities] = useState<Unavailability[]>([]);
+  const [loadingUnavailabilities, setLoadingUnavailabilities] = useState(false);
   
   // Use the workshop hook
   const { currentWorkshop: apiWorkshop, loading: apiLoading, error: apiError, getWorkshop } = useWorkshops();
@@ -27,6 +91,25 @@ const WorkshopDetail = () => {
       getWorkshop(id);
     }
   }, [id, getWorkshop]);
+
+  // Load unavailabilities when API workshop is available
+  useEffect(() => {
+    if (apiWorkshop) {
+      setLoadingUnavailabilities(true);
+      fetch(`http://localhost:8000/api/v1/workshops/${apiWorkshop.id}/artisan-unavailability`)
+        .then(response => response.json())
+        .then(data => {
+          setUnavailabilities(data);
+        })
+        .catch(error => {
+          console.error('Erreur lors du chargement des indisponibilités:', error);
+          setUnavailabilities([]);
+        })
+        .finally(() => {
+          setLoadingUnavailabilities(false);
+        });
+    }
+  }, [apiWorkshop]);
 
   // Mock data - in real app, fetch based on id
   const workshopType: 'inscription' | 'reservation' = (id === '2' || id === '4' || id === '6') ? 'reservation' : 'inscription';
@@ -138,7 +221,26 @@ const WorkshopDetail = () => {
   };
 
   // Use API workshop if available, otherwise use mock
-  const workshop = apiWorkshop || mockWorkshop;
+  const workshop = normalizeWorkshopData(apiWorkshop, mockWorkshop);
+
+  // Récupération des indisponibilités si on utilise les données API
+  useEffect(() => {
+    if (apiWorkshop && apiWorkshop.id) {
+      setLoadingUnavailabilities(true);
+      fetch(`http://localhost:8000/api/v1/workshops/${apiWorkshop.id}/artisan-unavailability`)
+        .then(response => response.json())
+        .then(data => {
+          setUnavailabilities(data);
+        })
+        .catch(error => {
+          console.error('Erreur lors du chargement des indisponibilités:', error);
+          setUnavailabilities([]);
+        })
+        .finally(() => {
+          setLoadingUnavailabilities(false);
+        });
+    }
+  }, [apiWorkshop]);
 
   const isWorkshopFull = workshop.type === 'inscription' && workshop.participants! >= workshop.maxParticipants;
 
@@ -173,7 +275,7 @@ const WorkshopDetail = () => {
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
             <div className="aspect-video bg-brand-beige relative">
               <img
-                src={workshop.image}
+                src={workshop.image || 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop'}
                 alt={workshop.title}
                 className="w-full h-full object-cover"
               />
@@ -205,16 +307,16 @@ const WorkshopDetail = () => {
             <div className="p-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{workshop.title}</h1>
               <div className="flex items-center gap-4 text-gray-600 mb-4">
-                <span>👨‍🎨 {workshop.instructor}</span>
+                <span>👨‍🎨 {workshop.instructor_name || workshop.instructor}</span>
                 {workshop.type === 'inscription' && workshop.date && (
                   <span>📅 {new Date(workshop.date).toLocaleDateString('fr-FR')}</span>
                 )}
-                <span>⏱️ {workshop.duration}</span>
+                <span>⏱️ {workshop.duration_minutes ? `${Math.floor(workshop.duration_minutes / 60)}h${workshop.duration_minutes % 60 > 0 ? ` ${workshop.duration_minutes % 60}min` : ''}` : workshop.duration}</span>
               </div>
               <div className="flex items-center gap-4 text-gray-600 mb-6">
-                <span>📍 {workshop.location}</span>
+                <span>📍 {workshop.address || workshop.location}</span>
                 <span className="text-2xl font-bold text-brand-terracotta">
-                  {workshop.price.toLocaleString()} Ar
+                  {(workshop.base_price || workshop.price).toLocaleString()} Ar
                 </span>
               </div>
               
@@ -274,7 +376,18 @@ const WorkshopDetail = () => {
           {showRegistrationForm && workshop.type === 'inscription' && (
             <div className="mb-6">
               <WorkshopRegistrationForm
-                workshop={workshop}
+                workshop={{
+                  id: typeof workshop.id === 'string' ? parseInt(workshop.id, 10) : workshop.id,
+                  title: workshop.title,
+                  instructor: workshop.instructor_name || workshop.instructor || '',
+                  date: workshop.date,
+                  duration: workshop.duration || '',
+                  price: workshop.base_price || workshop.price || 0,
+                  location: workshop.address || workshop.location || '',
+                  maxParticipants: workshop.maxParticipants || workshop.total_spots || 10,
+                  participants: workshop.participants,
+                  image: workshop.image || ''
+                }}
                 onCancel={() => setShowRegistrationForm(false)}
               />
             </div>
@@ -295,7 +408,7 @@ const WorkshopDetail = () => {
           {showBookingCalendar && (
             <div className="mb-6">
               <WorkshopBookingCalendar
-                workshopId={workshop.id}
+                workshopId={typeof workshop.id === 'string' ? parseInt(workshop.id, 10) : workshop.id}
                 workshopType={workshop.type}
                 duration={workshop.duration}
                 maxParticipants={workshop.maxParticipants}
@@ -337,14 +450,18 @@ const WorkshopDetail = () => {
                   <CardTitle className="text-brand-brown">Ce que vous apprendrez</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {workshop.whatYouWillLearn.map((item, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="w-2 h-2 bg-brand-terracotta rounded-full mt-2 flex-shrink-0"></span>
-                        <span className="text-gray-600">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {workshop.whatYouWillLearn ? (
+                    <ul className="space-y-2">
+                      {workshop.whatYouWillLearn.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="w-2 h-2 bg-brand-terracotta rounded-full mt-2 flex-shrink-0"></span>
+                          <span className="text-gray-600">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600">Informations détaillées disponibles lors de l'inscription.</p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -355,16 +472,20 @@ const WorkshopDetail = () => {
                     <CardTitle className="text-brand-brown">Programme de l'atelier</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {workshop.schedule.map((item, index) => (
-                        <div key={index} className="flex gap-4">
-                          <span className="font-medium text-brand-terracotta w-16 flex-shrink-0">
-                            {item.time}
-                          </span>
-                          <span className="text-gray-600">{item.activity}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {workshop.schedule ? (
+                      <div className="space-y-3">
+                        {workshop.schedule.map((item, index) => (
+                          <div key={index} className="flex gap-4">
+                            <span className="font-medium text-brand-terracotta w-16 flex-shrink-0">
+                              {item.time}
+                            </span>
+                            <span className="text-gray-600">{item.activity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600">Programme détaillé communiqué lors de l'inscription.</p>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -381,18 +502,18 @@ const WorkshopDetail = () => {
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 bg-brand-orange/20 rounded-full overflow-hidden">
                       <img
-                        src={workshop.instructorImage}
-                        alt={workshop.instructor}
+                        src={workshop.instructor_image || workshop.instructorImage}
+                        alt={workshop.instructor_name || workshop.instructor}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{workshop.instructor}</h3>
+                      <h3 className="font-medium text-gray-900">{workshop.instructor_name || workshop.instructor}</h3>
                       <p className="text-sm text-gray-600">Maître artisan</p>
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">
-                    Artisan passionné avec plus de 15 ans d'expérience dans l'artisanat traditionnel malgache.
+                    {workshop.instructor_bio || "Artisan passionné avec plus de 15 ans d'expérience dans l'artisanat traditionnel malgache."}
                   </p>
                   <Link to={`/artisan/1`}>
                     <Button variant="outline" size="sm" className="w-full border-brand-brown text-brand-brown hover:bg-brand-brown hover:text-white">
@@ -408,14 +529,18 @@ const WorkshopDetail = () => {
                   <CardTitle className="text-brand-brown">Matériel inclus</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {workshop.materials.map((material, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm">
-                        <span className="w-1.5 h-1.5 bg-brand-terracotta rounded-full"></span>
-                        <span className="text-gray-600">{material}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {workshop.materials ? (
+                    <ul className="space-y-2">
+                      {workshop.materials.map((material, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-brand-orange rounded-full"></span>
+                          <span className="text-gray-600">{material}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600">Liste du matériel fourni communiquée lors de l'inscription.</p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -456,6 +581,47 @@ const WorkshopDetail = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Indisponibilités de l'artisan */}
+              {apiWorkshop && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-brand-brown">Indisponibilités de l'artisan</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingUnavailabilities ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="ml-2">Chargement...</span>
+                      </div>
+                    ) : unavailabilities.length > 0 ? (
+                      <div className="space-y-3">
+                        {unavailabilities.map((unavailability) => (
+                          <div key={unavailability.id} className="p-3 bg-red-50 rounded-lg border border-red-200">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-medium text-red-800">{unavailability.reason}</h4>
+                                <p className="text-sm text-red-600 mt-1">
+                                  {unavailability.type === 'single_day' ? (
+                                    <>Indisponible le {new Date(unavailability.start_date).toLocaleDateString('fr-FR')}</>
+                                  ) : (
+                                    <>Du {new Date(unavailability.start_date).toLocaleDateString('fr-FR')} au {new Date(unavailability.end_date!).toLocaleDateString('fr-FR')}</>
+                                  )}
+                                </p>
+                              </div>
+                              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                                {unavailability.status === 'approved' ? 'Confirmé' : 'En attente'}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600 text-sm">Aucune indisponibilité prévue.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>

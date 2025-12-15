@@ -242,38 +242,42 @@ class WorkshopOut(BaseModel):
     title: str
     slug: str
     description: str
-    short_description: Optional[str]
-    artisan: ArtisanBasic
-    category: str
-    workshop_type: WorkshopType
-    skill_level: SkillLevel
+    short_description: Optional[str] = None
+    # artisan: ArtisanBasic  # Temporarily disabled - requires join
+    # category: str  # Column doesn't exist in DB
+    workshop_type: Optional[str] = None  # Changed to optional string to match DB
+    skill_level: Optional[str] = None  # Changed to optional string to match DB
     base_price: Decimal
-    foreign_price: Optional[Decimal]
+    # foreign_price: Optional[Decimal] = None  # Column doesn't exist in DB
     max_participants: int
-    min_participants: int
+    min_participants: Optional[int] = 1
     duration_minutes: int
-    location: str
-    room_details: Optional[str]
-    materials_included: Optional[List[str]]
-    materials_to_bring: Optional[List[str]]
-    prerequisites: Optional[str]
-    what_you_will_learn: List[str]
-    program: Optional[List[Dict[str, str]]]
-    privatization_enabled: bool
-    privatization_min_participants: Optional[int]
-    privatization_max_participants: Optional[int]
-    privatization_base_price: Optional[Decimal]
-    privatization_price_per_participant: Optional[Decimal]
-    featured_image_url: Optional[str]
-    gallery_images: Optional[List[str]]
-    video_preview_url: Optional[str]
-    status: WorkshopStatus
-    total_bookings: int
-    rating_average: Optional[Decimal]
-    rating_count: int
-    tags: Optional[List[str]]
-    created_at: datetime
-    updated_at: datetime
+    # location: str  # Column doesn't exist in DB
+    address: Optional[str] = None  # Use address instead of location
+    room_details: Optional[str] = None
+    materials_included: Optional[List[str]] = None
+    materials_to_bring: Optional[List[str]] = None
+    prerequisites: Optional[str] = None
+    what_you_will_learn: Optional[List[str]] = None
+    # program: Optional[List[Dict[str, str]]] = None  # Column doesn't exist in DB
+    # privatization_enabled: bool = False  # Column doesn't exist in DB
+    # privatization_min_participants: Optional[int] = None  # Column doesn't exist in DB
+    # privatization_max_participants: Optional[int] = None  # Column doesn't exist in DB
+    # privatization_base_price: Optional[Decimal] = None  # Column doesn't exist in DB
+    # privatization_price_per_participant: Optional[Decimal] = None  # Column doesn't exist in DB
+    featured_image_url: Optional[str] = None
+    gallery_images: Optional[List[str]] = None
+    video_preview_url: Optional[str] = None
+    status: Optional[str] = None  # Changed to string to match DB
+    total_bookings: Optional[int] = 0
+    rating_average: Optional[Decimal] = None
+    rating_count: Optional[int] = 0
+    tags: Optional[List[str]] = None
+    instructor_name: Optional[str] = None
+    instructor_image: Optional[str] = None
+    instructor_bio: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

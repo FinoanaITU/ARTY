@@ -54,6 +54,9 @@ class Workshop(BaseModel):
     total_bookings = Column(Integer, default=0)
     rating_average = Column(Numeric(3, 2), default=0)
     rating_count = Column(Integer, default=0)
+    instructor_name = Column(String(200))
+    instructor_image = Column(String(500))
+    instructor_bio = Column(Text)
     
     # Relationships
     artisan = relationship("User", back_populates="workshops")

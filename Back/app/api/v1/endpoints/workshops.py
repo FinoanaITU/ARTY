@@ -26,6 +26,8 @@ from app.schemas.workshop import (
     WorkshopSessionOut,
     WorkshopBookingOut,
 )
+from app.schemas.unavailability import UnavailabilityOut
+from app.models.unavailability import ArtisanUnavailability
 from app.core.exceptions import (
     ResourceNotFound,
     ValidationError,
@@ -114,6 +116,26 @@ async def get_workshop_availability(
         booked_dates=booked_dates,
         unavailable_dates=unavailable_dates,
     )
+
+
+@router.get("/{workshop_id}/artisan-unavailability")
+async def get_artisan_unavailability(
+    workshop_id: UUID = Path(...),
+    db: Session = Depends(get_db),
+):
+    """
+    Récupérer les indisponibilités de l'artisan pour un atelier donné
+    """
+    # Récupérer l'atelier pour obtenir l'ID de l'artisan
+    workshop = WorkshopService.get_workshop(db, workshop_id)
+    
+    # Récupérer les indisponibilités de l'artisan
+    unavailabilities = db.query(ArtisanUnavailability).filter(
+        ArtisanUnavailability.artisan_id == workshop.artisan_id,
+        ArtisanUnavailability.status == "approved"
+    ).order_by(ArtisanUnavailability.start_date).all()
+    
+    return [UnavailabilityOut.model_validate(u) for u in unavailabilities]
 
 
 # ============ ARTISAN ENDPOINTS ============
