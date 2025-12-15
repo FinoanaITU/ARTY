@@ -9,6 +9,7 @@ import { ArtisanProfileEditor } from '@/components/ArtisanProfileEditor';
 import { ArtisanProductManager } from '@/components/ArtisanProductManager';
 
 import WorkshopCreationForm from '@/components/WorkshopCreationFormNew';
+import { ArtisanWorkshopManager } from '@/components/ArtisanWorkshopManager';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import apiService from '@/services/api';
 import type { ProductOut } from '@/types/product';
+import type { WorkshopOut } from '@/types/workshop';
 
 const ArtisanDashboard = () => {
   const { user } = useUser();
@@ -25,6 +27,8 @@ const ArtisanDashboard = () => {
   const [showWorkshopCreation, setShowWorkshopCreation] = useState(false);
   const [products, setProducts] = useState<ProductOut[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
+  const [workshops, setWorkshops] = useState<WorkshopOut[]>([]);
+  const [workshopsLoading, setWorkshopsLoading] = useState(false);
 
   // Mock data for artisan stats and orders
   const artisanStats = {
@@ -105,6 +109,36 @@ const ArtisanDashboard = () => {
     };
 
     loadProducts();
+  }, [user]);
+
+  // Charger les ateliers de l'artisan ou tous les ateliers pour l'admin
+  useEffect(() => {
+    const loadWorkshops = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
+
+      setWorkshopsLoading(true);
+      try {
+        const params = user.role === 'admin' 
+          ? { limit: 100 } // Admin voit tous les ateliers
+          : { artisan_id: user.id, limit: 100 }; // Artisan voit ses ateliers
+        
+        const response = await apiService.getWorkshops(params);
+        setWorkshops(response.items || []);
+      } catch (error) {
+        console.error('Error loading workshops:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les ateliers",
+          variant: "destructive"
+        });
+      } finally {
+        setWorkshopsLoading(false);
+      }
+    };
+
+    loadWorkshops();
   }, [user]);
 
   const handleCreateProduct = async (productData: any, photos?: File[]) => {
@@ -193,6 +227,54 @@ const ArtisanDashboard = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleCreateWorkshop = (workshopData: any) => {
+    console.log('Workshop created:', workshopData);
+    setShowWorkshopCreation(false);
+    toast({
+      title: "Atelier créé",
+      description: "L'atelier a été créé avec succès et est en attente d'approbation.",
+    });
+    // Recharger la liste des ateliers
+    setWorkshops(prev => [workshopData, ...prev]);
+  };
+
+  const handleEditWorkshop = (workshop: WorkshopOut) => {
+    console.log('Edit workshop:', workshop);
+    // TODO: Implémenter l'édition d'atelier
+    toast({
+      title: "Fonction à venir",
+      description: "L'édition d'atelier sera disponible prochainement",
+    });
+  };
+
+  const handleDeleteWorkshop = async (workshopId: string) => {
+    try {
+      await apiService.deleteWorkshop(workshopId);
+      setWorkshops(prev => prev.filter(w => w.id !== workshopId));
+      toast({
+        title: "Atelier supprimé",
+        description: "L'atelier a été supprimé avec succès"
+      });
+    } catch (error: any) {
+      console.error('Error deleting workshop:', error);
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de la suppression de l\'atelier';
+      toast({
+        title: "Erreur",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleViewWorkshop = (workshop: WorkshopOut) => {
+    console.log('View workshop:', workshop);
+    // TODO: Naviguer vers la page de détail de l'atelier
+    toast({
+      title: "Navigation",
+      description: "Redirection vers la page de détail de l'atelier",
+    });
   };
 
   if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -547,54 +629,19 @@ const ArtisanDashboard = () => {
             <TabsContent value="workshops">
               {showWorkshopCreation ? (
                 <WorkshopCreationForm
-                  onSubmit={(workshopData) => {
-                    console.log('Workshop created:', workshopData);
-                    setShowWorkshopCreation(false);
-                    toast({
-                      title: "Atelier créé",
-                      description: "L'atelier a été créé avec succès et est en attente d'approbation.",
-                    });
-                    // Ici vous pourriez recharger la liste des ateliers
-                  }}
+                  onSubmit={handleCreateWorkshop}
                   onCancel={() => setShowWorkshopCreation(false)}
                 />
               ) : (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Mes Ateliers</h2>
-                      <p className="text-gray-600">Gérez vos ateliers et créez-en de nouveaux</p>
-                    </div>
-                    <Button 
-                      className="bg-orange-600 hover:bg-orange-700"
-                      onClick={() => setShowWorkshopCreation(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Créer un atelier
-                    </Button>
-                  </div>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Vos ateliers</CardTitle>
-                      <CardDescription>
-                        Gérez vos ateliers créés et publiés
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8">
-                        <p className="text-gray-500 mb-4">Vous n'avez pas encore créé d'atelier</p>
-                        <Button 
-                          variant="outline"
-                          onClick={() => setShowWorkshopCreation(true)}
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Créer votre premier atelier
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                <ArtisanWorkshopManager
+                  workshops={workshops}
+                  loading={workshopsLoading}
+                  isAdmin={user?.role === 'admin'}
+                  onCreateWorkshop={() => setShowWorkshopCreation(true)}
+                  onEditWorkshop={handleEditWorkshop}
+                  onDeleteWorkshop={handleDeleteWorkshop}
+                  onViewWorkshop={handleViewWorkshop}
+                />
               )}
             </TabsContent>
 
