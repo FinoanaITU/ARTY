@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_db, get_current_active_user
+from app.core.dependencies import get_db, get_current_active_user
 from app.models.user import User
 from app.services.review_service import ReviewService
 from app.schemas.review import (
