@@ -45,3 +45,21 @@ class UnavailabilityCreate(BaseModel):
     reason: Optional[str] = None
     type: UnavailabilityType = UnavailabilityType.SINGLE
     status: UnavailabilityStatus = UnavailabilityStatus.PENDING
+
+
+class UnavailabilityUpdate(BaseModel):
+    """Schéma pour mettre à jour une indisponibilité"""
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    reason: Optional[str] = None
+    type: Optional[UnavailabilityType] = None
+    status: Optional[UnavailabilityStatus] = None
+
+
+class UnavailabilityListResponse(BaseModel):
+    """Réponse paginée pour liste d'indisponibilités"""
+    items: list[UnavailabilityOut]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
