@@ -10,6 +10,9 @@ import { ArtisanProductManager } from '@/components/ArtisanProductManager';
 
 import WorkshopCreationForm from '@/components/WorkshopCreationFormNew';
 import { ArtisanWorkshopManager } from '@/components/ArtisanWorkshopManager';
+import { WorkshopViewModal } from '@/components/WorkshopViewModal';
+import { WorkshopEditModal } from '@/components/WorkshopEditModal';
+import { WorkshopDeleteConfirmModal } from '@/components/WorkshopDeleteConfirmModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +32,12 @@ const ArtisanDashboard = () => {
   const [productsLoading, setProductsLoading] = useState(false);
   const [workshops, setWorkshops] = useState<WorkshopOut[]>([]);
   const [workshopsLoading, setWorkshopsLoading] = useState(false);
+  
+  // États pour les modales d'atelier
+  const [viewingWorkshop, setViewingWorkshop] = useState<WorkshopOut | null>(null);
+  const [editingWorkshop, setEditingWorkshop] = useState<WorkshopOut | null>(null);
+  const [deletingWorkshop, setDeletingWorkshop] = useState<WorkshopOut | null>(null);
+  const [isDeletingWorkshop, setIsDeletingWorkshop] = useState(false);
 
   // Mock data for artisan stats and orders
   const artisanStats = {
@@ -241,22 +250,28 @@ const ArtisanDashboard = () => {
   };
 
   const handleEditWorkshop = (workshop: WorkshopOut) => {
-    console.log('Edit workshop:', workshop);
-    // TODO: Implémenter l'édition d'atelier
-    toast({
-      title: "Fonction à venir",
-      description: "L'édition d'atelier sera disponible prochainement",
-    });
+    setEditingWorkshop(workshop);
   };
 
-  const handleDeleteWorkshop = async (workshopId: string) => {
+  const handleDeleteWorkshop = (workshopId: string) => {
+    const workshop = workshops.find(w => w.id === workshopId);
+    if (workshop) {
+      setDeletingWorkshop(workshop);
+    }
+  };
+
+  const handleConfirmDeleteWorkshop = async () => {
+    if (!deletingWorkshop) return;
+    
+    setIsDeletingWorkshop(true);
     try {
-      await apiService.deleteWorkshop(workshopId);
-      setWorkshops(prev => prev.filter(w => w.id !== workshopId));
+      await apiService.deleteWorkshop(deletingWorkshop.id);
+      setWorkshops(prev => prev.filter(w => w.id !== deletingWorkshop.id));
       toast({
         title: "Atelier supprimé",
         description: "L'atelier a été supprimé avec succès"
       });
+      setDeletingWorkshop(null);
     } catch (error: any) {
       console.error('Error deleting workshop:', error);
       const errorMessage = error.response?.data?.detail || 'Erreur lors de la suppression de l\'atelier';
@@ -265,16 +280,17 @@ const ArtisanDashboard = () => {
         description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setIsDeletingWorkshop(false);
     }
   };
 
   const handleViewWorkshop = (workshop: WorkshopOut) => {
-    console.log('View workshop:', workshop);
-    // TODO: Naviguer vers la page de détail de l'atelier
-    toast({
-      title: "Navigation",
-      description: "Redirection vers la page de détail de l'atelier",
-    });
+    setViewingWorkshop(workshop);
+  };
+
+  const handleSaveWorkshop = (updatedWorkshop: WorkshopOut) => {
+    setWorkshops(prev => prev.map(w => w.id === updatedWorkshop.id ? updatedWorkshop : w));
   };
 
   if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -654,6 +670,28 @@ const ArtisanDashboard = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Modales pour les ateliers */}
+      <WorkshopViewModal
+        workshop={viewingWorkshop!}
+        isOpen={!!viewingWorkshop}
+        onClose={() => setViewingWorkshop(null)}
+      />
+      
+      <WorkshopEditModal
+        workshop={editingWorkshop!}
+        isOpen={!!editingWorkshop}
+        onClose={() => setEditingWorkshop(null)}
+        onSave={handleSaveWorkshop}
+      />
+      
+      <WorkshopDeleteConfirmModal
+        workshop={deletingWorkshop}
+        isOpen={!!deletingWorkshop}
+        onConfirm={handleConfirmDeleteWorkshop}
+        onCancel={() => setDeletingWorkshop(null)}
+        isLoading={isDeletingWorkshop}
+      />
     </div>
   );
 };
