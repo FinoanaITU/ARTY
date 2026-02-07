@@ -323,7 +323,7 @@ class OrderService:
             items=items,
             total=total,
             page=page,
-            limit=limit,
+            page_size=limit,
             total_pages=total_pages
         )
     
@@ -350,7 +350,7 @@ class OrderService:
                 items=[],
                 total=0,
                 page=page,
-                limit=limit,
+                page_size=limit,
                 total_pages=0
             )
         
@@ -394,7 +394,7 @@ class OrderService:
             items=items,
             total=total,
             page=page,
-            limit=limit,
+            page_size=limit,
             total_pages=total_pages
         )
     
