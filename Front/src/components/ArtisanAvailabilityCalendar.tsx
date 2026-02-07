@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { CalendarX, Save, Trash2, Plus } from 'lucide-react';
+import { CalendarX, Save, Trash2, Plus, Info, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -42,6 +42,18 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
         return date >= start && date <= end;
       }
     });
+  };
+
+  // Vérifie si une date est dans l'intervalle de sélection (pour colorer les dates intermédiaires)
+  const isDateInSelectedRange = (date: Date) => {
+    if (selectionMode === 'range' && selectedDates.length === 2) {
+      const [start, end] = selectedDates;
+      const dateTime = date.getTime();
+      const startTime = start.getTime();
+      const endTime = end.getTime();
+      return dateTime >= startTime && dateTime <= endTime;
+    }
+    return false;
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -98,91 +110,128 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarX className="h-5 w-5" />
-            Gérer mes indisponibilités
-          </CardTitle>
-          <p className="text-sm text-gray-600">
-            Marquez les dates où vous ne serez pas disponible pour vos ateliers
-          </p>
+    <div className="space-y-6 p-1">
+      {/* Layout en 2 colonnes : Gestion + Calendrier */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* En-tête avec informations */}
+        <Card className="border-orange-200 shadow-sm h-fit">
+        <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 pb-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-orange-600 rounded-lg">
+              <CalendarX className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-xl text-gray-900 mb-1">
+                Gérer mes indisponibilités
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                Indiquez les périodes pendant lesquelles vous ne pourrez pas animer d'ateliers
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="pt-6">
           {!isAddingPeriod ? (
             <Button 
               onClick={() => setIsAddingPeriod(true)}
-              className="w-full bg-orange-600 hover:bg-orange-700"
+              className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white shadow-md hover:shadow-lg transition-all"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-5 w-5 mr-2" />
               Ajouter une période d'indisponibilité
             </Button>
           ) : (
-            <div className="space-y-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
-              <div className="flex gap-2">
-                <Button
-                  variant={selectionMode === 'single' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => {
-                    setSelectionMode('single');
-                    setSelectedDates([]);
-                  }}
-                >
-                  Jour unique
-                </Button>
-                <Button
-                  variant={selectionMode === 'range' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => {
-                    setSelectionMode('range');
-                    setSelectedDates([]);
-                  }}
-                >
-                  Période
-                </Button>
+            <div className="space-y-5 p-5 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border-2 border-orange-200 shadow-sm">
+              {/* Sélection du mode */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Type de période
+                </label>
+                <div className="flex gap-3">
+                  <Button
+                    variant={selectionMode === 'single' ? 'default' : 'outline'}
+                    className={selectionMode === 'single' 
+                      ? 'flex-1 bg-orange-600 hover:bg-orange-700' 
+                      : 'flex-1 hover:bg-orange-50 hover:border-orange-300'
+                    }
+                    onClick={() => {
+                      setSelectionMode('single');
+                      setSelectedDates([]);
+                    }}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    Jour unique
+                  </Button>
+                  <Button
+                    variant={selectionMode === 'range' ? 'default' : 'outline'}
+                    className={selectionMode === 'range' 
+                      ? 'flex-1 bg-orange-600 hover:bg-orange-700' 
+                      : 'flex-1 hover:bg-orange-50 hover:border-orange-300'
+                    }
+                    onClick={() => {
+                      setSelectionMode('range');
+                      setSelectedDates([]);
+                    }}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    Période
+                  </Button>
+                </div>
               </div>
 
+              {/* Affichage de la sélection */}
               {selectedDates.length > 0 && (
-                <div className="p-3 bg-white rounded border">
-                  <p className="text-sm font-medium text-gray-700 mb-1">
-                    {selectionMode === 'single' ? 'Date sélectionnée:' : 'Période sélectionnée:'}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {selectionMode === 'single' 
-                      ? format(selectedDates[0], 'EEEE d MMMM yyyy', { locale: fr })
-                      : selectedDates.length === 1
-                        ? `Du ${format(selectedDates[0], 'EEEE d MMMM yyyy', { locale: fr })} - Sélectionnez la date de fin`
-                        : `Du ${format(selectedDates[0], 'd MMM', { locale: fr })} au ${format(selectedDates[1], 'd MMM yyyy', { locale: fr })}`
-                    }
-                  </p>
+                <div className="p-4 bg-white rounded-lg border-2 border-orange-300 shadow-sm">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 mb-1">
+                        {selectionMode === 'single' ? '📅 Date sélectionnée' : '📆 Période sélectionnée'}
+                      </p>
+                      <p className="text-base text-gray-700 font-medium">
+                        {selectionMode === 'single' 
+                          ? format(selectedDates[0], 'EEEE d MMMM yyyy', { locale: fr })
+                          : selectedDates.length === 1
+                            ? `Du ${format(selectedDates[0], 'EEEE d MMMM yyyy', { locale: fr })} - Cliquez sur la date de fin`
+                            : `Du ${format(selectedDates[0], 'd MMMM', { locale: fr })} au ${format(selectedDates[1], 'd MMMM yyyy', { locale: fr })}`
+                        }
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              <Textarea
-                placeholder="Raison de l'indisponibilité (ex: vacances, formation, maladie...)"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={2}
-              />
+              {/* Raison */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Raison de l'indisponibilité
+                </label>
+                <Textarea
+                  placeholder="Ex: Vacances, formation, salon professionnel, congés..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
+                  className="resize-none border-2 focus:border-orange-400"
+                />
+              </div>
 
-              <div className="flex gap-2">
+              {/* Boutons d'action */}
+              <div className="flex gap-3 pt-2">
                 <Button
                   onClick={addUnavailabilityPeriod}
-                  disabled={selectedDates.length === 0 || !reason.trim()}
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700"
+                  disabled={selectedDates.length === 0 || !reason.trim() || (selectionMode === 'range' && selectedDates.length < 2)}
+                  className="flex-1 h-11 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 shadow-md"
                 >
-                  Ajouter
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter cette période
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => {
                     setIsAddingPeriod(false);
                     setSelectedDates([]);
                     setReason('');
                   }}
+                  className="px-6 h-11 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
                 >
                   Annuler
                 </Button>
@@ -192,77 +241,131 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
         </CardContent>
       </Card>
 
-      <Card>
+      {/* Calendrier */}
+      <Card className="shadow-sm h-fit">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5 text-orange-600" />
+            Calendrier
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
-          <Calendar
-            mode="single"
-            selected={selectedDates[0]}
-            onSelect={handleDateSelect}
-            disabled={isPastDate}
-            modifiers={{
-              unavailable: isDateUnavailable,
-              selected: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
-            }}
-            modifiersStyles={{
-              unavailable: { 
-                backgroundColor: '#fee2e2', 
-                color: '#dc2626',
-                textDecoration: 'line-through'
-              },
-              selected: {
-                backgroundColor: '#ea580c',
-                color: 'white'
-              }
-            }}
-            className="rounded-md border"
-            locale={fr}
-          />
+          <div className="flex justify-center p-4">
+            <Calendar
+              mode="single"
+              selected={selectedDates[0]}
+              onSelect={handleDateSelect}
+              disabled={isPastDate}
+              modifiers={{
+                unavailable: isDateUnavailable,
+                selected: (date) => selectedDates.some(d => d.toDateString() === date.toDateString()),
+                inRange: isDateInSelectedRange
+              }}
+              modifiersStyles={{
+                unavailable: { 
+                  backgroundColor: '#fee2e2', 
+                  color: '#dc2626',
+                  textDecoration: 'line-through',
+                  fontWeight: 'bold'
+                },
+                selected: {
+                  backgroundColor: '#ea580c',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  border: '2px solid #c2410c'
+                },
+                inRange: {
+                  backgroundColor: '#fed7aa',
+                  color: '#9a3412',
+                  fontWeight: '500'
+                }
+              }}
+              className="rounded-md"
+              locale={fr}
+            />
+          </div>
           
-          <div className="p-4 border-t">
-            <div className="flex flex-wrap gap-2 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-200 border border-red-300 rounded"></div>
-                <span>Indisponible</span>
+          {/* Légende */}
+          <div className="px-4 pb-4 border-t bg-gray-50">
+            <div className="flex flex-wrap gap-4 text-sm pt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-red-100 border-2 border-red-200 rounded flex items-center justify-center">
+                  <span className="text-red-600 text-xs font-bold line-through">15</span>
+                </div>
+                <span className="font-medium text-gray-700">Indisponible</span>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-orange-600 rounded"></div>
-                <span>Sélectionné</span>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-orange-600 border-2 border-orange-800 rounded flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">15</span>
+                </div>
+                <span className="font-medium text-gray-700">Date de début/fin</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-orange-200 rounded flex items-center justify-center">
+                  <span className="text-orange-900 text-xs font-semibold">15</span>
+                </div>
+                <span className="font-medium text-gray-700">Dans la période</span>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+      </div>
+      {/* Fin du layout en 2 colonnes */}
 
+      {/* Liste des périodes d'indisponibilité */}
       {unavailablePeriods.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Périodes d'indisponibilité</CardTitle>
+        <Card className="shadow-sm border-gray-200">
+          <CardHeader className="bg-gray-50 pb-4">
+            <CardTitle className="text-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarX className="h-5 w-5 text-orange-600" />
+                Mes périodes d'indisponibilité
+              </div>
+              <Badge variant="secondary" className="text-sm">
+                {unavailablePeriods.length} période{unavailablePeriods.length > 1 ? 's' : ''}
+              </Badge>
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="space-y-3">
               {unavailablePeriods.map((period) => (
-                <div key={period.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {period.type === 'single' ? 'Jour' : 'Période'}
-                      </Badge>
-                      <span className="text-sm font-medium">
-                        {period.type === 'single' 
-                          ? format(period.startDate, 'd MMMM yyyy', { locale: fr })
-                          : `${format(period.startDate, 'd MMM', { locale: fr })} - ${format(period.endDate!, 'd MMM yyyy', { locale: fr })}`
-                        }
-                      </span>
+                <div 
+                  key={period.id} 
+                  className="group flex items-start gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-orange-50 hover:to-amber-50 rounded-xl border-2 border-gray-200 hover:border-orange-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="p-2 bg-white rounded-lg border-2 border-orange-200 group-hover:border-orange-400 transition-colors">
+                      <CalendarX className="h-5 w-5 text-orange-600" />
                     </div>
-                    <p className="text-sm text-gray-600">{period.reason}</p>
                   </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge 
+                        variant={period.type === 'single' ? 'outline' : 'secondary'}
+                        className="text-xs font-semibold"
+                      >
+                        {period.type === 'single' ? '📅 Jour unique' : '📆 Période'}
+                      </Badge>
+                    </div>
+                    <p className="text-base font-bold text-gray-900 mb-1">
+                      {period.type === 'single' 
+                        ? format(period.startDate, 'd MMMM yyyy', { locale: fr })
+                        : `${format(period.startDate, 'd MMMM', { locale: fr })} → ${format(period.endDate!, 'd MMMM yyyy', { locale: fr })}`
+                      }
+                    </p>
+                    <p className="text-sm text-gray-600 italic">{period.reason}</p>
+                  </div>
+                  
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => removePeriod(period.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors flex-shrink-0"
+                    title="Supprimer cette période"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-5 w-5" />
                   </Button>
                 </div>
               ))}
@@ -271,10 +374,14 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
         </Card>
       )}
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
-          <Save className="h-4 w-4 mr-2" />
-          Enregistrer les modifications
+      {/* Bouton de sauvegarde */}
+      <div className="flex justify-end pt-2">
+        <Button 
+          onClick={handleSave} 
+          className="h-12 px-8 bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-all text-base font-semibold"
+        >
+          <Save className="h-5 w-5 mr-2" />
+          Enregistrer toutes les modifications
         </Button>
       </div>
     </div>
