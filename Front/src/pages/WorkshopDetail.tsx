@@ -33,6 +33,7 @@ interface WorkshopData {
   instructorImage?: string;
   instructor_bio?: string;
   type?: 'inscription' | 'reservation';
+  workshop_type?: 'inscription' | 'reservation';
   date?: string;
   duration?: string;
   duration_minutes?: number;
@@ -40,16 +41,27 @@ interface WorkshopData {
   base_price?: number;
   participants?: number;
   maxParticipants?: number;
+  max_participants?: number;
   available_spots?: number;
   total_spots?: number;
   image?: string;
   address?: string;
   location?: string;
   difficulty?: string;
+  skill_level?: string;
   whatYouWillLearn?: string[];
+  what_you_will_learn?: string[];
   materials?: string[];
+  materials_included?: string[];
+  materials_to_bring?: string[];
+  prerequisites?: string;
   schedule?: Array<{ time: string; activity: string }>;
   privatizationOption?: any;
+  tags?: string[];
+  rating_average?: number | string;
+  rating_count?: number;
+  cancellation_policy?: string;
+  total_bookings?: number;
 }
 
 // Fonction pour normaliser les données du workshop
@@ -59,14 +71,17 @@ const normalizeWorkshopData = (apiWorkshop: any, mockWorkshop: any): WorkshopDat
     return {
       ...apiWorkshop,
       // Ajouter des propriétés pour la compatibilité avec le mock
-      type: 'reservation', // Par défaut pour les ateliers API
+      type: apiWorkshop.workshop_type || 'reservation',
       instructor: apiWorkshop.instructor_name,
       instructorImage: apiWorkshop.instructor_image,
       location: apiWorkshop.address,
       price: apiWorkshop.base_price,
+      difficulty: apiWorkshop.skill_level || 'Intermédiaire',
       duration: apiWorkshop.duration_minutes ? `${Math.floor(apiWorkshop.duration_minutes / 60)}h${apiWorkshop.duration_minutes % 60 > 0 ? ` ${apiWorkshop.duration_minutes % 60}min` : ''}` : undefined,
-      maxParticipants: apiWorkshop.total_spots || 10,
-      participants: apiWorkshop.available_spots ? (apiWorkshop.total_spots - apiWorkshop.available_spots) : 0
+      maxParticipants: apiWorkshop.max_participants || 10,
+      participants: apiWorkshop.total_bookings || 0,
+      materials: apiWorkshop.materials_included || [],
+      whatYouWillLearn: apiWorkshop.what_you_will_learn || []
     };
   } else {
     // Utiliser les données mock
@@ -292,13 +307,25 @@ const WorkshopDetail = () => {
                   <span>📅 {new Date(workshop.date).toLocaleDateString('fr-FR')}</span>
                 )}
                 <span>⏱️ {workshop.duration_minutes ? `${Math.floor(workshop.duration_minutes / 60)}h${workshop.duration_minutes % 60 > 0 ? ` ${workshop.duration_minutes % 60}min` : ''}` : workshop.duration}</span>
+                {workshop.rating_count > 0 && (
+                  <span>⭐ {parseFloat(workshop.rating_average).toFixed(1)} ({workshop.rating_count} avis)</span>
+                )}
               </div>
-              <div className="flex items-center gap-4 text-gray-600 mb-6">
+              <div className="flex items-center gap-4 text-gray-600 mb-4">
                 <span>📍 {workshop.address || workshop.location}</span>
                 <span className="text-2xl font-bold text-brand-terracotta">
                   {(workshop.base_price || workshop.price).toLocaleString()} Ar
                 </span>
               </div>
+              {workshop.tags && workshop.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {workshop.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline" className="bg-brand-beige text-brand-brown border-brand-brown">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
               
               {/* Privatization Info */}
               {workshop.privatizationOption && (
@@ -430,9 +457,9 @@ const WorkshopDetail = () => {
                   <CardTitle className="text-brand-brown">Ce que vous apprendrez</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {workshop.whatYouWillLearn ? (
+                  {(workshop.what_you_will_learn || workshop.whatYouWillLearn) && (workshop.what_you_will_learn?.length > 0 || workshop.whatYouWillLearn?.length > 0) ? (
                     <ul className="space-y-2">
-                      {workshop.whatYouWillLearn.map((item, index) => (
+                      {(workshop.what_you_will_learn || workshop.whatYouWillLearn).map((item, index) => (
                         <li key={index} className="flex items-start gap-2">
                           <span className="w-2 h-2 bg-brand-terracotta rounded-full mt-2 flex-shrink-0"></span>
                           <span className="text-gray-600">{item}</span>
@@ -509,9 +536,9 @@ const WorkshopDetail = () => {
                   <CardTitle className="text-brand-brown">Matériel inclus</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {workshop.materials ? (
+                  {(workshop.materials_included || workshop.materials) && (workshop.materials_included?.length > 0 || workshop.materials?.length > 0) ? (
                     <ul className="space-y-2">
-                      {workshop.materials.map((material, index) => (
+                      {(workshop.materials_included || workshop.materials).map((material, index) => (
                         <li key={index} className="flex items-center gap-2">
                           <span className="w-2 h-2 bg-brand-orange rounded-full"></span>
                           <span className="text-gray-600">{material}</span>
@@ -524,6 +551,25 @@ const WorkshopDetail = () => {
                 </CardContent>
               </Card>
 
+              {/* Materials To Bring */}
+              {workshop.materials_to_bring && workshop.materials_to_bring.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-brand-brown">Matériel à apporter</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {workshop.materials_to_bring.map((material, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-brand-terracotta rounded-full"></span>
+                          <span className="text-gray-600">{material}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Important Info */}
               <Card>
                 <CardHeader>
@@ -534,8 +580,13 @@ const WorkshopDetail = () => {
                     <strong>Âge minimum :</strong> 12 ans
                   </div>
                   <div>
-                    <strong>Niveau requis :</strong> Aucun
+                    <strong>Niveau requis :</strong> {workshop.skill_level || workshop.difficulty || 'Aucun'}
                   </div>
+                  {workshop.prerequisites && (
+                    <div>
+                      <strong>Prérequis :</strong> {workshop.prerequisites}
+                    </div>
+                  )}
                   <div>
                     <strong>Langues :</strong> Français, Malgache
                   </div>
@@ -555,10 +606,18 @@ const WorkshopDetail = () => {
                       </Badge>
                     </div>
                   )}
-                  <div>
-                    <strong>Politique d'annulation :</strong> 
-                    Annulation gratuite jusqu'à 24h avant l'atelier
-                  </div>
+                  {workshop.cancellation_policy && (
+                    <div>
+                      <strong>Politique d'annulation :</strong> 
+                      {workshop.cancellation_policy}
+                    </div>
+                  )}
+                  {!workshop.cancellation_policy && (
+                    <div>
+                      <strong>Politique d'annulation :</strong> 
+                      Annulation gratuite jusqu'à 24h avant l'atelier
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
