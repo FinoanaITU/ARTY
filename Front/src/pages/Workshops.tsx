@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Navigation from '@/components/Navigation';
@@ -310,13 +310,13 @@ const Workshops = () => {
   const [selectedDuration, setSelectedDuration] = useState('Tous');
   const [selectedGroupSize, setSelectedGroupSize] = useState('Tous');
 
-  // Fonction pour filtrer les ateliers
-  const filterWorkshops = (workshops: any[]) => {
+  // Fonction pour filtrer les ateliers (mémorisée)
+  const filterWorkshops = useCallback((workshops: any[]) => {
     return workshops.filter(workshop => {
       const matchesSearch = searchTerm === '' || 
-        workshop.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        workshop.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        workshop.category.toLowerCase().includes(searchTerm.toLowerCase());
+        workshop.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        workshop.instructor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        workshop.category?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesCategory = selectedCategory === 'Tous' || workshop.category === selectedCategory;
       const matchesDifficulty = selectedDifficulty === 'Tous' || workshop.difficulty === selectedDifficulty;
@@ -337,9 +337,9 @@ const Workshops = () => {
       
       return matchesSearch && matchesCategory && matchesDifficulty && matchesEventType && matchesDuration && matchesGroupSize;
     });
-  };
+  }, [searchTerm, selectedCategory, selectedDifficulty, selectedEventType, selectedDuration, selectedGroupSize]);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedCategory('Tous');
     setSelectedDifficulty('Tous');
@@ -347,35 +347,42 @@ const Workshops = () => {
     setSelectedEventType('Tous');
     setSelectedDuration('Tous');
     setSelectedGroupSize('Tous');
-  };
+  }, []);
 
-  const handleQuoteRequest = (workshopId: number, workshopTitle: string) => {
+  const handleQuoteRequest = useCallback((workshopId: number, workshopTitle: string) => {
     const workshop = reservationWorkshops.find(w => w.id === workshopId);
     setSelectedWorkshop({ ...workshop, title: workshopTitle });
     setShowQuoteForm(true);
-  };
+  }, [reservationWorkshops]);
 
-  const handleQuoteSubmit = (data: any) => {
+  const handleQuoteSubmit = useCallback((data: any) => {
     console.log('Quote request submitted:', data);
     setShowQuoteForm(false);
     setSelectedWorkshop(null);
-  };
+  }, []);
 
-  const handleSubscriptionPurchase = (plan: any) => {
+  const handleSubscriptionPurchase = useCallback((plan: any) => {
     setSelectedPlan(plan);
     setShowSubscriptionRegistrationForm(true);
-  };
+  }, []);
 
-  const handleWorkshopRegistrationWithSubscription = (workshop: any) => {
+  const handleWorkshopRegistrationWithSubscription = useCallback((workshop: any) => {
     setSelectedWorkshop(workshop);
     setShowSubscriptionForm(true);
-  };
+  }, []);
 
   // Use API workshops if available, fallback to mock data
-  const workshopsToUse = apiWorkshops.length > 0 ? apiWorkshops : reservationWorkshops;
-  const filteredReservationWorkshops = filterWorkshops(workshopsToUse);
+  const workshopsToUse = useMemo(() => 
+    apiWorkshops.length > 0 ? apiWorkshops : reservationWorkshops,
+    [apiWorkshops, reservationWorkshops]
+  );
+  
+  const filteredReservationWorkshops = useMemo(() => 
+    filterWorkshops(workshopsToUse),
+    [workshopsToUse, filterWorkshops]
+  );
 
-  const ReservationWorkshopsComponent = () => (
+  const ReservationWorkshopsComponent = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-primary mb-2">Catalogue d'Ateliers sur Réservation</h2>
@@ -431,20 +438,18 @@ const Workshops = () => {
                 
                 <CardHeader>
                   <CardTitle className="text-lg">{workshop.title}</CardTitle>
-                  <CardDescription>
-                    <div className="flex items-center gap-2 mt-2">
-                      {workshop.artisan?.avatar && (
-                        <img
-                          src={workshop.artisan.avatar}
-                          alt={workshop.artisan.name}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      )}
-                      <div>
-                        <div className="font-medium text-sm">{workshop.artisan?.name}</div>
-                      </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    {workshop.artisan?.avatar && (
+                      <img
+                        src={workshop.artisan.avatar}
+                        alt={workshop.artisan.name}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    )}
+                    <div>
+                      <div className="font-medium text-sm text-muted-foreground">{workshop.artisan?.name}</div>
                     </div>
-                  </CardDescription>
+                  </div>
                 </CardHeader>
                 
                 <CardContent>
@@ -533,21 +538,19 @@ const Workshops = () => {
                 
                 <CardHeader>
                   <CardTitle className="text-lg">{workshop.title}</CardTitle>
-                  <CardDescription>
-                    <div className="flex items-center gap-2 mt-2">
-                      <img
-                        src={artisans[workshop.instructor as keyof typeof artisans]?.photo}
-                        alt={workshop.instructor}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                      <div>
-                        <div className="font-medium text-sm">{workshop.instructor}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {artisans[workshop.instructor as keyof typeof artisans]?.description}
-                        </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <img
+                      src={artisans[workshop.instructor as keyof typeof artisans]?.photo}
+                      alt={workshop.instructor}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                    <div>
+                      <div className="font-medium text-sm text-muted-foreground">{workshop.instructor}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {artisans[workshop.instructor as keyof typeof artisans]?.description}
                       </div>
                     </div>
-                  </CardDescription>
+                  </div>
                 </CardHeader>
                 
                 <CardContent>
@@ -619,9 +622,26 @@ const Workshops = () => {
         </>
       )}
     </div>
-  );
+  ), [
+    workshopsLoading, 
+    workshopsError, 
+    apiWorkshops, 
+    searchTerm, 
+    selectedCategory, 
+    selectedDifficulty, 
+    selectedType,
+    selectedEventType,
+    selectedDuration,
+    selectedGroupSize,
+    resetFilters,
+    filteredReservationWorkshops,
+    showQuoteForm,
+    selectedWorkshop,
+    handleQuoteRequest,
+    handleQuoteSubmit
+  ]);
 
-  const EventWorkshopsComponent = () => (
+  const EventWorkshopsComponent = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-primary mb-2">Ateliers sur Inscription</h2>
@@ -658,24 +678,22 @@ const Workshops = () => {
             
             <CardHeader>
               <CardTitle className="text-lg">{workshop.title}</CardTitle>
-              <CardDescription>
-                <div className="flex items-center gap-2 mt-2">
-                  {workshop.artisan.avatar ? (
-                    <img
-                      src={workshop.artisan.avatar}
-                      alt={workshop.artisan.name}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-xs font-medium text-gray-600">{workshop.artisan.name.charAt(0)}</span>
-                    </div>
-                  )}
-                  <div>
-                    <div className="font-medium text-sm">{workshop.artisan.name}</div>
+              <div className="flex items-center gap-2 mt-2">
+                {workshop.artisan.avatar ? (
+                  <img
+                    src={workshop.artisan.avatar}
+                    alt={workshop.artisan.name}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-xs font-medium text-gray-600">{workshop.artisan.name.charAt(0)}</span>
                   </div>
+                )}
+                <div>
+                  <div className="font-medium text-sm text-muted-foreground">{workshop.artisan.name}</div>
                 </div>
-              </CardDescription>
+              </div>
             </CardHeader>
             
             <CardContent>
@@ -745,9 +763,9 @@ const Workshops = () => {
         </div>
       )}
     </div>
-  );
+  ), [inscriptionLoading, inscriptionError, inscriptionWorkshops]);
 
-  const SubscriptionComponent = () => (
+  const SubscriptionComponent = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-primary mb-2">Ateliers par Abonnement</h2>
@@ -813,9 +831,9 @@ const Workshops = () => {
         </CardContent>
       </Card>
     </div>
-  );
+  ), [handleSubscriptionPurchase]);
 
-  const ArtikidzComponent = () => (
+  const ArtikidzComponent = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-primary mb-2">Ateliers Artikidz</h2>
@@ -927,7 +945,7 @@ const Workshops = () => {
         </div>
       </div>
     </div>
-  );
+  ), []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 pb-20 md:pb-0">
@@ -967,19 +985,19 @@ const Workshops = () => {
             </TabsList>
 
             <TabsContent value="reservation">
-              <ReservationWorkshopsComponent />
+              {ReservationWorkshopsComponent}
             </TabsContent>
 
             <TabsContent value="inscription">
-              <EventWorkshopsComponent />
+              {EventWorkshopsComponent}
             </TabsContent>
 
             <TabsContent value="subscription">
-              <SubscriptionComponent />
+              {SubscriptionComponent}
             </TabsContent>
 
             <TabsContent value="artikidz">
-              <ArtikidzComponent />
+              {ArtikidzComponent}
             </TabsContent>
           </Tabs>
 
