@@ -53,7 +53,7 @@ async def create_unavailability(
 
     service = UnavailabilityService(db)
     return await service.create_unavailability(
-        artisan_id=current_user.artisan_profile.id, data=data
+        artisan_id=current_user.id, data=data  # Utiliser l'ID du user, pas du profil
     )
 
 
@@ -87,7 +87,7 @@ async def list_unavailabilities(
 
     service = UnavailabilityService(db)
     return await service.get_artisan_unavailabilities(
-        artisan_id=current_user.artisan_profile.id,
+        artisan_id=current_user.id,  # Utiliser l'ID du user, pas du profil
         page=page,
         page_size=page_size,
         status_filter=status_filter,
@@ -119,7 +119,7 @@ async def get_upcoming_unavailabilities(
 
     service = UnavailabilityService(db)
     return await service.get_upcoming_unavailabilities(
-        artisan_id=current_user.artisan_profile.id, limit=limit
+        artisan_id=current_user.id, limit=limit
     )
 
 
@@ -146,7 +146,7 @@ async def get_unavailability(
     service = UnavailabilityService(db)
     return await service.get_unavailability(
         unavailability_id=unavailability_id,
-        artisan_id=current_user.artisan_profile.id,
+        artisan_id=current_user.id,
     )
 
 
@@ -176,7 +176,7 @@ async def update_unavailability(
     service = UnavailabilityService(db)
     return await service.update_unavailability(
         unavailability_id=unavailability_id,
-        artisan_id=current_user.artisan_profile.id,
+        artisan_id=current_user.id,
         data=data,
     )
 
@@ -204,5 +204,5 @@ async def delete_unavailability(
     service = UnavailabilityService(db)
     await service.delete_unavailability(
         unavailability_id=unavailability_id,
-        artisan_id=current_user.artisan_profile.id,
+        artisan_id=current_user.id,
     )

@@ -28,9 +28,9 @@ class UnavailabilityService:
         self.db = db
 
     async def _check_artisan_exists(self, artisan_id: UUID) -> bool:
-        """Vérifie si l'artisan existe"""
+        """Vérifie si l'artisan existe (artisan_id est un user_id)"""
         result = self.db.execute(
-            select(ArtisanProfile).where(ArtisanProfile.id == artisan_id)
+            select(ArtisanProfile).where(ArtisanProfile.user_id == artisan_id)
         )
         return result.scalar_one_or_none() is not None
 
