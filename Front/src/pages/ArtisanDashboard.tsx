@@ -39,57 +39,137 @@ const ArtisanDashboard = () => {
   const [deletingWorkshop, setDeletingWorkshop] = useState<WorkshopOut | null>(null);
   const [isDeletingWorkshop, setIsDeletingWorkshop] = useState(false);
 
-  // Mock data for artisan stats and orders
-  const artisanStats = {
-    totalSales: 450000,
-    ordersThisMonth: 12,
-    rating: 4.8,
-    totalProducts: 24
+  // États pour les stats, commandes et indisponibilités
+  const [artisanStats, setArtisanStats] = useState({
+    totalSales: 0,
+    ordersThisMonth: 0,
+    rating: 0,
+    totalProducts: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [artisanUnavailability, setArtisanUnavailability] = useState<any[]>([]);
+  const [unavailabilitiesLoading, setUnavailabilitiesLoading] = useState(false);
+
+  const handleAvailabilitySave = async (periods: any[]) => {
+    if (!user) return;
+    
+    try {
+      // Supprimer les anciennes indisponibilités
+      for (const period of artisanUnavailability) {
+        await apiService.deleteUnavailability(user.id, period.id);
+      }
+      
+      // Créer les nouvelles
+      for (const period of periods) {
+        await apiService.createUnavailability(user.id, {
+          start_date: period.startDate.toISOString().split('T')[0],
+          end_date: period.endDate ? period.endDate.toISOString().split('T')[0] : undefined,
+          reason: period.reason,
+          type: period.type
+        });
+      }
+      
+      // Recharger les indisponibilités
+      const response = await apiService.getUnavailabilities(user.id);
+      setArtisanUnavailability(response);
+      
+      toast({
+        title: "Indisponibilités mises à jour",
+        description: "Vos périodes d'indisponibilité ont été enregistrées avec succès.",
+      });
+    } catch (error) {
+      console.error('Error saving unavailabilities:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder vos indisponibilités",
+        variant: "destructive"
+      });
+    }
   };
 
-  const recentOrders = [
-    {
-      id: 1,
-      customer: 'Marie L.',
-      items: ['Masque traditionnel'],
-      total: 45000,
-      date: '2024-05-25',
-      status: 'delivered' as const
-    },
-    {
-      id: 2,
-      customer: 'Jean P.',
-      items: ['Statuette Zébu'],
-      total: 25000,
-      date: '2024-05-23',
-      status: 'shipped' as const
-    }
-  ];
+  // Charger les stats de l'artisan
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
 
-  // Mock unavailability data
-  const [artisanUnavailability, setArtisanUnavailability] = useState([
-    {
-      id: '1',
-      startDate: new Date('2024-06-20'),
-      endDate: new Date('2024-06-25'),
-      reason: 'Vacances familiales',
-      type: 'range' as const
-    },
-    {
-      id: '2',
-      startDate: new Date('2024-07-14'),
-      reason: 'Formation professionnelle',
-      type: 'single' as const
-    }
-  ]);
+      setStatsLoading(true);
+      try {
+        const stats = await apiService.getArtisanStats(user.id);
+        setArtisanStats(stats);
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les statistiques",
+          variant: "destructive"
+        });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
 
-  const handleAvailabilitySave = (periods: any[]) => {
-    setArtisanUnavailability(periods);
-    toast({
-      title: "Indisponibilités mises à jour",
-      description: "Vos périodes d'indisponibilité ont été enregistrées avec succès.",
-    });
-  };
+    loadStats();
+  }, [user]);
+
+  // Charger les commandes récentes
+  useEffect(() => {
+    const loadOrders = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
+
+      setOrdersLoading(true);
+      try {
+        const response = await apiService.getOrders({ limit: 10 });
+        setRecentOrders(response.items || []);
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les commandes",
+          variant: "destructive"
+        });
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    loadOrders();
+  }, [user]);
+
+  // Charger les indisponibilités
+  useEffect(() => {
+    const loadUnavailabilities = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
+
+      setUnavailabilitiesLoading(true);
+      try {
+        const response = await apiService.getUnavailabilities(user.id);
+        // Convertir les dates string en objets Date
+        const formattedData = response.map((item: any) => ({
+          id: item.id,
+          startDate: new Date(item.start_date),
+          endDate: item.end_date ? new Date(item.end_date) : undefined,
+          reason: item.reason || '',
+          type: item.type
+        }));
+        setArtisanUnavailability(formattedData);
+      } catch (error) {
+        console.error('Error loading unavailabilities:', error);
+        // Toast non nécessaire ici, c'est optionnel
+      } finally {
+        setUnavailabilitiesLoading(false);
+      }
+    };
+
+    loadUnavailabilities();
+  }, [user]);
 
   // Charger les produits de l'artisan
   useEffect(() => {
@@ -632,12 +712,29 @@ const ArtisanDashboard = () => {
 
             <TabsContent value="profile">
               <ArtisanProfileEditor
-                onSaveProfile={(profile) => {
-                  console.log('Profile saved:', profile);
-                  toast({
-                    title: "Profil sauvegardé",
-                    description: "Votre profil a été sauvegardé avec succès"
-                  });
+                onSaveProfile={async (profile) => {
+                  try {
+                    await apiService.updateArtisanProfile({
+                      first_name: profile.name.split(' ')[0],
+                      last_name: profile.name.split(' ').slice(1).join(' '),
+                      bio: profile.about,
+                      specialty: profile.specialties[0] || '',
+                      location: `${profile.location.city}, ${profile.location.region}`,
+                      description: profile.businessInfo.businessDescription,
+                    });
+                    
+                    toast({
+                      title: "Profil sauvegardé",
+                      description: "Votre profil a été sauvegardé avec succès"
+                    });
+                  } catch (error) {
+                    console.error('Error saving profile:', error);
+                    toast({
+                      title: "Erreur",
+                      description: "Impossible de sauvegarder le profil",
+                      variant: "destructive"
+                    });
+                  }
                 }}
               />
             </TabsContent>

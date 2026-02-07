@@ -550,6 +550,144 @@ class ApiService {
     return response.data;
   }
 
+  // Cart endpoints
+  async getCart() {
+    const response = await this.api.get('/carts/me');
+    return response.data;
+  }
+
+  async addToCart(data: {
+    product_id: string;
+    quantity: number;
+    customization_notes?: string;
+  }) {
+    const response = await this.api.post('/carts/items', data);
+    return response.data;
+  }
+
+  async updateCartItem(itemId: string, quantity: number) {
+    const response = await this.api.patch(`/carts/items/${itemId}`, { quantity });
+    return response.data;
+  }
+
+  async removeFromCart(itemId: string) {
+    const response = await this.api.delete(`/carts/items/${itemId}`);
+    return response.data;
+  }
+
+  async clearCart() {
+    await this.api.delete('/carts/');
+  }
+
+  // Order endpoints
+  async getOrders(params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const response = await this.api.get('/orders/', { params });
+    return response.data;
+  }
+
+  async getOrder(orderId: string) {
+    const response = await this.api.get(`/orders/${orderId}`);
+    return response.data;
+  }
+
+  async createOrder(data: {
+    cart_id: string;
+    shipping_address: any;
+    billing_address?: any;
+    shipping_method?: string;
+    notes?: string;
+  }) {
+    const response = await this.api.post('/orders/', data);
+    return response.data;
+  }
+
+  async updateOrderStatus(orderId: string, status: string, comment?: string) {
+    const response = await this.api.patch(`/orders/${orderId}/status`, { status, comment });
+    return response.data;
+  }
+
+  // Artisan stats endpoint
+  async getArtisanStats(artisanId: string) {
+    const response = await this.api.get(`/artisans/${artisanId}/stats`);
+    return response.data;
+  }
+
+  // Review endpoints
+  async getProductReviews(productId: string, params?: { page?: number; limit?: number }) {
+    const response = await this.api.get(`/products/${productId}/reviews`, { params });
+    return response.data;
+  }
+
+  async createReview(data: {
+    product_id: string;
+    order_item_id: string;
+    rating: number;
+    title: string;
+    comment: string;
+    images?: string[];
+  }) {
+    const response = await this.api.post(`/products/${data.product_id}/reviews`, data);
+    return response.data;
+  }
+
+  async voteReviewHelpful(reviewId: string, helpful: boolean) {
+    const response = await this.api.post(`/reviews/${reviewId}/vote`, { helpful });
+    return response.data;
+  }
+
+  // Unavailability endpoints
+  async getUnavailabilities(artisanId: string) {
+    const response = await this.api.get(`/artisans/${artisanId}/unavailabilities`);
+    return response.data;
+  }
+
+  async createUnavailability(artisanId: string, data: {
+    start_date: string;
+    end_date?: string;
+    reason?: string;
+    type: 'single' | 'range';
+  }) {
+    const response = await this.api.post(`/artisans/${artisanId}/unavailabilities`, data);
+    return response.data;
+  }
+
+  async deleteUnavailability(artisanId: string, unavailabilityId: string) {
+    await this.api.delete(`/artisans/${artisanId}/unavailabilities/${unavailabilityId}`);
+  }
+
+  // User profile endpoints
+  async updateUserProfile(data: {
+    email?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    bio?: string;
+    profile_image?: string;
+  }) {
+    const response = await this.api.put('/users/me', data);
+    return response.data;
+  }
+
+  async updateArtisanProfile(data: {
+    email?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    bio?: string;
+    specialty?: string;
+    experience_years?: number;
+    location?: string;
+    description?: string;
+    documents?: any;
+  }) {
+    const response = await this.api.put('/users/me/artisan', data);
+    return response.data;
+  }
+
   // Méthodes génériques pour d'autres endpoints
   get(endpoint: string, config?: any) {
     return this.api.get(endpoint, config);
