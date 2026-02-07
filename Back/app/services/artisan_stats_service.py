@@ -95,8 +95,11 @@ class ArtisanStatsService:
         reviews_data = db.query(
             func.count(Review.id).label("count"),
             func.avg(Review.rating).label("avg_rating")
-        ).join(Product).filter(
-            Product.artisan_id == artisan_id
+        ).join(Product, Review.reviewable_id == Product.id).filter(
+            and_(
+                Review.reviewable_type == 'product',
+                Product.artisan_id == artisan_id
+            )
         ).first()
         
         stats.total_reviews = reviews_data.count or 0
@@ -153,14 +156,14 @@ class ArtisanStatsService:
         total_revenue = total_sales_data.revenue or Decimal("0.00")
         
         # Commandes en attente et en production
-        pending_orders = db.query(Order).join(OrderItem).filter(
+        pending_orders = db.query(Order.id).join(OrderItem, Order.id == OrderItem.order_id).filter(
             and_(
                 OrderItem.artisan_id == artisan_id,
                 Order.status.in_(["pending", "confirmed"])
             )
         ).distinct().count()
         
-        in_production_orders = db.query(Order).join(OrderItem).filter(
+        in_production_orders = db.query(Order.id).join(OrderItem, Order.id == OrderItem.order_id).filter(
             and_(
                 OrderItem.artisan_id == artisan_id,
                 Order.status == "in_production"
@@ -171,7 +174,7 @@ class ArtisanStatsService:
         monthly_sales_data = db.query(
             func.count(OrderItem.id).label("count"),
             func.sum(OrderItem.artisan_payout).label("revenue")
-        ).join(Order).filter(
+        ).join(Order, OrderItem.order_id == Order.id).filter(
             and_(
                 OrderItem.artisan_id == artisan_id,
                 func.date(Order.created_at) >= start_of_month
@@ -185,7 +188,7 @@ class ArtisanStatsService:
         weekly_sales_data = db.query(
             func.count(OrderItem.id).label("count"),
             func.sum(OrderItem.artisan_payout).label("revenue")
-        ).join(Order).filter(
+        ).join(Order, OrderItem.order_id == Order.id).filter(
             and_(
                 OrderItem.artisan_id == artisan_id,
                 func.date(Order.created_at) >= start_of_week
@@ -199,8 +202,11 @@ class ArtisanStatsService:
         reviews_data = db.query(
             func.count(Review.id).label("count"),
             func.avg(Review.rating).label("avg_rating")
-        ).join(Product).filter(
-            Product.artisan_id == artisan_id
+        ).join(Product, Review.reviewable_id == Product.id).filter(
+            and_(
+                Review.reviewable_type == 'product',
+                Product.artisan_id == artisan_id
+            )
         ).first()
         
         total_reviews = reviews_data.count or 0
@@ -290,7 +296,7 @@ class ArtisanStatsService:
             Product.title,
             func.count(OrderItem.id).label("sales_count"),
             func.sum(OrderItem.artisan_payout).label("revenue")
-        ).join(Product).filter(
+        ).join(Product, OrderItem.product_id == Product.id).filter(
             OrderItem.artisan_id == artisan_id
         ).group_by(
             OrderItem.product_id,
@@ -326,7 +332,7 @@ class ArtisanStatsService:
             func.date(Order.created_at).label("date"),
             func.count(OrderItem.id).label("sales_count"),
             func.sum(OrderItem.artisan_payout).label("revenue")
-        ).join(OrderItem).filter(
+        ).join(OrderItem, Order.id == OrderItem.order_id).filter(
             and_(
                 OrderItem.artisan_id == artisan_id,
                 func.date(Order.created_at) >= start_date

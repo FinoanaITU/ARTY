@@ -611,9 +611,17 @@ class ApiService {
   }
 
   // Artisan stats endpoint
-  async getArtisanStats(artisanId: string) {
-    const response = await this.api.get(`/artisans/${artisanId}/stats`);
-    return response.data;
+  async getArtisanStats() {
+    const response = await this.api.get('/analytics/artisan/stats');
+    const data = response.data;
+    
+    // Map backend snake_case to frontend camelCase
+    return {
+      totalSales: data.total_revenue || 0,
+      ordersThisMonth: data.monthly_sales || 0,
+      rating: data.average_rating || 0,
+      totalProducts: data.total_products || 0
+    };
   }
 
   // Review endpoints
@@ -640,23 +648,23 @@ class ApiService {
   }
 
   // Unavailability endpoints
-  async getUnavailabilities(artisanId: string) {
-    const response = await this.api.get(`/artisans/${artisanId}/unavailabilities`);
-    return response.data;
+  async getUnavailabilities() {
+    const response = await this.api.get('/unavailabilities');
+    return response.data.items || [];
   }
 
-  async createUnavailability(artisanId: string, data: {
+  async createUnavailability(data: {
     start_date: string;
     end_date?: string;
     reason?: string;
     type: 'single' | 'range';
   }) {
-    const response = await this.api.post(`/artisans/${artisanId}/unavailabilities`, data);
+    const response = await this.api.post('/unavailabilities', data);
     return response.data;
   }
 
-  async deleteUnavailability(artisanId: string, unavailabilityId: string) {
-    await this.api.delete(`/artisans/${artisanId}/unavailabilities/${unavailabilityId}`);
+  async deleteUnavailability(unavailabilityId: string) {
+    await this.api.delete(`/unavailabilities/${unavailabilityId}`);
   }
 
   // User profile endpoints

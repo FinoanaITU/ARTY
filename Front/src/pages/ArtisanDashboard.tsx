@@ -58,12 +58,12 @@ const ArtisanDashboard = () => {
     try {
       // Supprimer les anciennes indisponibilités
       for (const period of artisanUnavailability) {
-        await apiService.deleteUnavailability(user.id, period.id);
+        await apiService.deleteUnavailability(period.id);
       }
       
       // Créer les nouvelles
       for (const period of periods) {
-        await apiService.createUnavailability(user.id, {
+        await apiService.createUnavailability({
           start_date: period.startDate.toISOString().split('T')[0],
           end_date: period.endDate ? period.endDate.toISOString().split('T')[0] : undefined,
           reason: period.reason,
@@ -72,7 +72,7 @@ const ArtisanDashboard = () => {
       }
       
       // Recharger les indisponibilités
-      const response = await apiService.getUnavailabilities(user.id);
+      const response = await apiService.getUnavailabilities();
       setArtisanUnavailability(response);
       
       toast({
@@ -98,7 +98,7 @@ const ArtisanDashboard = () => {
 
       setStatsLoading(true);
       try {
-        const stats = await apiService.getArtisanStats(user.id);
+        const stats = await apiService.getArtisanStats();
         setArtisanStats(stats);
       } catch (error) {
         console.error('Error loading stats:', error);
@@ -150,7 +150,7 @@ const ArtisanDashboard = () => {
 
       setUnavailabilitiesLoading(true);
       try {
-        const response = await apiService.getUnavailabilities(user.id);
+        const response = await apiService.getUnavailabilities();
         // Convertir les dates string en objets Date
         const formattedData = response.map((item: any) => ({
           id: item.id,

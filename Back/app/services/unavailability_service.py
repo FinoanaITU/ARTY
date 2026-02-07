@@ -6,7 +6,7 @@ from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 from sqlalchemy import func, and_, or_
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
 
@@ -24,12 +24,12 @@ from app.schemas.unavailability import (
 class UnavailabilityService:
     """Service pour gérer les indisponibilités des artisans"""
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.db = db
 
     async def _check_artisan_exists(self, artisan_id: UUID) -> bool:
         """Vérifie si l'artisan existe"""
-        result = await self.db.execute(
+        result = self.db.execute(
             select(ArtisanProfile).where(ArtisanProfile.id == artisan_id)
         )
         return result.scalar_one_or_none() is not None
@@ -91,7 +91,7 @@ class UnavailabilityService:
         if exclude_id:
             query = query.where(ArtisanUnavailability.id != exclude_id)
         
-        result = await self.db.execute(query)
+        result = self.db.execute(query)
         conflicts = result.scalars().all()
         return len(conflicts) > 0
 
@@ -153,8 +153,8 @@ class UnavailabilityService:
         )
 
         self.db.add(unavailability)
-        await self.db.commit()
-        await self.db.refresh(unavailability)
+        self.db.commit()
+        self.db.refresh(unavailability)
 
         return UnavailabilityOut.model_validate(unavailability)
 
@@ -174,7 +174,7 @@ class UnavailabilityService:
         Raises:
             HTTPException 404: Indisponibilité introuvable
         """
-        result = await self.db.execute(
+        result = self.db.execute(
             select(ArtisanUnavailability).where(
                 and_(
                     ArtisanUnavailability.id == unavailability_id,
@@ -240,14 +240,14 @@ class UnavailabilityService:
 
         # Compter le total
         count_query = select(func.count()).select_from(query.subquery())
-        total_result = await self.db.execute(count_query)
+        total_result = self.db.execute(count_query)
         total = total_result.scalar() or 0
 
         # Pagination
         offset = (page - 1) * page_size
         query = query.offset(offset).limit(page_size)
 
-        result = await self.db.execute(query)
+        result = self.db.execute(query)
         unavailabilities = result.scalars().all()
 
         total_pages = (total + page_size - 1) // page_size
@@ -285,7 +285,7 @@ class UnavailabilityService:
             HTTPException 400: Dates invalides ou conflit
         """
         # Récupérer l'indisponibilité existante
-        result = await self.db.execute(
+        result = self.db.execute(
             select(ArtisanUnavailability).where(
                 and_(
                     ArtisanUnavailability.id == unavailability_id,
@@ -344,8 +344,8 @@ class UnavailabilityService:
 
         unavailability.updated_at = datetime.utcnow()
 
-        await self.db.commit()
-        await self.db.refresh(unavailability)
+        self.db.commit()
+        self.db.refresh(unavailability)
 
         return UnavailabilityOut.model_validate(unavailability)
 
@@ -362,7 +362,7 @@ class UnavailabilityService:
         Raises:
             HTTPException 404: Indisponibilité introuvable
         """
-        result = await self.db.execute(
+        result = self.db.execute(
             select(ArtisanUnavailability).where(
                 and_(
                     ArtisanUnavailability.id == unavailability_id,
@@ -378,8 +378,8 @@ class UnavailabilityService:
                 detail="Unavailability not found",
             )
 
-        await self.db.delete(unavailability)
-        await self.db.commit()
+        self.db.delete(unavailability)
+        self.db.commit()
 
     async def get_upcoming_unavailabilities(
         self, artisan_id: UUID, limit: int = 5
@@ -396,7 +396,7 @@ class UnavailabilityService:
         """
         today = date.today()
 
-        result = await self.db.execute(
+        result = self.db.execute(
             select(ArtisanUnavailability)
             .where(
                 and_(

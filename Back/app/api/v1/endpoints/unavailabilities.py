@@ -6,9 +6,10 @@ from typing import Optional
 from uuid import UUID
 from datetime import date
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db, get_current_active_user
+from app.core.database import get_db
+from app.api.deps import get_current_active_user
 from app.models.user import User
 from app.services.unavailability_service import UnavailabilityService
 from app.schemas.unavailability import (
@@ -30,7 +31,7 @@ router = APIRouter()
 )
 async def create_unavailability(
     data: UnavailabilityCreate,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -66,7 +67,7 @@ async def list_unavailabilities(
     page_size: int = 20,
     status_filter: Optional[str] = None,
     start_from: Optional[date] = None,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -101,7 +102,7 @@ async def list_unavailabilities(
 )
 async def get_upcoming_unavailabilities(
     limit: int = 5,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -129,7 +130,7 @@ async def get_upcoming_unavailabilities(
 )
 async def get_unavailability(
     unavailability_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -157,7 +158,7 @@ async def get_unavailability(
 async def update_unavailability(
     unavailability_id: UUID,
     data: UnavailabilityUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -187,7 +188,7 @@ async def update_unavailability(
 )
 async def delete_unavailability(
     unavailability_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """
