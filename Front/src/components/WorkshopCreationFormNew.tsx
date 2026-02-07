@@ -75,6 +75,8 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [publishImmediately, setPublishImmediately] = useState(false);
+  const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
   const [formData, setFormData] = useState<WorkshopFormData>({
     title: '',
     description: '',
@@ -198,19 +200,21 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
         materials_to_bring: formData.materials_to_bring?.filter(m => m.trim() !== ''),
         prerequisites: formData.prerequisites,
         what_you_will_learn: formData.what_you_will_learn?.filter(w => w.trim() !== ''),
-        featured_image_url: formData.featured_image_url,
-        gallery_images: formData.gallery_images?.filter(g => g.trim() !== ''),
         tags: formData.tags?.filter(t => t.trim() !== ''),
       };
 
       // Appel API avec photos
       const result = photos.length > 0 
-        ? await apiService.createWorkshopWithPhotos(workshopData, photos)
-        : await apiService.createWorkshop(workshopData);
+        ? await apiService.createWorkshopWithPhotos(workshopData, photos, publishImmediately)
+        : await apiService.createWorkshop(workshopData, publishImmediately);
+
+      const statusMessage = publishImmediately 
+        ? "Votre atelier a été créé et publié avec succès!"
+        : "Votre atelier a été créé avec succès et est enregistré comme brouillon.";
 
       toast({
         title: "Atelier créé",
-        description: "Votre atelier a été créé avec succès et est en attente d'approbation.",
+        description: statusMessage,
       });
 
       onSubmit(result);
@@ -218,8 +222,18 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
       console.error('Erreur lors de la création de l\'atelier:', error);
       
       let errorMessage = 'Erreur lors de la création de l\'atelier';
-      if (error.response?.data?.detail) {
-        errorMessage = error.response.data.detail;
+      const errorDetail = error.response?.data?.detail;
+      
+      // Gérer l'erreur de description trop courte
+      if (errorDetail && (errorDetail.includes('String should have at least 10 characters') || errorDetail.includes('description'))) {
+        errorMessage = 'Description trop courte (minimum 10 caractères)';
+        // Mettre le focus sur le champ description
+        setTimeout(() => {
+          descriptionRef.current?.focus();
+          descriptionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      } else if (errorDetail) {
+        errorMessage = errorDetail;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -302,8 +316,9 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="description">Description complète *</Label>
+              <Label htmlFor="description">Description complète * (min. 10 caractères)</Label>
               <Textarea
+                ref={descriptionRef}
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -311,6 +326,9 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                 className="min-h-32"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.description.length} caractères
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -447,8 +465,9 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                 <Input
                   id="duration_minutes"
                   type="number"
-                  value={formData.duration_minutes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) || 0 }))}
+                  value={formData.duration_minutes === 0 ? '' : formData.duration_minutes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, duration_minutes: e.target.value === '' ? 0 : parseInt(e.target.value) }))}
+                  onBlur={(e) => { if (e.target.value === '') setFormData(prev => ({ ...prev, duration_minutes: 180 })); }}
                   placeholder="180"
                   min="30"
                   step="30"
@@ -460,8 +479,9 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                 <Input
                   id="min_participants"
                   type="number"
-                  value={formData.min_participants}
-                  onChange={(e) => setFormData(prev => ({ ...prev, min_participants: parseInt(e.target.value) || 1 }))}
+                  value={formData.min_participants === 0 ? '' : formData.min_participants}
+                  onChange={(e) => setFormData(prev => ({ ...prev, min_participants: e.target.value === '' ? 0 : parseInt(e.target.value) }))}
+                  onBlur={(e) => { if (e.target.value === '') setFormData(prev => ({ ...prev, min_participants: 1 })); }}
                   placeholder="1"
                   min="1"
                   required
@@ -472,8 +492,9 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                 <Input
                   id="max_participants"
                   type="number"
-                  value={formData.max_participants}
-                  onChange={(e) => setFormData(prev => ({ ...prev, max_participants: parseInt(e.target.value) || 1 }))}
+                  value={formData.max_participants === 0 ? '' : formData.max_participants}
+                  onChange={(e) => setFormData(prev => ({ ...prev, max_participants: e.target.value === '' ? 0 : parseInt(e.target.value) }))}
+                  onBlur={(e) => { if (e.target.value === '') setFormData(prev => ({ ...prev, max_participants: 12 })); }}
                   placeholder="12"
                   min="1"
                   required
@@ -518,8 +539,9 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                 <Input
                   id="base_price"
                   type="number"
-                  value={formData.base_price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))}
+                  value={formData.base_price === 0 ? '' : formData.base_price}
+                  onChange={(e) => setFormData(prev => ({ ...prev, base_price: e.target.value === '' ? 0 : parseFloat(e.target.value) }))}
+                  onBlur={(e) => { if (e.target.value === '') setFormData(prev => ({ ...prev, base_price: 0 })); }}
                   placeholder="25000"
                   min="0"
                   step="1000"
@@ -532,7 +554,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                   id="foreign_price"
                   type="number"
                   value={formData.foreign_price || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, foreign_price: parseFloat(e.target.value) || undefined }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, foreign_price: e.target.value === '' ? undefined : parseFloat(e.target.value) }))}
                   placeholder="30000"
                   min="0"
                   step="1000"
@@ -675,6 +697,33 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
           </CardContent>
         </Card>
 
+        {/* Option de publication */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Publication</CardTitle>
+            <CardDescription>Choisissez si vous souhaitez publier l'atelier immédiatement</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="publish"
+                checked={publishImmediately}
+                onChange={(e) => setPublishImmediately(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="publish" className="text-sm font-normal cursor-pointer">
+                Publier l'atelier immédiatement (visible par tous)
+              </Label>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {publishImmediately 
+                ? "L'atelier sera visible publiquement après validation par l'équipe."
+                : "L'atelier sera enregistré comme brouillon et ne sera pas visible avant publication."}
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Boutons de soumission */}
         <div className="flex gap-4 justify-end">
           <Button
@@ -698,7 +747,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Créer l'atelier
+                {publishImmediately ? 'Créer et publier' : 'Créer l\'atelier'}
               </>
             )}
           </Button>

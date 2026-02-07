@@ -48,6 +48,7 @@ class WorkshopService:
         db: Session,
         workshop_create: WorkshopCreate,
         artisan_id: UUID,
+        publish: bool = False,
     ) -> Workshop:
         """Créer un nouvel atelier"""
         # Vérifier que l'artisan existe
@@ -57,6 +58,9 @@ class WorkshopService:
 
         # Générer slug
         slug = WorkshopService._generate_slug(workshop_create.title)
+
+        # Déterminer le statut initial
+        initial_status = "published" if publish else "draft"
 
         # Créer l'atelier
         workshop = Workshop(
@@ -85,7 +89,7 @@ class WorkshopService:
             gallery_images=workshop_create.gallery_images,
             video_preview_url=workshop_create.video_preview_url,
             tags=workshop_create.tags,
-            status="draft",
+            status=initial_status,
         )
 
         # Les options de privatisation ne sont pas encore implémentées dans le modèle

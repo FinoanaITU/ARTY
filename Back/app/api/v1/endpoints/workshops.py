@@ -166,6 +166,7 @@ async def create_workshop(
     prerequisites: Optional[str] = Form(None),
     what_you_will_learn: Optional[str] = Form(None),  # JSON string
     tags: Optional[str] = Form(None),  # JSON string
+    publish: bool = Query(False),  # Nouveau paramètre pour publication
     # Photos
     photos: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
@@ -234,6 +235,7 @@ async def create_workshop(
         db=db,
         workshop_create=workshop_create,
         artisan_id=current_user.id,
+        publish=publish,
     )
     
     return WorkshopOut.model_validate(workshop)
@@ -242,6 +244,7 @@ async def create_workshop(
 @router.post("/json", response_model=WorkshopOut, status_code=201)
 async def create_workshop_json(
     workshop_create: WorkshopCreate,
+    publish: bool = Query(False),  # Nouveau paramètre pour publication
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -256,6 +259,7 @@ async def create_workshop_json(
         db=db,
         workshop_create=workshop_create,
         artisan_id=current_user.id,
+        publish=publish,
     )
     
     return WorkshopOut.model_validate(workshop)

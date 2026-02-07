@@ -450,12 +450,14 @@ class ApiService {
     return response.data;
   }
 
-  async createWorkshop(data: WorkshopCreate): Promise<WorkshopOut> {
-    const response = await this.api.post('/workshops/json', data);
+  async createWorkshop(data: WorkshopCreate, publish: boolean = false): Promise<WorkshopOut> {
+    const response = await this.api.post('/workshops/json', data, {
+      params: { publish }
+    });
     return response.data;
   }
 
-  async createWorkshopWithPhotos(data: WorkshopCreate, photos?: File[]): Promise<WorkshopOut> {
+  async createWorkshopWithPhotos(data: WorkshopCreate, photos?: File[], publish: boolean = false): Promise<WorkshopOut> {
     const formData = new FormData();
     
     // Ajouter les données du formulaire
@@ -491,6 +493,7 @@ class ApiService {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      params: { publish }
     });
     return response.data;
   }
