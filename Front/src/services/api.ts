@@ -3,7 +3,20 @@
  */
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { ProductOut, ProductListResponse, CategoriesResponse, BulkOrderRequestOut } from '@/types/product';
+import type { 
+  WorkshopOut, 
+  WorkshopListResponse, 
+  WorkshopCreate, 
+  WorkshopUpdate,
+  WorkshopSessionOut,
+  WorkshopSessionCreate,
+  WorkshopBookingOut,
+  WorkshopBookingCreate,
+  BookingConfirmation,
+  AvailabilityResponse
+} from '@/types/workshop';
 
+// Base URL: prefer env var, fallback to FastAPI default '/api' (no version)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 class ApiService {
@@ -381,6 +394,308 @@ class ApiService {
     }
   ): Promise<BulkOrderRequestOut> {
     const response = await this.api.post(`/products/${productId}/bulk-order-request`, data);
+    return response.data;
+  }
+
+  // Workshop endpoints
+  async getWorkshops(params?: {
+    type?: string;
+    category?: string;
+    skill_level?: string;
+    search?: string;
+    artisan_id?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<WorkshopListResponse> {
+    // Backend expects 'skip' and 'limit'; map page to skip
+    const query: any = { ...params };
+    if (params?.page && params?.limit) {
+      query.skip = (params.page - 1) * params.limit;
+      delete query.page;
+    }
+    const response = await this.api.get('/workshops', { params: query });
+    return response.data;
+  }
+
+  async getWorkshop(workshopId: string): Promise<WorkshopOut> {
+    const response = await this.api.get(`/workshops/${workshopId}`);
+    return response.data;
+  }
+
+  async getWorkshopAvailability(
+    workshopId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<AvailabilityResponse> {
+    const params: any = {};
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    const response = await this.api.get(`/workshops/${workshopId}/availability`, { params });
+    return response.data;
+  }
+
+  async getWorkshopSessions(
+    workshopId: string,
+    params?: { date_from?: string; date_to?: string }
+  ): Promise<WorkshopSessionOut[]> {
+    const response = await this.api.get(`/workshops/${workshopId}/sessions`, { params });
+    return response.data;
+  }
+
+  async getWorkshopBookings(
+    workshopId: string,
+    params?: { status?: string; page?: number; limit?: number }
+  ): Promise<WorkshopBookingOut[]> {
+    const response = await this.api.get(`/workshops/${workshopId}/bookings`, { params });
+    return response.data;
+  }
+
+  async createWorkshop(data: WorkshopCreate, publish: boolean = false): Promise<WorkshopOut> {
+    const response = await this.api.post('/workshops/json', data, {
+      params: { publish }
+    });
+    return response.data;
+  }
+
+  async createWorkshopWithPhotos(data: WorkshopCreate, photos?: File[], publish: boolean = false): Promise<WorkshopOut> {
+    const formData = new FormData();
+    
+    // Ajouter les données du formulaire
+    formData.append('title', data.title);
+    formData.append('description', data.description);
+    if (data.short_description) formData.append('short_description', data.short_description);
+    formData.append('category', data.category);
+    formData.append('workshop_type', data.workshop_type);
+    formData.append('skill_level', data.skill_level);
+    formData.append('base_price', data.base_price.toString());
+    if (data.foreign_price) formData.append('foreign_price', data.foreign_price.toString());
+    formData.append('max_participants', data.max_participants.toString());
+    formData.append('min_participants', (data.min_participants || 1).toString());
+    formData.append('duration_minutes', data.duration_minutes.toString());
+    formData.append('location', data.location);
+    if (data.address) formData.append('address', data.address);
+    
+    // Ajouter les listes JSON
+    if (data.materials_included) formData.append('materials_included', JSON.stringify(data.materials_included));
+    if (data.materials_to_bring) formData.append('materials_to_bring', JSON.stringify(data.materials_to_bring));
+    if (data.prerequisites) formData.append('prerequisites', data.prerequisites);
+    if (data.what_you_will_learn) formData.append('what_you_will_learn', JSON.stringify(data.what_you_will_learn));
+    if (data.tags) formData.append('tags', JSON.stringify(data.tags));
+    
+    // Ajouter les photos
+    if (photos) {
+      photos.forEach((photo, index) => {
+        formData.append('photos', photo);
+      });
+    }
+    
+    const response = await this.api.post('/workshops', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      params: { publish }
+    });
+    return response.data;
+  }
+
+  async updateWorkshop(workshopId: string, data: WorkshopUpdate): Promise<WorkshopOut> {
+    const response = await this.api.patch(`/workshops/${workshopId}`, data);
+    return response.data;
+  }
+
+  async deleteWorkshop(workshopId: string): Promise<void> {
+    await this.api.delete(`/workshops/${workshopId}`);
+  }
+
+  async publishWorkshop(workshopId: string): Promise<WorkshopOut> {
+    const response = await this.api.post(`/workshops/${workshopId}/publish`);
+    return response.data;
+  }
+
+  async unpublishWorkshop(workshopId: string): Promise<WorkshopOut> {
+    const response = await this.api.post(`/workshops/${workshopId}/unpublish`);
+    return response.data;
+  }
+
+  async archiveWorkshop(workshopId: string): Promise<WorkshopOut> {
+    const response = await this.api.post(`/workshops/${workshopId}/archive`);
+    return response.data;
+  }
+
+  async createWorkshopSession(
+    workshopId: string,
+    data: WorkshopSessionCreate
+  ): Promise<WorkshopSessionOut> {
+    const response = await this.api.post(`/workshops/${workshopId}/sessions`, data);
+    return response.data;
+  }
+
+  async deleteWorkshopSession(workshopId: string, sessionId: string): Promise<void> {
+    await this.api.delete(`/workshops/${workshopId}/sessions/${sessionId}`);
+  }
+
+  async bookWorkshop(workshopId: string, data: WorkshopBookingCreate): Promise<BookingConfirmation> {
+    const response = await this.api.post(`/workshops/${workshopId}/book`, data);
+    return response.data;
+  }
+
+  async cancelBooking(bookingId: string): Promise<void> {
+    await this.api.post(`/bookings/${bookingId}/cancel`);
+  }
+
+  async confirmBooking(bookingId: string): Promise<WorkshopBookingOut> {
+    const response = await this.api.post(`/bookings/${bookingId}/confirm`);
+    return response.data;
+  }
+
+  async getUserBookings(): Promise<WorkshopBookingOut[]> {
+    const response = await this.api.get('/bookings/user');
+    return response.data;
+  }
+
+  // Cart endpoints
+  async getCart() {
+    const response = await this.api.get('/carts/me');
+    return response.data;
+  }
+
+  async addToCart(data: {
+    product_id: string;
+    quantity: number;
+    customization_notes?: string;
+  }) {
+    const response = await this.api.post('/carts/items', data);
+    return response.data;
+  }
+
+  async updateCartItem(itemId: string, quantity: number) {
+    const response = await this.api.patch(`/carts/items/${itemId}`, { quantity });
+    return response.data;
+  }
+
+  async removeFromCart(itemId: string) {
+    const response = await this.api.delete(`/carts/items/${itemId}`);
+    return response.data;
+  }
+
+  async clearCart() {
+    await this.api.delete('/carts/');
+  }
+
+  // Order endpoints
+  async getOrders(params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const response = await this.api.get('/orders/', { params });
+    return response.data;
+  }
+
+  async getOrder(orderId: string) {
+    const response = await this.api.get(`/orders/${orderId}`);
+    return response.data;
+  }
+
+  async createOrder(data: {
+    cart_id: string;
+    shipping_address: any;
+    billing_address?: any;
+    shipping_method?: string;
+    notes?: string;
+  }) {
+    const response = await this.api.post('/orders/', data);
+    return response.data;
+  }
+
+  async updateOrderStatus(orderId: string, status: string, comment?: string) {
+    const response = await this.api.patch(`/orders/${orderId}/status`, { status, comment });
+    return response.data;
+  }
+
+  // Artisan stats endpoint
+  async getArtisanStats() {
+    const response = await this.api.get('/analytics/artisan/stats');
+    const data = response.data;
+    
+    // Map backend snake_case to frontend camelCase
+    return {
+      totalSales: data.total_revenue || 0,
+      ordersThisMonth: data.monthly_sales || 0,
+      rating: data.average_rating || 0,
+      totalProducts: data.total_products || 0
+    };
+  }
+
+  // Review endpoints
+  async getProductReviews(productId: string, params?: { page?: number; limit?: number }) {
+    const response = await this.api.get(`/products/${productId}/reviews`, { params });
+    return response.data;
+  }
+
+  async createReview(data: {
+    product_id: string;
+    order_item_id: string;
+    rating: number;
+    title: string;
+    comment: string;
+    images?: string[];
+  }) {
+    const response = await this.api.post(`/products/${data.product_id}/reviews`, data);
+    return response.data;
+  }
+
+  async voteReviewHelpful(reviewId: string, helpful: boolean) {
+    const response = await this.api.post(`/reviews/${reviewId}/vote`, { helpful });
+    return response.data;
+  }
+
+  // Unavailability endpoints
+  async getUnavailabilities() {
+    const response = await this.api.get('/unavailabilities');
+    return response.data.items || [];
+  }
+
+  async createUnavailability(data: {
+    start_date: string;
+    end_date?: string;
+    reason?: string;
+    type: 'single' | 'range';
+  }) {
+    const response = await this.api.post('/unavailabilities', data);
+    return response.data;
+  }
+
+  async deleteUnavailability(unavailabilityId: string) {
+    await this.api.delete(`/unavailabilities/${unavailabilityId}`);
+  }
+
+  // User profile endpoints
+  async updateUserProfile(data: {
+    email?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    bio?: string;
+    profile_image?: string;
+  }) {
+    const response = await this.api.put('/users/me', data);
+    return response.data;
+  }
+
+  async updateArtisanProfile(data: {
+    email?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    bio?: string;
+    specialty?: string;
+    experience_years?: number;
+    location?: string;
+    description?: string;
+    documents?: any;
+  }) {
+    const response = await this.api.put('/users/me/artisan', data);
     return response.data;
   }
 

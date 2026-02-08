@@ -53,9 +53,14 @@ if os.path.isdir(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # CORS middleware
+allow_origin_regex = None
+if settings.DEBUG:
+    allow_origin_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=settings.ALLOWED_CREDENTIALS,
     allow_methods=["*"],
     allow_headers=["*"],

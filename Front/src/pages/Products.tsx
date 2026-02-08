@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import apiService from '@/services/api';
@@ -248,16 +248,14 @@ const Products = () => {
                       </div>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">{product.name}</CardTitle>
-                        <CardDescription>
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-semibold text-xs">
-                              {product.artisan.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-medium text-sm">{product.artisan.name}</div>
-                            </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-semibold text-xs">
+                            {product.artisan.name.charAt(0).toUpperCase()}
                           </div>
-                        </CardDescription>
+                          <div>
+                            <div className="font-medium text-sm text-muted-foreground">{product.artisan.name}</div>
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <div className="flex justify-between items-center mb-4">

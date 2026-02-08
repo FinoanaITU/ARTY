@@ -300,7 +300,7 @@ class TestBulkOrderAPI:
         )
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "commande en gros" in response.json()["detail"].lower()
+        assert "commandes en gros" in response.json()["detail"].lower()
     
     def test_create_bulk_order_request_quantity_too_low(
         self, client: TestClient, db: Session, created_product: Product

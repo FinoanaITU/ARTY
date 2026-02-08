@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Navigation from '@/components/Navigation';
@@ -8,12 +8,14 @@ import QuoteRequestForm from '@/components/QuoteRequestForm';
 import WorkshopSubscriptionForm from '@/components/WorkshopSubscriptionForm';
 import SubscriptionRegistrationForm from '@/components/SubscriptionRegistrationForm';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useWorkshops } from '@/hooks/useWorkshops';
+import { useInscriptionWorkshops } from '@/hooks/useInscriptionWorkshops';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Clock, MapPin, Users, CreditCard, Calendar as CalendarIcon, BookOpen, Star } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CreditCard, Calendar as CalendarIcon, BookOpen, Star, Loader2 } from 'lucide-react';
 
 const artisans = {
   'Hery Rakoto': {
@@ -281,6 +283,33 @@ const Workshops = () => {
   const [selectedWorkshop, setSelectedWorkshop] = useState<any>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const { subscription, hasActiveSubscription, createSubscription, getAvailablePlans } = useSubscription();
+  const { 
+    workshops: apiWorkshops, 
+    workshopsList,
+    loading: workshopsLoading, 
+    error: workshopsError,
+    loadWorkshops 
+  } = useWorkshops();
+  const {
+    workshops: inscriptionWorkshops,
+    loading: inscriptionLoading,
+    error: inscriptionError
+  } = useInscriptionWorkshops();
+  
+  // Helper pour normaliser les URLs d'images (comme dans ArtisanProductManager)
+  const normalizeImageUrl = (url: string | undefined | null): string => {
+    if (!url) return '';
+    // Si l'URL commence par http:// or https://, la laisser telle quelle
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    // Construire l'URL complète avec la base du backend
+    const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+    return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
+  };
+  
+  // Load workshops from API on component mount
+  useEffect(() => {
+    loadWorkshops({ limit: 50, page: 1 });
+  }, [loadWorkshops]);
   
   // États pour les filtres
   const [searchTerm, setSearchTerm] = useState('');
@@ -291,13 +320,13 @@ const Workshops = () => {
   const [selectedDuration, setSelectedDuration] = useState('Tous');
   const [selectedGroupSize, setSelectedGroupSize] = useState('Tous');
 
-  // Fonction pour filtrer les ateliers
-  const filterWorkshops = (workshops: any[]) => {
+  // Fonction pour filtrer les ateliers (mémorisée)
+  const filterWorkshops = useCallback((workshops: any[]) => {
     return workshops.filter(workshop => {
       const matchesSearch = searchTerm === '' || 
-        workshop.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        workshop.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        workshop.category.toLowerCase().includes(searchTerm.toLowerCase());
+        workshop.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        workshop.instructor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        workshop.category?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesCategory = selectedCategory === 'Tous' || workshop.category === selectedCategory;
       const matchesDifficulty = selectedDifficulty === 'Tous' || workshop.difficulty === selectedDifficulty;
@@ -318,9 +347,9 @@ const Workshops = () => {
       
       return matchesSearch && matchesCategory && matchesDifficulty && matchesEventType && matchesDuration && matchesGroupSize;
     });
-  };
+  }, [searchTerm, selectedCategory, selectedDifficulty, selectedEventType, selectedDuration, selectedGroupSize]);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedCategory('Tous');
     setSelectedDifficulty('Tous');
@@ -328,273 +357,436 @@ const Workshops = () => {
     setSelectedEventType('Tous');
     setSelectedDuration('Tous');
     setSelectedGroupSize('Tous');
-  };
+  }, []);
 
-  const handleQuoteRequest = (workshopId: number, workshopTitle: string) => {
+  const handleQuoteRequest = useCallback((workshopId: number, workshopTitle: string) => {
     const workshop = reservationWorkshops.find(w => w.id === workshopId);
     setSelectedWorkshop({ ...workshop, title: workshopTitle });
     setShowQuoteForm(true);
-  };
+  }, [reservationWorkshops]);
 
-  const handleQuoteSubmit = (data: any) => {
+  const handleQuoteSubmit = useCallback((data: any) => {
     console.log('Quote request submitted:', data);
     setShowQuoteForm(false);
     setSelectedWorkshop(null);
-  };
+  }, []);
 
-  const handleSubscriptionPurchase = (plan: any) => {
+  const handleSubscriptionPurchase = useCallback((plan: any) => {
     setSelectedPlan(plan);
     setShowSubscriptionRegistrationForm(true);
-  };
+  }, []);
 
-  const handleWorkshopRegistrationWithSubscription = (workshop: any) => {
+  const handleWorkshopRegistrationWithSubscription = useCallback((workshop: any) => {
     setSelectedWorkshop(workshop);
     setShowSubscriptionForm(true);
-  };
+  }, []);
 
-  const filteredReservationWorkshops = filterWorkshops(reservationWorkshops);
+  // Use API workshops if available, fallback to mock data
+  const workshopsToUse = useMemo(() => 
+    apiWorkshops.length > 0 ? apiWorkshops : reservationWorkshops,
+    [apiWorkshops, reservationWorkshops]
+  );
+  
+  const filteredReservationWorkshops = useMemo(() => 
+    filterWorkshops(workshopsToUse),
+    [workshopsToUse, filterWorkshops]
+  );
 
-  const ReservationWorkshopsComponent = () => (
+  const ReservationWorkshopsComponent = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-primary mb-2">Catalogue d'Ateliers sur Réservation</h2>
         <p className="text-muted-foreground">Catalogue filtrable d'ateliers personnalisables selon vos besoins</p>
       </div>
       
-      <WorkshopFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        selectedDifficulty={selectedDifficulty}
-        setSelectedDifficulty={setSelectedDifficulty}
-        selectedType={selectedType}
-        setSelectedType={setSelectedType}
-        selectedEventType={selectedEventType}
-        setSelectedEventType={setSelectedEventType}
-        selectedDuration={selectedDuration}
-        setSelectedDuration={setSelectedDuration}
-        selectedGroupSize={selectedGroupSize}
-        setSelectedGroupSize={setSelectedGroupSize}
-        onResetFilters={resetFilters}
-        resultsCount={filteredReservationWorkshops.length}
-      />
+      {workshopsLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <span className="text-muted-foreground">Chargement des ateliers...</span>
+        </div>
+      )}
       
-      <div className="grid md:grid-cols-2 gap-6">
-        {filteredReservationWorkshops.map((workshop) => (
-          <Card key={workshop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="aspect-video relative">
-              <img src={workshop.image} alt={workshop.title} className="w-full h-full object-cover" />
-              <Badge className="absolute top-2 right-2 bg-purple-600 text-white">Sur Réservation</Badge>
-              <Badge className="absolute bottom-2 left-2 bg-primary">{workshop.difficulty}</Badge>
-              <Badge className="absolute bottom-2 right-2 bg-secondary text-secondary-foreground">{workshop.category}</Badge>
-              <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-                {workshop.theme.slice(0, 2).map((theme: string) => (
-                  <Badge key={theme} className="bg-orange-500 text-white text-xs">{theme}</Badge>
-                ))}
-              </div>
-            </div>
-            
-            <CardHeader>
-              <CardTitle className="text-lg">{workshop.title}</CardTitle>
-              <CardDescription>
-                <div className="flex items-center gap-2 mt-2">
-                  <img
-                    src={artisans[workshop.instructor as keyof typeof artisans]?.photo}
-                    alt={workshop.instructor}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                  <div>
-                    <div className="font-medium text-sm">{workshop.instructor}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {artisans[workshop.instructor as keyof typeof artisans]?.description}
-                    </div>
-                  </div>
-                </div>
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">{workshop.description}</p>
-              
-              <div className="space-y-2 text-sm mb-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>{workshop.duration}</span>
-                  <Users className="h-4 w-4 ml-4" />
-                  <span>{workshop.minParticipants}-{workshop.maxParticipants} personnes</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>{workshop.availableLocations.join(', ')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  <span className="font-medium">{workshop.savoirFaire}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  <span className="font-semibold text-primary">
-                    Prix à partir de {workshop.basePrice.toLocaleString()} Ar
-                  </span>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
-                  <p className="text-xs text-blue-700">
-                    <strong>ℹ️ Tarif estimatif :</strong> Le tarif affiché est une estimation. Un devis final sera envoyé selon votre lieu, la taille du groupe, le matériel et les contraintes logistiques.
-                  </p>
-                </div>
-              </div>
-              
-              <Dialog open={showQuoteForm && selectedWorkshop?.id === workshop.id} onOpenChange={(open) => {
-                if (!open) {
-                  setShowQuoteForm(false);
-                  setSelectedWorkshop(null);
-                }
-              }}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="w-full"
-                    onClick={() => handleQuoteRequest(workshop.id, workshop.title)}
-                  >
-                    Demander un devis
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  {selectedWorkshop && (
-                    <QuoteRequestForm
-                      workshopTitle={selectedWorkshop.title}
-                      onSubmit={handleQuoteSubmit}
-                      onCancel={() => {
-                        setShowQuoteForm(false);
-                        setSelectedWorkshop(null);
-                      }}
+      {workshopsError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+          <p>Erreur lors du chargement des ateliers: {workshopsError}</p>
+          <p className="text-xs text-red-600 mt-2">Affichage des ateliers en attente...</p>
+        </div>
+      )}
+      
+      {!workshopsLoading && apiWorkshops.length > 0 && (
+        <>
+          <WorkshopFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedDifficulty={selectedDifficulty}
+            setSelectedDifficulty={setSelectedDifficulty}
+            selectedType={selectedType}
+            setSelectedType={setSelectedType}
+            selectedEventType={selectedEventType}
+            setSelectedEventType={setSelectedEventType}
+            selectedDuration={selectedDuration}
+            setSelectedDuration={setSelectedDuration}
+            selectedGroupSize={selectedGroupSize}
+            setSelectedGroupSize={setSelectedGroupSize}
+            onResetFilters={resetFilters}
+            resultsCount={filteredReservationWorkshops.length}
+          />
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {filteredReservationWorkshops.map((workshop: any) => (
+              <Card key={workshop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="aspect-video relative">
+                  {workshop.featured_image_url && (
+                    <img 
+                      src={normalizeImageUrl(workshop.featured_image_url)} 
+                      alt={workshop.title} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Image+non+disponible'; }}
                     />
                   )}
-                </DialogContent>
-              </Dialog>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  <Badge className="absolute top-2 right-2 bg-purple-600 text-white">Sur Réservation</Badge>
+                  <Badge className="absolute bottom-2 left-2 bg-primary">{workshop.skill_level}</Badge>
+                  <Badge className="absolute bottom-2 right-2 bg-secondary text-secondary-foreground">{workshop.category}</Badge>
+                </div>
+                
+                <CardHeader>
+                  <CardTitle className="text-lg">{workshop.title}</CardTitle>
+                  <div className="flex items-center gap-2 mt-2">
+                    {workshop.artisan?.avatar && (
+                      <img
+                        src={normalizeImageUrl(workshop.artisan.avatar)}
+                        alt={workshop.artisan.name}
+                        className="w-8 h-8 rounded-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/32?text=A'; }}
+                      />
+                    )}
+                    <div>
+                      <div className="font-medium text-sm text-muted-foreground">{workshop.artisan?.name}</div>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">{workshop.short_description || workshop.description}</p>
+                  
+                  <div className="space-y-2 text-sm mb-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span>{Math.round(workshop.duration_minutes / 60)}h</span>
+                      <Users className="h-4 w-4 ml-4" />
+                      <span>{workshop.min_participants}-{workshop.max_participants} personnes</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>{workshop.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      <span className="font-semibold text-primary">
+                        À partir de {parseFloat(String(workshop.base_price)).toLocaleString()} {workshop.currency || 'Ar'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <Link to={`/workshop/${workshop.id}`}>
+                    <Button className="w-full">
+                      Voir détails
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
       
-      {filteredReservationWorkshops.length === 0 && (
+      {!workshopsLoading && apiWorkshops.length === 0 && !workshopsError && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Aucun atelier ne correspond à vos critères de recherche.</p>
+          <p className="text-muted-foreground">Aucun atelier disponible pour le moment.</p>
           <Button variant="outline" onClick={resetFilters} className="mt-4">
-            Réinitialiser les filtres
+            Réessayer
           </Button>
         </div>
       )}
+      
+      {/* Fallback: Show mock data component */}
+      {!workshopsLoading && apiWorkshops.length === 0 && (
+        <>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-700 text-sm">
+            <p><strong>ℹ️</strong> Affichage des ateliers en catalogue (données de démonstration)</p>
+          </div>
+          
+          <WorkshopFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedDifficulty={selectedDifficulty}
+            setSelectedDifficulty={setSelectedDifficulty}
+            selectedType={selectedType}
+            setSelectedType={setSelectedType}
+            selectedEventType={selectedEventType}
+            setSelectedEventType={setSelectedEventType}
+            selectedDuration={selectedDuration}
+            setSelectedDuration={setSelectedDuration}
+            selectedGroupSize={selectedGroupSize}
+            setSelectedGroupSize={setSelectedGroupSize}
+            onResetFilters={resetFilters}
+            resultsCount={filteredReservationWorkshops.length}
+          />
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {filteredReservationWorkshops.map((workshop) => (
+              <Card key={workshop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="aspect-video relative">
+                  <img src={workshop.image} alt={workshop.title} className="w-full h-full object-cover" />
+                  <Badge className="absolute top-2 right-2 bg-purple-600 text-white">Sur Réservation</Badge>
+                  <Badge className="absolute bottom-2 left-2 bg-primary">{workshop.difficulty}</Badge>
+                  <Badge className="absolute bottom-2 right-2 bg-secondary text-secondary-foreground">{workshop.category}</Badge>
+                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                    {workshop.theme.slice(0, 2).map((theme: string) => (
+                      <Badge key={theme} className="bg-orange-500 text-white text-xs">{theme}</Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <CardHeader>
+                  <CardTitle className="text-lg">{workshop.title}</CardTitle>
+                  <div className="flex items-center gap-2 mt-2">
+                    <img
+                      src={artisans[workshop.instructor as keyof typeof artisans]?.photo}
+                      alt={workshop.instructor}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                    <div>
+                      <div className="font-medium text-sm text-muted-foreground">{workshop.instructor}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {artisans[workshop.instructor as keyof typeof artisans]?.description}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">{workshop.description}</p>
+                  
+                  <div className="space-y-2 text-sm mb-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span>{workshop.duration}</span>
+                      <Users className="h-4 w-4 ml-4" />
+                      <span>{workshop.minParticipants}-{workshop.maxParticipants} personnes</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>{workshop.availableLocations.join(', ')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      <span className="font-medium">{workshop.savoirFaire}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      <span className="font-semibold text-primary">
+                        Prix à partir de {workshop.basePrice.toLocaleString()} Ar
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <Dialog open={showQuoteForm && selectedWorkshop?.id === workshop.id} onOpenChange={(open) => {
+                    if (!open) {
+                      setShowQuoteForm(false);
+                      setSelectedWorkshop(null);
+                    }
+                  }}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleQuoteRequest(workshop.id, workshop.title)}
+                      >
+                        Demander un devis
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      {selectedWorkshop && (
+                        <QuoteRequestForm
+                          workshopTitle={selectedWorkshop.title}
+                          onSubmit={handleQuoteSubmit}
+                          onCancel={() => {
+                            setShowQuoteForm(false);
+                            setSelectedWorkshop(null);
+                          }}
+                        />
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {filteredReservationWorkshops.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Aucun atelier ne correspond à vos critères de recherche.</p>
+              <Button variant="outline" onClick={resetFilters} className="mt-4">
+                Réinitialiser les filtres
+              </Button>
+            </div>
+          )}
+        </>
+      )}
     </div>
-  );
+  ), [
+    workshopsLoading, 
+    workshopsError, 
+    apiWorkshops, 
+    searchTerm, 
+    selectedCategory, 
+    selectedDifficulty, 
+    selectedType,
+    selectedEventType,
+    selectedDuration,
+    selectedGroupSize,
+    resetFilters,
+    filteredReservationWorkshops,
+    showQuoteForm,
+    selectedWorkshop,
+    handleQuoteRequest,
+    handleQuoteSubmit
+  ]);
 
-  const EventWorkshopsComponent = () => (
+  const EventWorkshopsComponent = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-primary mb-2">Ateliers sur Inscription</h2>
         <p className="text-muted-foreground">Événements programmés avec dates fixes</p>
       </div>
       
-      <div className="grid md:grid-cols-2 gap-6">
-        {eventWorkshops.map((workshop) => (
-          <Card key={workshop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="aspect-video relative">
-              <img src={workshop.image} alt={workshop.title} className="w-full h-full object-cover" />
-              <Badge className="absolute top-2 right-2 bg-orange-600 text-white">Sur Inscription</Badge>
-              {workshop.includedInSubscription && (
-                <Badge className="absolute top-2 left-2 bg-green-600 text-white">Inclus abonnement</Badge>
-              )}
-              <Badge className="absolute bottom-2 left-2 bg-primary">{workshop.difficulty}</Badge>
-              <Badge className="absolute bottom-2 right-2 bg-secondary text-secondary-foreground">{workshop.category}</Badge>
-            </div>
+      {inscriptionLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <span className="text-muted-foreground">Chargement des ateliers...</span>
+        </div>
+      )}
+      
+      {inscriptionError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+          <p>Erreur lors du chargement: {inscriptionError}</p>
+        </div>
+      )}
+      
+      {!inscriptionLoading && inscriptionWorkshops.length > 0 && (
+        <div className="grid md:grid-cols-2 gap-6">
+          {inscriptionWorkshops.map((workshop) => (
+            <Card key={workshop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="aspect-video relative">
+                <img 
+                  src={normalizeImageUrl(workshop.featured_image_url)} 
+                  alt={workshop.title} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Image+non+disponible'; }}
+                />
+                <Badge className="absolute top-2 right-2 bg-orange-600 text-white">Sur Inscription</Badge>
+                <Badge className="absolute bottom-2 left-2 bg-primary">{workshop.skill_level}</Badge>
+                <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                  {workshop.tags.slice(0, 2).map((tag: string) => (
+                    <Badge key={tag} className="bg-blue-500 text-white text-xs">{tag}</Badge>
+                  ))}
+                </div>
+              </div>
             
             <CardHeader>
               <CardTitle className="text-lg">{workshop.title}</CardTitle>
-              <CardDescription>
-                <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2">
+                {workshop.artisan.avatar ? (
                   <img
-                    src={artisans[workshop.instructor as keyof typeof artisans]?.photo}
-                    alt={workshop.instructor}
+                    src={normalizeImageUrl(workshop.artisan.avatar)}
+                    alt={workshop.artisan.name}
                     className="w-8 h-8 rounded-full object-cover"
                   />
-                  <div>
-                    <div className="font-medium text-sm">{workshop.instructor}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {artisans[workshop.instructor as keyof typeof artisans]?.description}
-                    </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-xs font-medium text-gray-600">{workshop.artisan.name.charAt(0)}</span>
                   </div>
+                )}
+                <div>
+                  <div className="font-medium text-sm text-muted-foreground">{workshop.artisan.name}</div>
                 </div>
-              </CardDescription>
+              </div>
             </CardHeader>
             
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">{workshop.description}</p>
+              <p className="text-sm text-muted-foreground mb-4">{workshop.short_description}</p>
               
               <div className="space-y-2 text-sm mb-4">
                 <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>{new Date(workshop.date).toLocaleDateString('fr-FR')} à {workshop.time}</span>
+                  <Clock className="h-4 w-4" />
+                  <span>{Math.round(workshop.duration_minutes / 60)}h</span>
+                  <MapPin className="h-4 w-4 ml-4" />
+                  <span>{workshop.address}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>{workshop.duration}</span>
-                  <MapPin className="h-4 w-4 ml-4" />
-                  <span>{workshop.location}</span>
+                  <Users className="h-4 w-4" />
+                  <span>{workshop.min_participants}-{workshop.max_participants} participants</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>{workshop.participants}/{workshop.maxParticipants} places</span>
-                  </div>
-                  <span className="font-semibold text-lg text-primary">
-                    {workshop.price.toLocaleString()} Ar
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  <span className="font-semibold text-primary">
+                    {workshop.base_price.toLocaleString()} {workshop.currency}
                   </span>
                 </div>
-                {workshop.participants < workshop.minRequired && (
-                  <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
-                    Minimum {workshop.minRequired} participants requis pour maintenir l'atelier
-                  </div>
-                )}
               </div>
               
-              <div className="space-y-2">
-                <Link to={`/workshop/${workshop.id}`}>
-                  <Button 
-                    className="w-full"
-                    disabled={workshop.participants >= workshop.maxParticipants}
-                  >
-                    {workshop.participants >= workshop.maxParticipants ? 'Complet' : 'S\'inscrire'}
-                  </Button>
-                </Link>
-                
-                {/* Bouton d'inscription avec abonnement si l'atelier est inclus */}
-                {workshop.includedInSubscription && hasActiveSubscription && (
-                  <Button 
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => handleWorkshopRegistrationWithSubscription(workshop)}
-                    disabled={workshop.participants >= workshop.maxParticipants}
-                  >
-                    Utiliser mes crédits d'abonnement
-                  </Button>
-                )}
+              <div className="mb-4">
+                <h4 className="font-medium text-sm mb-2">Sessions programmées :</h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {workshop.sessions.slice(0, 3).map((session) => (
+                    <div key={session.id} className="bg-gray-50 p-2 rounded text-xs">
+                      <div className="flex justify-between items-center">
+                        <span>{new Date(session.start_datetime).toLocaleDateString('fr-FR')} à {new Date(session.start_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 rounded ${session.needs_min_participants ? 'bg-orange-100 text-orange-600' : session.is_full ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                            {session.current_bookings}/{session.max_participants}
+                          </span>
+                        </div>
+                      </div>
+                      {session.needs_min_participants && (
+                        <div className="text-orange-600 mt-1">
+                          Minimum {workshop.min_participants} participants requis
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {workshop.sessions.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      +{workshop.sessions.length - 3} autres sessions
+                    </div>
+                  )}
+                </div>
               </div>
               
-              {workshop.includedInSubscription && (
-                <p className="text-xs text-center text-muted-foreground mt-2">
-                  <Link to="#subscription" className="text-primary hover:underline">
-                    Inclus dans certaines formules d'abonnement
-                  </Link>
-                </p>
-              )}
+              <Link to={`/workshop/${workshop.id}`}>
+                <Button className="w-full">
+                  Voir détails et s'inscrire
+                </Button>
+              </Link>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+      
+      {!inscriptionLoading && inscriptionWorkshops.length === 0 && !inscriptionError && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Aucun atelier sur inscription disponible pour le moment.</p>
+        </div>
+      )}
     </div>
-  );
+  ), [inscriptionLoading, inscriptionError, inscriptionWorkshops]);
 
-  const SubscriptionComponent = () => (
+  const SubscriptionComponent = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-primary mb-2">Ateliers par Abonnement</h2>
@@ -660,9 +852,9 @@ const Workshops = () => {
         </CardContent>
       </Card>
     </div>
-  );
+  ), [handleSubscriptionPurchase]);
 
-  const ArtikidzComponent = () => (
+  const ArtikidzComponent = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-primary mb-2">Ateliers Artikidz</h2>
@@ -774,7 +966,7 @@ const Workshops = () => {
         </div>
       </div>
     </div>
-  );
+  ), []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 pb-20 md:pb-0">
@@ -814,19 +1006,19 @@ const Workshops = () => {
             </TabsList>
 
             <TabsContent value="reservation">
-              <ReservationWorkshopsComponent />
+              {ReservationWorkshopsComponent}
             </TabsContent>
 
             <TabsContent value="inscription">
-              <EventWorkshopsComponent />
+              {EventWorkshopsComponent}
             </TabsContent>
 
             <TabsContent value="subscription">
-              <SubscriptionComponent />
+              {SubscriptionComponent}
             </TabsContent>
 
             <TabsContent value="artikidz">
-              <ArtikidzComponent />
+              {ArtikidzComponent}
             </TabsContent>
           </Tabs>
 

@@ -17,6 +17,7 @@ except ImportError:
 
 try:
     from app.models.workshop import Workshop, WorkshopSession, WorkshopBooking
+    from app.models.workshop_time_slot import WorkshopTimeSlot
 except ImportError:
     pass
 

@@ -22,6 +22,7 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Contact from "./pages/Contact";
 import BecomeProfessional from "./pages/BecomeProfessional";
+import TestLogin from "./pages/TestLogin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/become-professional" element={<BecomeProfessional />} />
+                <Route path="/test-login" element={<TestLogin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

@@ -5,68 +5,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Calendar as CalendarIcon, Upload, X } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { Plus, Trash2, Upload, X, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { WorkshopCreate } from '@/types/workshop';
+import apiService from '@/services/api';
 
 interface WorkshopFormData {
-  // Photos
-  photos: string[];
-  
-  // Informations de base
-  name: string;
-  category: string;
-  
-  // Disponibilité
-  availabilityTypes: {
-    reservation: boolean;
-    inscription: boolean;
-    subscription: boolean;
-  };
-  
-  // Aptitudes physiques
-  physicalRequirements: string;
-  
-  // Localisation
-  location: {
-    artisanPlaceOnly: boolean;
-    canRelocate: boolean;
-    relocateDetails?: string;
-  };
-  
-  // Horaires
-  duration: number; // en heures
-  date?: Date; // si inscription fixe
-  
-  // Tarification
-  pricing: {
-    basePrice: number;
-    foreignPrice?: number;
-  };
-  
-  // Descriptions
+  title: string;
   description: string;
-  schedule: string[]; // Déroulement
-  learningObjectives: string[]; // Ce que vous apprendrez
-  includedMaterials: string[]; // Matériel inclus
-  
-  // Informations importantes
-  importantInfo: {
-    minimumAge: number;
-    requiredLevel: string;
-    languages: string[];
-    type: 'inscription_fixe' | 'reservation_libre';
-    privatization: boolean;
-    cancellationPolicy: string;
-  };
+  short_description: string;
+  category: string;
+  workshop_type: 'inscription' | 'reservation';
+  skill_level: 'Débutant' | 'Intermédiaire' | 'Avancé';
+  base_price: number;
+  foreign_price?: number;
+  max_participants: number;
+  min_participants: number;
+  duration_minutes: number;
+  location: string;
+  address?: string;
+  materials_included?: string[];
+  materials_to_bring?: string[];
+  prerequisites?: string;
+  what_you_will_learn?: string[];
+  featured_image_url?: string;
+  gallery_images?: string[];
+  tags?: string[];
 }
 
 interface WorkshopCreationFormProps {
@@ -76,26 +43,29 @@ interface WorkshopCreationFormProps {
 }
 
 const categories = [
-  'Sculpture sur bois',
-  'Tissage traditionnel', 
-  'Poterie et céramique',
-  'Bijouterie artisanale',
+  'Sculpture',
+  'Textile', 
+  'Céramique',
+  'Bijouterie',
   'Vannerie',
   'Broderie',
   'Marqueterie',
-  'Cuisine malgache',
-  'Teinture naturelle',
-  'Instruments de musique',
-  'Peinture traditionnelle',
+  'Cuisine',
+  'Teinture',
+  'Musique',
+  'Peinture',
   'Autres'
 ];
 
-const languages = [
-  'Français',
-  'Malgache',
-  'Anglais',
-  'Allemand',
-  'Italien'
+const skillLevels = [
+  'Débutant',
+  'Intermédiaire',
+  'Avancé'
+];
+
+const workshopTypes = [
+  { value: 'inscription', label: 'Inscription (dates fixes)' },
+  { value: 'reservation', label: 'Réservation (dates flexibles)' }
 ];
 
 const requiredLevels = [
@@ -111,6 +81,8 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   onCancel,
   initialData
 }) => {
+  const { createWorkshop, loading: apiLoading, error: apiError } = useWorkshops();
+  
   const [formData, setFormData] = useState<WorkshopFormData>({
     photos: [],
     name: '',
@@ -145,6 +117,52 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   });
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialData?.date);
+  
+  // Submit handler that integrates with API
+  const handleFormSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    try {
+      // Transform form data to API schema
+      const workshopData = {
+        title: formData.name,
+        description: formData.description,
+        short_description: formData.description.substring(0, 100),
+        category: formData.category,
+        workshop_type: formData.availabilityTypes.inscription ? 'inscription' : 'reservation',
+        skill_level: formData.importantInfo.requiredLevel as any,
+        base_price: formData.pricing.basePrice,
+        foreign_price: formData.pricing.foreignPrice,
+        min_participants: 1,
+        max_participants: 20,
+        duration_minutes: formData.duration * 60,
+        location: formData.location.artisanPlaceOnly ? 'Artisan' : 'Flexible',
+        materials_included: formData.includedMaterials,
+        what_you_will_learn: formData.learningObjectives,
+        program: formData.schedule,
+        privatization_enabled: formData.importantInfo.privatization,
+        cancellation_policy: formData.importantInfo.cancellationPolicy,
+        refund_policy: formData.importantInfo.cancellationPolicy,
+      };
+      
+      // Call API
+      const result = await createWorkshop(workshopData);
+      
+      if (result) {
+        toast?.({
+          title: "Succès",
+          description: "L'atelier a été créé avec succès!",
+        });
+        onSubmit(formData);
+      }
+    } catch (error) {
+      toast?.({
+        title: "Erreur",
+        description: apiError || "Erreur lors de la création de l'atelier",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handlePhotoUpload = () => {
     // Simulation d'upload de photo

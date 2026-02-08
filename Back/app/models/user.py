@@ -101,6 +101,8 @@ class User(BaseModel):
     # orders = relationship("Order", back_populates="buyer", lazy="dynamic")
     # cart_items = relationship("CartItem", back_populates="user", lazy="dynamic")
     sessions = relationship("UserSession", back_populates="user", lazy="dynamic")
+    workshops = relationship("Workshop", back_populates="artisan", lazy="dynamic")
+    workshop_bookings = relationship("WorkshopBooking", back_populates="user", lazy="dynamic")
 
 
 class ArtisanProfile(BaseModel):
@@ -140,8 +142,6 @@ class ArtisanProfile(BaseModel):
     artisan_photos = relationship("ArtisanPhoto", back_populates="artisan_profile", cascade="all, delete-orphan")
     # Temporarily comment out relationships that require models not yet fully configured
     # products = relationship("Product", back_populates="artisan")
-    # workshops = relationship("Workshop", back_populates="artisan")
-    # unavailability_periods = relationship("UnavailabilityPeriod", back_populates="artisan", cascade="all, delete-orphan")
 
 
 class ArtisanPhoto(BaseModel):

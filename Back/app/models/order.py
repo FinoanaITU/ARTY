@@ -35,9 +35,8 @@ class CartItem(BaseModel):
     customization_notes = Column(Text)
     
     # Relationships
-    # Temporarily commented out to avoid circular dependency issues
-    # cart = relationship("Cart", back_populates="items")
-    # product = relationship("Product", back_populates="cart_items")
+    cart = relationship("Cart", back_populates="items")
+    product = relationship("Product")
     # variant = relationship("ProductVariant", back_populates="cart_items")
 
 

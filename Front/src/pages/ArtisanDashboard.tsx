@@ -7,8 +7,12 @@ import { ArtisanOrderManager } from '@/components/ArtisanOrderManager';
 import ArtisanAvailabilityCalendar from '@/components/ArtisanAvailabilityCalendar';
 import { ArtisanProfileEditor } from '@/components/ArtisanProfileEditor';
 import { ArtisanProductManager } from '@/components/ArtisanProductManager';
-import { WorkshopManager } from '@/components/WorkshopManager';
-import { WorkshopCreationForm } from '@/components/WorkshopCreationForm';
+
+import WorkshopCreationForm from '@/components/WorkshopCreationFormNew';
+import { ArtisanWorkshopManager } from '@/components/ArtisanWorkshopManager';
+import { WorkshopViewModal } from '@/components/WorkshopViewModal';
+import { WorkshopEditModal } from '@/components/WorkshopEditModal';
+import { WorkshopDeleteConfirmModal } from '@/components/WorkshopDeleteConfirmModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +21,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import apiService from '@/services/api';
 import type { ProductOut } from '@/types/product';
+import type { WorkshopOut } from '@/types/workshop';
 
 const ArtisanDashboard = () => {
   const { user } = useUser();
@@ -25,58 +30,146 @@ const ArtisanDashboard = () => {
   const [showWorkshopCreation, setShowWorkshopCreation] = useState(false);
   const [products, setProducts] = useState<ProductOut[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
+  const [workshops, setWorkshops] = useState<WorkshopOut[]>([]);
+  const [workshopsLoading, setWorkshopsLoading] = useState(false);
+  
+  // États pour les modales d'atelier
+  const [viewingWorkshop, setViewingWorkshop] = useState<WorkshopOut | null>(null);
+  const [editingWorkshop, setEditingWorkshop] = useState<WorkshopOut | null>(null);
+  const [deletingWorkshop, setDeletingWorkshop] = useState<WorkshopOut | null>(null);
+  const [isDeletingWorkshop, setIsDeletingWorkshop] = useState(false);
 
-  // Mock data for artisan stats and orders
-  const artisanStats = {
-    totalSales: 450000,
-    ordersThisMonth: 12,
-    rating: 4.8,
-    totalProducts: 24
+  // États pour les stats, commandes et indisponibilités
+  const [artisanStats, setArtisanStats] = useState({
+    totalSales: 0,
+    ordersThisMonth: 0,
+    rating: 0,
+    totalProducts: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [artisanUnavailability, setArtisanUnavailability] = useState<any[]>([]);
+  const [unavailabilitiesLoading, setUnavailabilitiesLoading] = useState(false);
+
+  const handleAvailabilitySave = async (periods: any[]) => {
+    if (!user) return;
+    
+    try {
+      // Supprimer les anciennes indisponibilités
+      for (const period of artisanUnavailability) {
+        await apiService.deleteUnavailability(period.id);
+      }
+      
+      // Créer les nouvelles
+      for (const period of periods) {
+        await apiService.createUnavailability({
+          start_date: period.startDate.toISOString().split('T')[0],
+          end_date: period.endDate ? period.endDate.toISOString().split('T')[0] : undefined,
+          reason: period.reason,
+          type: period.type
+        });
+      }
+      
+      // Recharger les indisponibilités
+      const response = await apiService.getUnavailabilities();
+      setArtisanUnavailability(response);
+      
+      toast({
+        title: "Indisponibilités mises à jour",
+        description: "Vos périodes d'indisponibilité ont été enregistrées avec succès.",
+      });
+    } catch (error) {
+      console.error('Error saving unavailabilities:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder vos indisponibilités",
+        variant: "destructive"
+      });
+    }
   };
 
-  const recentOrders = [
-    {
-      id: 1,
-      customer: 'Marie L.',
-      items: ['Masque traditionnel'],
-      total: 45000,
-      date: '2024-05-25',
-      status: 'delivered' as const
-    },
-    {
-      id: 2,
-      customer: 'Jean P.',
-      items: ['Statuette Zébu'],
-      total: 25000,
-      date: '2024-05-23',
-      status: 'shipped' as const
-    }
-  ];
+  // Charger les stats de l'artisan
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
 
-  // Mock unavailability data
-  const [artisanUnavailability, setArtisanUnavailability] = useState([
-    {
-      id: '1',
-      startDate: new Date('2024-06-20'),
-      endDate: new Date('2024-06-25'),
-      reason: 'Vacances familiales',
-      type: 'range' as const
-    },
-    {
-      id: '2',
-      startDate: new Date('2024-07-14'),
-      reason: 'Formation professionnelle',
-      type: 'single' as const
-    }
-  ]);
+      setStatsLoading(true);
+      try {
+        const stats = await apiService.getArtisanStats();
+        setArtisanStats(stats);
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les statistiques",
+          variant: "destructive"
+        });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
 
-  const handleAvailabilitySave = (periods: any[]) => {
-    setArtisanUnavailability(periods);
-    toast({
-      title: "Indisponibilités mises à jour",
-      description: "Vos périodes d'indisponibilité ont été enregistrées avec succès.",
-    });
-  };
+    loadStats();
+  }, [user]);
+
+  // Charger les commandes récentes
+  useEffect(() => {
+    const loadOrders = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
+
+      setOrdersLoading(true);
+      try {
+        const response = await apiService.getOrders({ limit: 10 });
+        setRecentOrders(response.items || []);
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les commandes",
+          variant: "destructive"
+        });
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    loadOrders();
+  }, [user]);
+
+  // Charger les indisponibilités
+  useEffect(() => {
+    const loadUnavailabilities = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
+
+      setUnavailabilitiesLoading(true);
+      try {
+        const response = await apiService.getUnavailabilities();
+        // Convertir les dates string en objets Date
+        const formattedData = response.map((item: any) => ({
+          id: item.id,
+          startDate: new Date(item.start_date),
+          endDate: item.end_date ? new Date(item.end_date) : undefined,
+          reason: item.reason || '',
+          type: item.type
+        }));
+        setArtisanUnavailability(formattedData);
+      } catch (error) {
+        console.error('Error loading unavailabilities:', error);
+        // Toast non nécessaire ici, c'est optionnel
+      } finally {
+        setUnavailabilitiesLoading(false);
+      }
+    };
+
+    loadUnavailabilities();
+  }, [user]);
 
   // Charger les produits de l'artisan
   useEffect(() => {
@@ -105,6 +198,36 @@ const ArtisanDashboard = () => {
     };
 
     loadProducts();
+  }, [user]);
+
+  // Charger les ateliers de l'artisan ou tous les ateliers pour l'admin
+  useEffect(() => {
+    const loadWorkshops = async () => {
+      if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
+        return;
+      }
+
+      setWorkshopsLoading(true);
+      try {
+        const params = user.role === 'admin' 
+          ? { limit: 100 } // Admin voit tous les ateliers
+          : { artisan_id: user.id, limit: 100 }; // Artisan voit ses ateliers
+        
+        const response = await apiService.getWorkshops(params);
+        setWorkshops(response.items || []);
+      } catch (error) {
+        console.error('Error loading workshops:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les ateliers",
+          variant: "destructive"
+        });
+      } finally {
+        setWorkshopsLoading(false);
+      }
+    };
+
+    loadWorkshops();
   }, [user]);
 
   const handleCreateProduct = async (productData: any, photos?: File[]) => {
@@ -193,6 +316,61 @@ const ArtisanDashboard = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleCreateWorkshop = (workshopData: any) => {
+    console.log('Workshop created:', workshopData);
+    setShowWorkshopCreation(false);
+    toast({
+      title: "Atelier créé",
+      description: "L'atelier a été créé avec succès et est en attente d'approbation.",
+    });
+    // Recharger la liste des ateliers
+    setWorkshops(prev => [workshopData, ...prev]);
+  };
+
+  const handleEditWorkshop = (workshop: WorkshopOut) => {
+    setEditingWorkshop(workshop);
+  };
+
+  const handleDeleteWorkshop = (workshopId: string) => {
+    const workshop = workshops.find(w => w.id === workshopId);
+    if (workshop) {
+      setDeletingWorkshop(workshop);
+    }
+  };
+
+  const handleConfirmDeleteWorkshop = async () => {
+    if (!deletingWorkshop) return;
+    
+    setIsDeletingWorkshop(true);
+    try {
+      await apiService.deleteWorkshop(deletingWorkshop.id);
+      setWorkshops(prev => prev.filter(w => w.id !== deletingWorkshop.id));
+      toast({
+        title: "Atelier supprimé",
+        description: "L'atelier a été supprimé avec succès"
+      });
+      setDeletingWorkshop(null);
+    } catch (error: any) {
+      console.error('Error deleting workshop:', error);
+      const errorMessage = error.response?.data?.detail || 'Erreur lors de la suppression de l\'atelier';
+      toast({
+        title: "Erreur",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeletingWorkshop(false);
+    }
+  };
+
+  const handleViewWorkshop = (workshop: WorkshopOut) => {
+    setViewingWorkshop(workshop);
+  };
+
+  const handleSaveWorkshop = (updatedWorkshop: WorkshopOut) => {
+    setWorkshops(prev => prev.map(w => w.id === updatedWorkshop.id ? updatedWorkshop : w));
   };
 
   if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -534,12 +712,29 @@ const ArtisanDashboard = () => {
 
             <TabsContent value="profile">
               <ArtisanProfileEditor
-                onSaveProfile={(profile) => {
-                  console.log('Profile saved:', profile);
-                  toast({
-                    title: "Profil sauvegardé",
-                    description: "Votre profil a été sauvegardé avec succès"
-                  });
+                onSaveProfile={async (profile) => {
+                  try {
+                    await apiService.updateArtisanProfile({
+                      first_name: profile.name.split(' ')[0],
+                      last_name: profile.name.split(' ').slice(1).join(' '),
+                      bio: profile.about,
+                      specialty: profile.specialties[0] || '',
+                      location: `${profile.location.city}, ${profile.location.region}`,
+                      description: profile.businessInfo.businessDescription,
+                    });
+                    
+                    toast({
+                      title: "Profil sauvegardé",
+                      description: "Votre profil a été sauvegardé avec succès"
+                    });
+                  } catch (error) {
+                    console.error('Error saving profile:', error);
+                    toast({
+                      title: "Erreur",
+                      description: "Impossible de sauvegarder le profil",
+                      variant: "destructive"
+                    });
+                  }
                 }}
               />
             </TabsContent>
@@ -547,61 +742,19 @@ const ArtisanDashboard = () => {
             <TabsContent value="workshops">
               {showWorkshopCreation ? (
                 <WorkshopCreationForm
-                  onSubmit={(workshopData) => {
-                    console.log('Create workshop:', workshopData);
-                    setShowWorkshopCreation(false);
-                    toast({
-                      title: "Atelier créé",
-                      description: "L'atelier a été créé avec succès.",
-                    });
-                  }}
+                  onSubmit={handleCreateWorkshop}
                   onCancel={() => setShowWorkshopCreation(false)}
                 />
               ) : (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Mes Ateliers</h2>
-                      <p className="text-gray-600">Gérez vos ateliers et créez-en de nouveaux</p>
-                    </div>
-                    <Button 
-                      className="bg-orange-600 hover:bg-orange-700"
-                      onClick={() => setShowWorkshopCreation(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Créer un atelier
-                    </Button>
-                  </div>
-                  
-                  <WorkshopManager
-                    workshops={[]}
-                    artisans={[
-                      { id: '1', name: 'Jean Rakotozafy', specialty: 'Sculpture sur bois' },
-                      { id: '2', name: 'Marie Razafy', specialty: 'Tissage traditionnel' }
-                    ]}
-                    onCreateWorkshop={(workshop) => {
-                      console.log('Workshop created:', workshop);
-                      toast({
-                        title: "Atelier créé",
-                        description: "L'atelier a été créé avec succès"
-                      });
-                    }}
-                    onUpdateWorkshop={(id, workshop) => {
-                      console.log('Workshop updated:', id, workshop);
-                      toast({
-                        title: "Atelier mis à jour",
-                        description: "L'atelier a été mis à jour avec succès"
-                      });
-                    }}
-                    onDeleteWorkshop={(id) => {
-                      console.log('Workshop deleted:', id);
-                      toast({
-                        title: "Atelier supprimé",
-                        description: "L'atelier a été supprimé avec succès"
-                      });
-                    }}
-                  />
-                </div>
+                <ArtisanWorkshopManager
+                  workshops={workshops}
+                  loading={workshopsLoading}
+                  isAdmin={user?.role === 'admin'}
+                  onCreateWorkshop={() => setShowWorkshopCreation(true)}
+                  onEditWorkshop={handleEditWorkshop}
+                  onDeleteWorkshop={handleDeleteWorkshop}
+                  onViewWorkshop={handleViewWorkshop}
+                />
               )}
             </TabsContent>
 
@@ -614,6 +767,28 @@ const ArtisanDashboard = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Modales pour les ateliers */}
+      <WorkshopViewModal
+        workshop={viewingWorkshop!}
+        isOpen={!!viewingWorkshop}
+        onClose={() => setViewingWorkshop(null)}
+      />
+      
+      <WorkshopEditModal
+        workshop={editingWorkshop!}
+        isOpen={!!editingWorkshop}
+        onClose={() => setEditingWorkshop(null)}
+        onSave={handleSaveWorkshop}
+      />
+      
+      <WorkshopDeleteConfirmModal
+        workshop={deletingWorkshop}
+        isOpen={!!deletingWorkshop}
+        onConfirm={handleConfirmDeleteWorkshop}
+        onCancel={() => setDeletingWorkshop(null)}
+        isLoading={isDeletingWorkshop}
+      />
     </div>
   );
 };

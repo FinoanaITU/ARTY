@@ -80,6 +80,67 @@ class LoginIn(BaseModel):
     password: str = Field(..., min_length=1, description="Le mot de passe ne peut pas être vide")
 
 
+class UserUpdate(BaseModel):
+    """
+    Schema pour la mise à jour du profil utilisateur.
+    Tous les champs sont optionnels (mise à jour partielle).
+    """
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=20)
+    name: Optional[str] = Field(None, min_length=2, max_length=200)
+    address: Optional[str] = None
+    city: Optional[str] = Field(None, max_length=100)
+    country: Optional[str] = Field(None, max_length=100)
+    avatar: Optional[str] = Field(None, description="URL or UUID de l'avatar")
+    company_name: Optional[str] = Field(None, max_length=200, description="Pour acheteurs entreprise")
+    siret: Optional[str] = Field(None, max_length=50, description="Pour acheteurs entreprise")
+    
+    class Config:
+        from_attributes = True
+
+
+class ArtisanProfileUpdate(BaseModel):
+    """
+    Schema pour la mise à jour du profil artisan.
+    Tous les champs sont optionnels.
+    """
+    region: Optional[str] = Field(None, max_length=100)
+    languages: Optional[List[str]] = None
+    company_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    main_specialty: Optional[str] = Field(None, max_length=100)
+    other_skills: Optional[List[str]] = None
+    years_experience: Optional[str] = Field(None, max_length=50)
+    activity_description: Optional[str] = Field(None, min_length=10)
+    brand_story: Optional[str] = None
+    offerings: Optional[List[str]] = Field(None, description="['products', 'workshops', 'both']")
+    nif: Optional[str] = Field(None, max_length=50)
+    stat: Optional[str] = Field(None, max_length=50)
+    documents_not_available: Optional[bool] = None
+    about: Optional[str] = None
+    location_region: Optional[str] = Field(None, max_length=100)
+    location_city: Optional[str] = Field(None, max_length=100)
+    location_address: Optional[str] = Field(None, max_length=200)
+    experience: Optional[str] = Field(None, max_length=200)
+    certifications: Optional[List[str]] = None
+    awards: Optional[List[str]] = None
+    social_media: Optional[dict] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class UserWithArtisanUpdate(BaseModel):
+    """
+    Schema combiné pour mettre à jour User + ArtisanProfile en une seule requête.
+    Utilisé pour l'endpoint PUT /users/me/artisan
+    """
+    user: Optional[UserUpdate] = None
+    artisan_profile: Optional[ArtisanProfileUpdate] = None
+    
+    class Config:
+        from_attributes = True
+
+
 # ============ OUTPUT SCHEMAS ============
 
 class ArtisanBasic(BaseModel):
@@ -99,6 +160,10 @@ class UserOut(BaseModel):
     name: str
     role: str  # String pour compatibilité JSON
     avatar: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
     buyer_type: Optional[str] = None  # String pour compatibilité
     nationality: Optional[str] = None  # String pour compatibilité
     company_name: Optional[str] = None
@@ -106,6 +171,7 @@ class UserOut(BaseModel):
     specialty: Optional[str] = None  # Pour artisans
     description: Optional[str] = None  # Pour artisans
     experience: Optional[str] = None  # Pour artisans
+    artisan_profile: Optional['ArtisanProfileOut'] = None  # Profil artisan complet
     created_at: datetime
     updated_at: datetime
     

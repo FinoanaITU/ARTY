@@ -1,13 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
 import WorkshopBookingCalendar from '@/components/WorkshopBookingCalendar';
 import WorkshopRegistrationForm from '@/components/WorkshopRegistrationForm';
 import ArtisanUnavailabilityDisplay from '@/components/ArtisanUnavailabilityDisplay';
+import { useWorkshops } from '@/hooks/useWorkshops';
+import { UnavailabilityPeriod } from '@/types/artisan';
+
+interface Unavailability {
+  id: string;
+  artisan_id: string;
+  start_date: string;
+  end_date: string | null;
+  reason: string;
+  type: 'single_day' | 'range';
+  status: 'approved' | 'pending' | 'rejected';
+}
+
+// Type pour les données de workshop unifiées
+interface WorkshopData {
+  id: string | number;
+  title: string;
+  description: string;
+  artisan_id?: string;
+  instructor_name?: string;
+  instructor?: string;
+  instructor_image?: string;
+  instructorImage?: string;
+  instructor_bio?: string;
+  type?: 'inscription' | 'reservation';
+  workshop_type?: 'inscription' | 'reservation';
+  date?: string;
+  duration?: string;
+  duration_minutes?: number;
+  price?: number;
+  base_price?: number;
+  participants?: number;
+  maxParticipants?: number;
+  max_participants?: number;
+  available_spots?: number;
+  total_spots?: number;
+  image?: string;
+  address?: string;
+  location?: string;
+  difficulty?: string;
+  skill_level?: string;
+  whatYouWillLearn?: string[];
+  what_you_will_learn?: string[];
+  materials?: string[];
+  materials_included?: string[];
+  materials_to_bring?: string[];
+  prerequisites?: string;
+  schedule?: Array<{ time: string; activity: string }>;
+  privatizationOption?: any;
+  tags?: string[];
+  rating_average?: number | string;
+  rating_count?: number;
+  cancellation_policy?: string;
+  total_bookings?: number;
+}
+
+// Fonction pour normaliser les données du workshop
+const normalizeWorkshopData = (apiWorkshop: any, mockWorkshop: any): WorkshopData => {
+  if (apiWorkshop) {
+    // Utiliser les données de l'API
+    return {
+      ...apiWorkshop,
+      // Ajouter des propriétés pour la compatibilité avec le mock
+      type: apiWorkshop.workshop_type || 'reservation',
+      instructor: apiWorkshop.instructor_name,
+      instructorImage: apiWorkshop.instructor_image,
+      location: apiWorkshop.address,
+      price: apiWorkshop.base_price,
+      difficulty: apiWorkshop.skill_level || 'Intermédiaire',
+      duration: apiWorkshop.duration_minutes ? `${Math.floor(apiWorkshop.duration_minutes / 60)}h${apiWorkshop.duration_minutes % 60 > 0 ? ` ${apiWorkshop.duration_minutes % 60}min` : ''}` : undefined,
+      maxParticipants: apiWorkshop.max_participants || 10,
+      participants: apiWorkshop.total_bookings || 0,
+      materials: apiWorkshop.materials_included || [],
+      whatYouWillLearn: apiWorkshop.what_you_will_learn || []
+    };
+  } else {
+    // Utiliser les données mock
+    return mockWorkshop;
+  }
+};
+
+// Helper pour normaliser les URLs d'images
+const normalizeImageUrl = (url: string | undefined | null): string => {
+  if (!url) return 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop';
+  // Si l'URL commence par http:// or https://, la laisser telle quelle
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Construire l'URL complète avec la base du backend
+  const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+  return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
+};
 
 const WorkshopDetail = () => {
   const { id } = useParams();
@@ -15,11 +106,55 @@ const WorkshopDetail = () => {
   const [showBookingCalendar, setShowBookingCalendar] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [showUnavailabilityCalendar, setShowUnavailabilityCalendar] = useState(false);
+  const [unavailabilities, setUnavailabilities] = useState<Unavailability[]>([]);
+  const [loadingUnavailabilities, setLoadingUnavailabilities] = useState(false);
+  
+  // Use the workshop hook
+  const { currentWorkshop: apiWorkshop, loading: apiLoading, error: apiError, getWorkshop } = useWorkshops();
+  
+  // Load workshop data on mount
+  useEffect(() => {
+    if (id) {
+      getWorkshop(id);
+    }
+  }, [id, getWorkshop]);
+
+  // Load unavailabilities when API workshop is available
+  useEffect(() => {
+    if (apiWorkshop) {
+      setLoadingUnavailabilities(true);
+      fetch(`http://localhost:8000/api/v1/workshops/${apiWorkshop.id}/artisan-unavailability`)
+        .then(response => response.json())
+        .then(data => {
+          setUnavailabilities(data);
+        })
+        .catch(error => {
+          console.error('Erreur lors du chargement des indisponibilités:', error);
+          setUnavailabilities([]);
+        })
+        .finally(() => {
+          setLoadingUnavailabilities(false);
+        });
+    }
+  }, [apiWorkshop]);
+
+  // Convert API unavailabilities to the format expected by the calendar
+  const artisanUnavailability = unavailabilities.map(unavail => ({
+    id: unavail.id,
+    artisanId: unavail.artisan_id,
+    startDate: new Date(unavail.start_date),
+    endDate: unavail.end_date ? new Date(unavail.end_date) : undefined,
+    reason: unavail.reason,
+    type: unavail.type === 'single_day' ? 'single' as const : 'range' as const,
+    status: unavail.status as 'draft' | 'pending_approval' | 'approved' | 'rejected',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }));
 
   // Mock data - in real app, fetch based on id
   const workshopType: 'inscription' | 'reservation' = (id === '2' || id === '4' || id === '6') ? 'reservation' : 'inscription';
   
-  const workshop = {
+  const mockWorkshop = {
     id: parseInt(id || '1'),
     title: workshopType === 'reservation' ? 'Tissage traditionnel Malagasy' : 'Initiation à la sculpture sur bois',
     instructor: workshopType === 'reservation' ? 'Voahangy Razafy' : 'Hery Rakoto',
@@ -83,47 +218,35 @@ const WorkshopDetail = () => {
     setShowBookingCalendar(false);
   };
 
-  // Mock données d'indisponibilité de l'artisan
-  const artisanUnavailability = [
-    {
-      id: '1',
-      artisanId: 'artisan-1',
-      startDate: new Date('2024-08-15'),
-      endDate: new Date('2024-08-20'),
-      reason: 'Congés d\'été',
-      type: 'range' as const,
-      status: 'approved' as const,
-      createdAt: new Date('2024-08-01'),
-      updatedAt: new Date('2024-08-01')
-    },
-    {
-      id: '2',
-      artisanId: 'artisan-1',
-      startDate: new Date('2024-08-25'),
-      reason: 'Salon d\'artisanat',
-      type: 'single' as const,
-      status: 'approved' as const,
-      createdAt: new Date('2024-08-01'),
-      updatedAt: new Date('2024-08-01')
-    },
-    {
-      id: '3',
-      artisanId: 'artisan-1',
-      startDate: new Date('2024-09-01'),
-      endDate: new Date('2024-09-03'),
-      reason: 'Formation technique',
-      type: 'range' as const,
-      status: 'approved' as const,
-      createdAt: new Date('2024-08-01'),
-      updatedAt: new Date('2024-08-01')
-    }
-  ];
+
 
   const handleCustomDateRequest = (requestedDate: Date) => {
     console.log('Date requested:', requestedDate);
     setShowUnavailabilityCalendar(false);
     setShowBookingCalendar(true);
   };
+
+  // Use API workshop if available, otherwise use mock
+  const workshop = normalizeWorkshopData(apiWorkshop, mockWorkshop);
+
+  // Récupération des indisponibilités si on utilise les données API
+  useEffect(() => {
+    if (apiWorkshop && apiWorkshop.id) {
+      setLoadingUnavailabilities(true);
+      fetch(`http://localhost:8000/api/v1/workshops/${apiWorkshop.id}/artisan-unavailability`)
+        .then(response => response.json())
+        .then(data => {
+          setUnavailabilities(data);
+        })
+        .catch(error => {
+          console.error('Erreur lors du chargement des indisponibilités:', error);
+          setUnavailabilities([]);
+        })
+        .finally(() => {
+          setLoadingUnavailabilities(false);
+        });
+    }
+  }, [apiWorkshop]);
 
   const isWorkshopFull = workshop.type === 'inscription' && workshop.participants! >= workshop.maxParticipants;
 
@@ -133,6 +256,22 @@ const WorkshopDetail = () => {
       
       <div className="px-4 py-6">
         <div className="max-w-4xl mx-auto">
+          {/* Loading State */}
+          {apiLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <span className="text-muted-foreground">Chargement de l'atelier...</span>
+            </div>
+          )}
+          
+          {/* Error State */}
+          {apiError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm mb-6">
+              <p>Erreur lors du chargement: {apiError}</p>
+              <p className="text-xs text-red-600 mt-2">Affichage de l'atelier en attente...</p>
+            </div>
+          )}
+          
           {/* Back Button */}
           <Link to="/workshops" className="inline-flex items-center text-brand-brown hover:text-brand-terracotta mb-6">
             ← Retour aux ateliers
@@ -142,9 +281,14 @@ const WorkshopDetail = () => {
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
             <div className="aspect-video bg-brand-beige relative">
               <img
-                src={workshop.image}
+                src={normalizeImageUrl(
+                  (apiWorkshop?.featured_image_url as string) || 
+                  workshop.image || 
+                  'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop'
+                )}
                 alt={workshop.title}
                 className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop'; }}
               />
               
               {/* Workshop Type Badge */}
@@ -174,18 +318,30 @@ const WorkshopDetail = () => {
             <div className="p-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{workshop.title}</h1>
               <div className="flex items-center gap-4 text-gray-600 mb-4">
-                <span>👨‍🎨 {workshop.instructor}</span>
+                <span>👨‍🎨 {workshop.instructor_name || workshop.instructor}</span>
                 {workshop.type === 'inscription' && workshop.date && (
                   <span>📅 {new Date(workshop.date).toLocaleDateString('fr-FR')}</span>
                 )}
-                <span>⏱️ {workshop.duration}</span>
+                <span>⏱️ {workshop.duration_minutes ? `${Math.floor(workshop.duration_minutes / 60)}h${workshop.duration_minutes % 60 > 0 ? ` ${workshop.duration_minutes % 60}min` : ''}` : workshop.duration}</span>
+                {workshop.rating_count > 0 && (
+                  <span>⭐ {parseFloat(workshop.rating_average).toFixed(1)} ({workshop.rating_count} avis)</span>
+                )}
               </div>
-              <div className="flex items-center gap-4 text-gray-600 mb-6">
-                <span>📍 {workshop.location}</span>
+              <div className="flex items-center gap-4 text-gray-600 mb-4">
+                <span>📍 {workshop.address || workshop.location}</span>
                 <span className="text-2xl font-bold text-brand-terracotta">
-                  {workshop.price.toLocaleString()} Ar
+                  {(workshop.base_price || workshop.price).toLocaleString()} Ar
                 </span>
               </div>
+              {workshop.tags && workshop.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {workshop.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline" className="bg-brand-beige text-brand-brown border-brand-brown">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
               
               {/* Privatization Info */}
               {workshop.privatizationOption && (
@@ -243,7 +399,18 @@ const WorkshopDetail = () => {
           {showRegistrationForm && workshop.type === 'inscription' && (
             <div className="mb-6">
               <WorkshopRegistrationForm
-                workshop={workshop}
+                workshop={{
+                  id: typeof workshop.id === 'string' ? parseInt(workshop.id, 10) : workshop.id,
+                  title: workshop.title,
+                  instructor: workshop.instructor_name || workshop.instructor || '',
+                  date: workshop.date,
+                  duration: workshop.duration || '',
+                  price: workshop.base_price || workshop.price || 0,
+                  location: workshop.address || workshop.location || '',
+                  maxParticipants: workshop.maxParticipants || workshop.total_spots || 10,
+                  participants: workshop.participants,
+                  image: workshop.image || ''
+                }}
                 onCancel={() => setShowRegistrationForm(false)}
               />
             </div>
@@ -306,14 +473,18 @@ const WorkshopDetail = () => {
                   <CardTitle className="text-brand-brown">Ce que vous apprendrez</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {workshop.whatYouWillLearn.map((item, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="w-2 h-2 bg-brand-terracotta rounded-full mt-2 flex-shrink-0"></span>
-                        <span className="text-gray-600">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {(workshop.what_you_will_learn || workshop.whatYouWillLearn) && (workshop.what_you_will_learn?.length > 0 || workshop.whatYouWillLearn?.length > 0) ? (
+                    <ul className="space-y-2">
+                      {(workshop.what_you_will_learn || workshop.whatYouWillLearn).map((item, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="w-2 h-2 bg-brand-terracotta rounded-full mt-2 flex-shrink-0"></span>
+                          <span className="text-gray-600">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600">Informations détaillées disponibles lors de l'inscription.</p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -324,16 +495,20 @@ const WorkshopDetail = () => {
                     <CardTitle className="text-brand-brown">Programme de l'atelier</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {workshop.schedule.map((item, index) => (
-                        <div key={index} className="flex gap-4">
-                          <span className="font-medium text-brand-terracotta w-16 flex-shrink-0">
-                            {item.time}
-                          </span>
-                          <span className="text-gray-600">{item.activity}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {workshop.schedule ? (
+                      <div className="space-y-3">
+                        {workshop.schedule.map((item, index) => (
+                          <div key={index} className="flex gap-4">
+                            <span className="font-medium text-brand-terracotta w-16 flex-shrink-0">
+                              {item.time}
+                            </span>
+                            <span className="text-gray-600">{item.activity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600">Programme détaillé communiqué lors de l'inscription.</p>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -350,24 +525,26 @@ const WorkshopDetail = () => {
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 bg-brand-orange/20 rounded-full overflow-hidden">
                       <img
-                        src={workshop.instructorImage}
-                        alt={workshop.instructor}
+                        src={workshop.instructor_image || workshop.instructorImage}
+                        alt={workshop.instructor_name || workshop.instructor}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{workshop.instructor}</h3>
+                      <h3 className="font-medium text-gray-900">{workshop.instructor_name || workshop.instructor}</h3>
                       <p className="text-sm text-gray-600">Maître artisan</p>
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">
-                    Artisan passionné avec plus de 15 ans d'expérience dans l'artisanat traditionnel malgache.
+                    {workshop.instructor_bio || "Artisan passionné avec plus de 15 ans d'expérience dans l'artisanat traditionnel malgache."}
                   </p>
-                  <Link to={`/artisan/1`}>
-                    <Button variant="outline" size="sm" className="w-full border-brand-brown text-brand-brown hover:bg-brand-brown hover:text-white">
-                      Voir le profil
-                    </Button>
-                  </Link>
+                  {(apiWorkshop?.artisan_id || workshop.id) && (
+                    <Link to={`/artisan/${apiWorkshop?.artisan_id || workshop.id}`}>
+                      <Button variant="outline" size="sm" className="w-full border-brand-brown text-brand-brown hover:bg-brand-brown hover:text-white">
+                        Voir le profil
+                      </Button>
+                    </Link>
+                  )}
                 </CardContent>
               </Card>
 
@@ -377,16 +554,39 @@ const WorkshopDetail = () => {
                   <CardTitle className="text-brand-brown">Matériel inclus</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {workshop.materials.map((material, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm">
-                        <span className="w-1.5 h-1.5 bg-brand-terracotta rounded-full"></span>
-                        <span className="text-gray-600">{material}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {(workshop.materials_included || workshop.materials) && (workshop.materials_included?.length > 0 || workshop.materials?.length > 0) ? (
+                    <ul className="space-y-2">
+                      {(workshop.materials_included || workshop.materials).map((material, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-brand-orange rounded-full"></span>
+                          <span className="text-gray-600">{material}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600">Liste du matériel fourni communiquée lors de l'inscription.</p>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* Materials To Bring */}
+              {workshop.materials_to_bring && workshop.materials_to_bring.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-brand-brown">Matériel à apporter</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {workshop.materials_to_bring.map((material, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-brand-terracotta rounded-full"></span>
+                          <span className="text-gray-600">{material}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Important Info */}
               <Card>
@@ -398,8 +598,13 @@ const WorkshopDetail = () => {
                     <strong>Âge minimum :</strong> 12 ans
                   </div>
                   <div>
-                    <strong>Niveau requis :</strong> Aucun
+                    <strong>Niveau requis :</strong> {workshop.skill_level || workshop.difficulty || 'Aucun'}
                   </div>
+                  {workshop.prerequisites && (
+                    <div>
+                      <strong>Prérequis :</strong> {workshop.prerequisites}
+                    </div>
+                  )}
                   <div>
                     <strong>Langues :</strong> Français, Malgache
                   </div>
@@ -419,12 +624,61 @@ const WorkshopDetail = () => {
                       </Badge>
                     </div>
                   )}
-                  <div>
-                    <strong>Politique d'annulation :</strong> 
-                    Annulation gratuite jusqu'à 24h avant l'atelier
-                  </div>
+                  {workshop.cancellation_policy && (
+                    <div>
+                      <strong>Politique d'annulation :</strong> 
+                      {workshop.cancellation_policy}
+                    </div>
+                  )}
+                  {!workshop.cancellation_policy && (
+                    <div>
+                      <strong>Politique d'annulation :</strong> 
+                      Annulation gratuite jusqu'à 24h avant l'atelier
+                    </div>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* Indisponibilités de l'artisan */}
+              {apiWorkshop && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-brand-brown">Indisponibilités de l'artisan</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingUnavailabilities ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="ml-2">Chargement...</span>
+                      </div>
+                    ) : unavailabilities.length > 0 ? (
+                      <div className="space-y-3">
+                        {unavailabilities.map((unavailability) => (
+                          <div key={unavailability.id} className="p-3 bg-red-50 rounded-lg border border-red-200">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-medium text-red-800">{unavailability.reason}</h4>
+                                <p className="text-sm text-red-600 mt-1">
+                                  {unavailability.type === 'single_day' ? (
+                                    <>Indisponible le {new Date(unavailability.start_date).toLocaleDateString('fr-FR')}</>
+                                  ) : (
+                                    <>Du {new Date(unavailability.start_date).toLocaleDateString('fr-FR')} au {new Date(unavailability.end_date!).toLocaleDateString('fr-FR')}</>
+                                  )}
+                                </p>
+                              </div>
+                              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                                {unavailability.status === 'approved' ? 'Confirmé' : 'En attente'}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600 text-sm">Aucune indisponibilité prévue.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>

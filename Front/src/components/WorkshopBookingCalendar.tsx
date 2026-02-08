@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarIcon, Clock, Users, Plus, AlertTriangle, Info } from 'lucide-react';
+import { CalendarIcon, Clock, Users, Plus, AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { isReservationAllowed } from '@/utils/dateValidation';
@@ -24,7 +24,7 @@ interface TimeSlot {
 }
 
 interface WorkshopBookingCalendarProps {
-  workshopId: number;
+  workshopId: string | number;
   workshopType: 'inscription' | 'reservation';
   duration: string;
   maxParticipants: number;
@@ -80,19 +80,48 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     return period?.reason;
   };
 
-  // Mock time slots - in real app, this would come from backend
+  // Get real time slots from API
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [loadingTimeSlots, setLoadingTimeSlots] = useState(false);
+
+  // Fetch time slots when date changes
+  useEffect(() => {
+    if (selectedDate && isDateSelectable(selectedDate)) {
+      setLoadingTimeSlots(true);
+      const dateStr = selectedDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+      
+      fetch(`http://localhost:8000/api/v1/workshops/${workshopId}/time-slots?date=${dateStr}`)
+        .then(response => response.json())
+        .then(data => {
+          // Convert API response to TimeSlot format
+          const slots: TimeSlot[] = data.map((slot: any) => ({
+            time: slot.time,
+            available: slot.available,
+            maxParticipants: slot.maxParticipants,
+            currentParticipants: slot.currentParticipants,
+            minParticipants: slot.minParticipants
+          }));
+          setTimeSlots(slots);
+        })
+        .catch(error => {
+          console.error('Error fetching time slots:', error);
+          setTimeSlots([]);
+        })
+        .finally(() => {
+          setLoadingTimeSlots(false);
+        });
+    } else {
+      setTimeSlots([]);
+    }
+  }, [selectedDate, workshopId]);
+
   const getAvailableTimeSlots = (date: Date): TimeSlot[] => {
     // If artisan is unavailable, return empty array
     if (isDateUnavailable(date)) {
       return [];
     }
-
-    return [
-      { time: '09:00', available: true, maxParticipants, currentParticipants: 2, minParticipants: 4 },
-      { time: '11:00', available: true, maxParticipants, currentParticipants: 6, minParticipants: 4 },
-      { time: '14:00', available: true, maxParticipants, currentParticipants: 3, minParticipants: 4 },
-      { time: '16:00', available: false, maxParticipants, currentParticipants: maxParticipants, minParticipants: 4 }
-    ];
+    
+    return timeSlots;
   };
 
   // Get slot status and styling
@@ -143,7 +172,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     };
   };
 
-  const timeSlots = selectedDate ? getAvailableTimeSlots(selectedDate) : [];
+  const availableSlots = selectedDate ? getAvailableTimeSlots(selectedDate) : [];
 
   const handleBooking = () => {
     if (selectedDate && selectedTime && selectedPriceVariation) {
@@ -239,13 +268,10 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   }
 
   const isDateAvailable = (date: Date) => {
-    // Disable past dates and check artisan availability
+    // Only disable past dates for selection
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const day = date.getDay();
     const isPastDate = date < today;
-    const isWeekend = day === 0 || day === 6;
-    const isArtisanUnavailable = isDateUnavailable(date);
     
     // For reservation workshops, check 5-day minimum
     if (workshopType === 'reservation') {
@@ -255,7 +281,22 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
       }
     }
     
-    return !isPastDate && !isWeekend && !isArtisanUnavailable;
+    return !isPastDate;
+  };
+
+  // Check if date is selectable (available for booking)
+  const isDateSelectable = (date: Date) => {
+    const day = date.getDay();
+    const isWeekend = day === 0 || day === 6;
+    const isArtisanUnavailable = isDateUnavailable(date);
+    
+    return isDateAvailable(date) && !isWeekend && !isArtisanUnavailable;
+  };
+
+  // Check if date is a weekend
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 0 || day === 6;
   };
 
   const basePrice = 35000; // Example workshop price
@@ -312,16 +353,39 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
           <Calendar
             mode="single"
             selected={selectedDate}
-            onSelect={setSelectedDate}
+            onSelect={(date) => {
+              // Only allow selection of selectable dates
+              if (date && isDateSelectable(date)) {
+                setSelectedDate(date);
+              } else if (date && !isDateSelectable(date)) {
+                // Show why date is not selectable
+                return;
+              } else {
+                setSelectedDate(date);
+              }
+            }}
             disabled={(date) => !isDateAvailable(date)}
             modifiers={{
-              unavailable: isDateUnavailable
+              unavailable: isDateUnavailable,
+              weekend: isWeekend,
+              unselectable: (date) => !isDateSelectable(date) && isDateAvailable(date)
             }}
             modifiersStyles={{
               unavailable: { 
                 backgroundColor: '#fee2e2', 
                 color: '#dc2626',
-                textDecoration: 'line-through'
+                textDecoration: 'line-through',
+                fontWeight: 'bold'
+              },
+              weekend: {
+                backgroundColor: '#f3f4f6',
+                color: '#6b7280',
+                fontStyle: 'italic'
+              },
+              unselectable: {
+                backgroundColor: '#fef3c7',
+                color: '#d97706',
+                cursor: 'not-allowed'
               }
             }}
             className="rounded-md border"
@@ -362,7 +426,23 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
         </Card>
       )}
 
-      {selectedDate && !isDateUnavailable(selectedDate) && (
+      {selectedDate && isWeekend(selectedDate) && !isDateUnavailable(selectedDate) && (
+        <Card className="border-gray-200 bg-gray-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Info className="h-5 w-5 text-gray-600" />
+              <div>
+                <h3 className="font-medium text-gray-900">Week-end</h3>
+                <p className="text-sm text-gray-700">
+                  L'atelier n'a pas lieu les week-ends. Sélectionnez un jour de semaine.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedDate && isDateSelectable(selectedDate) && (
         <>
           {/* Date validation warning for reservations */}
           {workshopType === 'reservation' && (() => {
@@ -447,7 +527,17 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {timeSlots.map((slot) => {
+                {loadingTimeSlots ? (
+                  <div className="col-span-2 flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="ml-2">Chargement des créneaux...</span>
+                  </div>
+                ) : availableSlots.length === 0 ? (
+                  <div className="col-span-2 text-center py-8 text-gray-500">
+                    Aucun créneau disponible pour cette date
+                  </div>
+                ) : (
+                  availableSlots.map((slot) => {
                   const slotInfo = getSlotStatus(slot);
                   return (
                     <button
@@ -481,22 +571,11 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
                       </div>
                     </button>
                   );
-                })}
+                  })
+                )}
               </div>
 
-              {timeSlots.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p className="mb-4">Aucun créneau disponible pour cette date</p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowCustomRequest(true)}
-                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Demander un autre créneau
-                  </Button>
-                </div>
-              )}
+
             </CardContent>
           </Card>
         </>
