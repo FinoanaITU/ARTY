@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
+import CartIcon from '@/components/CartIcon';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,6 +115,11 @@ const Navigation = () => {
               }`}
             >
               NOUS CONTACTER
+            </Link>
+            
+            {/* Cart Icon */}
+            <Link to="/cart" className="p-2 hover:bg-brand-orange/10 rounded-full transition-colors">
+              <CartIcon />
             </Link>
             
             {/* User dropdown menu */}
@@ -230,6 +236,17 @@ const Navigation = () => {
           >
             <div className="w-6 h-6 mb-1">🛍️</div>
             <span className="text-xs font-medium">Produits</span>
+          </Link>
+          <Link
+            to="/cart"
+            className={`flex flex-col items-center py-2 transition-colors ${
+              isActive('/cart') ? 'text-brand-orange' : 'text-brand-brown/70'
+            }`}
+          >
+            <div className="mb-1">
+              <CartIcon />
+            </div>
+            <span className="text-xs font-medium">Panier</span>
           </Link>
           <Link
             to="/workshops"

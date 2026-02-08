@@ -16,6 +16,8 @@ import Workshops from "./pages/Workshops";
 import ArtisanProfile from "./pages/ArtisanProfile";
 import WorkshopDetail from "./pages/WorkshopDetail";
 import Dashboard from "./pages/Dashboard";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 const ArtisanDashboard = lazy(() => import("./pages/ArtisanDashboard"));
 import AdminPanel from "./pages/AdminPanel";
 import Signup from "./pages/Signup";
@@ -41,6 +43,8 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
                 <Route path="/workshops" element={<Workshops />} />
                 <Route path="/artisan/:id" element={<ArtisanProfile />} />
                 <Route path="/workshop/:id" element={<WorkshopDetail />} />
