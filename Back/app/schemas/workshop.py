@@ -118,6 +118,7 @@ class WorkshopCreate(BaseModel):
     min_participants: int = Field(default=1, ge=1)
     duration_minutes: int = Field(..., ge=30)
     location: str = Field(..., min_length=2)
+    address: Optional[str] = Field(None, min_length=2)
     room_details: Optional[str] = None
     materials_included: Optional[List[str]] = None
     materials_to_bring: Optional[List[str]] = None
@@ -162,6 +163,7 @@ class WorkshopUpdate(BaseModel):
     min_participants: Optional[int] = Field(None, ge=1)
     duration_minutes: Optional[int] = Field(None, ge=30)
     location: Optional[str] = Field(None, min_length=2)
+    address: Optional[str] = Field(None, min_length=2)
     room_details: Optional[str] = None
     materials_included: Optional[List[str]] = None
     materials_to_bring: Optional[List[str]] = None

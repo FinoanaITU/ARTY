@@ -68,16 +68,18 @@ class WorkshopService:
             slug=slug,
             description=workshop_create.description,
             short_description=workshop_create.short_description,
-            artisan_id=artisan_id,
+            artisan_id=artisan_id,  # Rattaché à l'artisan connecté
+            category=workshop_create.category,  # Ajouté
             # category_id sera géré plus tard si nécessaire
             workshop_type=workshop_create.workshop_type.value if hasattr(workshop_create.workshop_type, 'value') else workshop_create.workshop_type,
             skill_level=workshop_create.skill_level.value if hasattr(workshop_create.skill_level, 'value') else workshop_create.skill_level,
             base_price=workshop_create.base_price,
-            # foreign_price=workshop_create.foreign_price,  # Column doesn't exist
+            foreign_price=workshop_create.foreign_price,  # Ajouté
             max_participants=workshop_create.max_participants,
             min_participants=workshop_create.min_participants or 1,
             duration_minutes=workshop_create.duration_minutes,
-            address=workshop_create.location,  # Map location to address
+            location=workshop_create.location,  # Ajouté - location pour filtering
+            address=workshop_create.address,  # Adresse détaillée
             room_details=workshop_create.room_details,
             materials_included=workshop_create.materials_included,
             materials_to_bring=workshop_create.materials_to_bring,
