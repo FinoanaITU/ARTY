@@ -13,17 +13,17 @@ class Workshop(BaseModel):
     short_description = Column(String(500))
     artisan_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), index=True)
-    # category = Column(String(100), nullable=False)  # Temporarily disabled - not in DB
+    category = Column(String(100), nullable=True)  # String category for quick access
     workshop_type = Column(String(20), default='group', index=True)
     skill_level = Column(String(20), default='beginner')
     base_price = Column(Numeric(10, 2), nullable=False)
-    # foreign_price = Column(Numeric(10, 2))  # Price for foreign participants - not in DB
+    foreign_price = Column(Numeric(10, 2))  # Price for foreign participants
     private_price = Column(Numeric(10, 2))
     currency = Column(String(3), default='MGA')
     min_participants = Column(Integer, default=1)
     max_participants = Column(Integer, nullable=False)
     duration_minutes = Column(Integer, nullable=False)
-    # location = Column(String(200), nullable=False)  # Location for filtering - not in DB
+    location = Column(String(200), nullable=True)  # Location for filtering
     location_type = Column(String(20), default='physical', index=True)
     address = Column(Text)
     room_details = Column(Text)

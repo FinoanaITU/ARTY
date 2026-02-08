@@ -46,8 +46,19 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
   onSave
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingWorkshop, setIsLoadingWorkshop] = useState(false);
+  const [workshopData, setWorkshopData] = useState<WorkshopOut | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  
+  // Refs pour les champs obligatoires
+  const titleRef = React.useRef<HTMLInputElement>(null);
+  const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
+  const categoryRef = React.useRef<HTMLButtonElement>(null);
+  const skillLevelRef = React.useRef<HTMLButtonElement>(null);
+  const locationRef = React.useRef<HTMLInputElement>(null);
+  const addressRef = React.useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState<WorkshopFormData>({
     title: '',
     description: '',
@@ -69,42 +80,69 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
     tags: []
   });
 
-  // Charger les données de l'atelier dans le formulaire
+  // Stocker les données initiales pour détecter les modifications
+  const [initialFormData, setInitialFormData] = useState<WorkshopFormData>(formData);
+
+  // Récupérer les données complètes de l'atelier depuis le backend
   useEffect(() => {
-    if (workshop && isOpen) {
-      setFormData({
-        title: workshop.title || '',
-        description: workshop.description || '',
-        short_description: workshop.short_description || '',
-        category: workshop.category || '',
-        workshop_type: workshop.workshop_type || 'inscription',
-        skill_level: workshop.skill_level || '',
-        base_price: Number(workshop.base_price) || 0,
-        foreign_price: Number(workshop.foreign_price) || 0,
-        min_participants: workshop.min_participants || 1,
-        max_participants: workshop.max_participants || 10,
-        duration_minutes: workshop.duration_minutes || 120,
-        location: workshop.location || '',
-        address: workshop.address || '',
-        materials_included: workshop.materials_included || [],
-        materials_to_bring: workshop.materials_to_bring || [],
-        prerequisites: workshop.prerequisites || '',
-        what_you_will_learn: workshop.what_you_will_learn || [],
-        tags: workshop.tags || []
-      });
-      
-      // Afficher les images existantes
-      const existingPreviews: string[] = [];
-      if (workshop.featured_image_url) {
-        existingPreviews.push(`http://localhost:8000/static/uploads/${workshop.featured_image_url}`);
+    const loadWorkshopData = async () => {
+      if (workshop && isOpen) {
+        setIsLoadingWorkshop(true);
+        try {
+          // Récupérer les données complètes depuis le backend
+          const fullWorkshopData = await apiService.getWorkshop(workshop.id);
+          setWorkshopData(fullWorkshopData);
+
+          const formDataFromWorkshop = {
+            title: fullWorkshopData.title || '',
+            description: fullWorkshopData.description || '',
+            short_description: fullWorkshopData.short_description || '',
+            category: fullWorkshopData.category || '',
+            workshop_type: fullWorkshopData.workshop_type || 'inscription',
+            skill_level: fullWorkshopData.skill_level || '',
+            base_price: Number(fullWorkshopData.base_price) || 0,
+            foreign_price: Number(fullWorkshopData.foreign_price) || 0,
+            min_participants: fullWorkshopData.min_participants || 1,
+            max_participants: fullWorkshopData.max_participants || 10,
+            duration_minutes: fullWorkshopData.duration_minutes || 120,
+            location: fullWorkshopData.location || '',
+            address: fullWorkshopData.address || '',
+            materials_included: fullWorkshopData.materials_included || [],
+            materials_to_bring: fullWorkshopData.materials_to_bring || [],
+            prerequisites: fullWorkshopData.prerequisites || '',
+            what_you_will_learn: fullWorkshopData.what_you_will_learn || [],
+            tags: fullWorkshopData.tags || []
+          };
+          
+          setFormData(formDataFromWorkshop);
+          setInitialFormData(formDataFromWorkshop);
+          
+          // Afficher les images existantes
+          const existingPreviews: string[] = [];
+          if (fullWorkshopData.featured_image_url) {
+            existingPreviews.push(`http://localhost:8000/static/uploads/${fullWorkshopData.featured_image_url}`);
+          }
+          if (fullWorkshopData.gallery_images) {
+            existingPreviews.push(...fullWorkshopData.gallery_images.map(img => `http://localhost:8000/static/uploads/${img}`));
+          }
+          setPhotoPreviews(existingPreviews);
+          setPhotos([]);
+        } catch (error: any) {
+          console.error('Erreur lors du chargement de l\'atelier:', error);
+          toast({
+            title: "Erreur",
+            description: "Impossible de charger les données de l'atelier.",
+            variant: "destructive",
+          });
+          onClose();
+        } finally {
+          setIsLoadingWorkshop(false);
+        }
       }
-      if (workshop.gallery_images) {
-        existingPreviews.push(...workshop.gallery_images.map(img => `http://localhost:8000/static/uploads/${img}`));
-      }
-      setPhotoPreviews(existingPreviews);
-      setPhotos([]);
-    }
-  }, [workshop, isOpen]);
+    };
+
+    loadWorkshopData();
+  }, [workshop, isOpen, onClose]);
 
   const handleInputChange = (field: keyof WorkshopFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -161,20 +199,103 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
     setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Vérifier si des modifications ont été apportées
+  const hasChanges = () => {
+    return JSON.stringify(formData) !== JSON.stringify(initialFormData);
+  };
+
+  // Valider et mettre le focus sur le premier champ requis manquant
+  const validateAndFocus = (): boolean => {
+    if (!formData.title?.trim()) {
+      toast({
+        title: "Champ requis",
+        description: "Le titre de l'atelier est obligatoire.",
+        variant: "destructive",
+      });
+      titleRef.current?.focus();
+      titleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    if (!formData.description?.trim() || formData.description.length < 10) {
+      toast({
+        title: "Champ requis",
+        description: "La description doit contenir au moins 10 caractères.",
+        variant: "destructive",
+      });
+      descriptionRef.current?.focus();
+      descriptionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    if (!formData.category?.trim()) {
+      toast({
+        title: "Champ requis",
+        description: "Veuillez sélectionner une catégorie.",
+        variant: "destructive",
+      });
+      categoryRef.current?.focus();
+      categoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    if (!formData.skill_level?.trim()) {
+      toast({
+        title: "Champ requis",
+        description: "Veuillez sélectionner un niveau.",
+        variant: "destructive",
+      });
+      skillLevelRef.current?.focus();
+      skillLevelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    if (!formData.location?.trim()) {
+      toast({
+        title: "Champ requis",
+        description: "Le lieu est obligatoire.",
+        variant: "destructive",
+      });
+      locationRef.current?.focus();
+      locationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    if (!formData.address?.trim()) {
+      toast({
+        title: "Champ requis",
+        description: "L'adresse est obligatoire.",
+        variant: "destructive",
+      });
+      addressRef.current?.focus();
+      addressRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Vérifier si des modifications ont été faites
+    if (!hasChanges()) {
+      toast({
+        title: "Aucune modification",
+        description: "Vous n'avez effectué aucune modification.",
+        variant: "default",
+      });
+      return;
+    }
+
+    // Valider les champs obligatoires avec focus
+    if (!validateAndFocus()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Validation
-      if (!formData.title || !formData.description || !formData.category) {
-        toast({
-          title: "Erreur",
-          description: "Veuillez remplir tous les champs obligatoires.",
-          variant: "destructive",
-        });
-        return;
-      }
 
       // Préparer les données pour l'API
       const workshopData: any = {
@@ -210,7 +331,21 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
       onClose();
     } catch (error: any) {
       console.error('Erreur lors de la mise à jour de l\'atelier:', error);
-      const errorMessage = error.response?.data?.detail || 'Erreur lors de la mise à jour';
+      let errorMessage = 'Erreur lors de la mise à jour';
+      const errorDetail = error.response?.data?.detail;
+      
+      // Gérer l'erreur de description trop courte
+      if (errorDetail && (errorDetail.includes('String should have at least 10 characters') || errorDetail.includes('description'))) {
+        errorMessage = 'Description trop courte (minimum 10 caractères)';
+        // Mettre le focus sur le champ description
+        setTimeout(() => {
+          descriptionRef.current?.focus();
+          descriptionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      } else if (errorDetail) {
+        errorMessage = errorDetail;
+      }
+      
       toast({
         title: "Erreur",
         description: errorMessage,
@@ -236,7 +371,13 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {isLoadingWorkshop ? (
+          <div className="p-12 flex flex-col items-center justify-center">
+            <Loader2 className="w-12 h-12 animate-spin text-orange-600 mb-4" />
+            <p className="text-gray-600">Chargement des données de l'atelier...</p>
+          </div>
+        ) : (
+        <form key={workshop.id} onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Informations de base */}
           <Card>
             <CardHeader>
@@ -247,6 +388,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
               <div>
                 <Label htmlFor="title">Titre de l'atelier *</Label>
                 <Input
+                  ref={titleRef}
                   id="title"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
@@ -256,8 +398,9 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="description">Description complète *</Label>
+                <Label htmlFor="description">Description complète * (min. 10 caractères)</Label>
                 <Textarea
+                  ref={descriptionRef}
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
@@ -265,6 +408,9 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
                   className="min-h-[120px]"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.description.length} caractères
+                </p>
               </div>
 
               <div>
@@ -282,7 +428,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
                 <div>
                   <Label htmlFor="category">Catégorie *</Label>
                   <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger ref={categoryRef}>
                       <SelectValue placeholder="Choisir une catégorie" />
                     </SelectTrigger>
                     <SelectContent>
@@ -299,7 +445,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
                 <div>
                   <Label htmlFor="skill_level">Niveau *</Label>
                   <Select value={formData.skill_level} onValueChange={(value) => handleInputChange('skill_level', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger ref={skillLevelRef}>
                       <SelectValue placeholder="Niveau requis" />
                     </SelectTrigger>
                     <SelectContent>
@@ -338,8 +484,9 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
                   <Input
                     id="base_price"
                     type="number"
-                    value={formData.base_price}
-                    onChange={(e) => handleInputChange('base_price', parseInt(e.target.value) || 0)}
+                    value={formData.base_price === 0 ? '' : formData.base_price}
+                    onChange={(e) => handleInputChange('base_price', e.target.value === '' ? 0 : parseInt(e.target.value))}
+                    onBlur={(e) => { if (e.target.value === '') handleInputChange('base_price', 0); }}
                     min="0"
                     required
                   />
@@ -349,8 +496,8 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
                   <Input
                     id="foreign_price"
                     type="number"
-                    value={formData.foreign_price}
-                    onChange={(e) => handleInputChange('foreign_price', parseInt(e.target.value) || 0)}
+                    value={formData.foreign_price || ''}
+                    onChange={(e) => handleInputChange('foreign_price', e.target.value === '' ? undefined : parseInt(e.target.value))}
                     min="0"
                   />
                 </div>
@@ -362,8 +509,9 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
                   <Input
                     id="min_participants"
                     type="number"
-                    value={formData.min_participants}
-                    onChange={(e) => handleInputChange('min_participants', parseInt(e.target.value) || 1)}
+                    value={formData.min_participants === 0 ? '' : formData.min_participants}
+                    onChange={(e) => handleInputChange('min_participants', e.target.value === '' ? 0 : parseInt(e.target.value))}
+                    onBlur={(e) => { if (e.target.value === '') handleInputChange('min_participants', 1); }}
                     min="1"
                     required
                   />
@@ -373,8 +521,9 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
                   <Input
                     id="max_participants"
                     type="number"
-                    value={formData.max_participants}
-                    onChange={(e) => handleInputChange('max_participants', parseInt(e.target.value) || 10)}
+                    value={formData.max_participants === 0 ? '' : formData.max_participants}
+                    onChange={(e) => handleInputChange('max_participants', e.target.value === '' ? 0 : parseInt(e.target.value))}
+                    onBlur={(e) => { if (e.target.value === '') handleInputChange('max_participants', 10); }}
                     min="1"
                     required
                   />
@@ -384,8 +533,9 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
                   <Input
                     id="duration_minutes"
                     type="number"
-                    value={formData.duration_minutes}
-                    onChange={(e) => handleInputChange('duration_minutes', parseInt(e.target.value) || 120)}
+                    value={formData.duration_minutes === 0 ? '' : formData.duration_minutes}
+                    onChange={(e) => handleInputChange('duration_minutes', e.target.value === '' ? 0 : parseInt(e.target.value))}
+                    onBlur={(e) => { if (e.target.value === '') handleInputChange('duration_minutes', 120); }}
                     min="30"
                     step="30"
                     required
@@ -404,6 +554,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
               <div>
                 <Label htmlFor="location">Lieu *</Label>
                 <Input
+                  ref={locationRef}
                   id="location"
                   value={formData.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
@@ -414,6 +565,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
               <div>
                 <Label htmlFor="address">Adresse complète *</Label>
                 <Input
+                  ref={addressRef}
                   id="address"
                   value={formData.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
@@ -458,6 +610,124 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
+          {/* Matériel inclus */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Matériel inclus</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.materials_included.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleArrayInputChange('materials_included', index, e.target.value)}
+                    placeholder={`Matériel ${index + 1}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeArrayItem('materials_included', index)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => addArrayItem('materials_included')}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter du matériel inclus
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Matériel à apporter */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Matériel à apporter</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.materials_to_bring.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleArrayInputChange('materials_to_bring', index, e.target.value)}
+                    placeholder={`Matériel ${index + 1}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeArrayItem('materials_to_bring', index)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => addArrayItem('materials_to_bring')}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter du matériel à apporter
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Prérequis */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Prérequis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={formData.prerequisites}
+                onChange={(e) => handleInputChange('prerequisites', e.target.value)}
+                placeholder="Ex: Aucun prérequis, débutants acceptés"
+                className="min-h-[80px]"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Tags */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tags</CardTitle>
+              <CardDescription>Mots-clés pour aider à trouver votre atelier</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.tags.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => handleArrayInputChange('tags', index, e.target.value)}
+                    placeholder={`Tag ${index + 1}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeArrayItem('tags', index)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => addArrayItem('tags')}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un tag
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Photos existantes */}
           {photoPreviews.length > 0 && (
             <Card>
@@ -494,7 +764,11 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             <Button type="button" variant="outline" onClick={onClose}>
               Annuler
             </Button>
-            <Button type="submit" disabled={isLoading} className="bg-orange-600 hover:bg-orange-700">
+            <Button 
+              type="submit" 
+              disabled={isLoading || !hasChanges()} 
+              className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -509,6 +783,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </Button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

@@ -244,16 +244,16 @@ class WorkshopOut(BaseModel):
     description: str
     short_description: Optional[str] = None
     # artisan: ArtisanBasic  # Temporarily disabled - requires join
-    # category: str  # Column doesn't exist in DB
+    category: Optional[str] = None  # String category for quick access
     workshop_type: Optional[str] = None  # Changed to optional string to match DB
     skill_level: Optional[str] = None  # Changed to optional string to match DB
     base_price: Decimal
-    # foreign_price: Optional[Decimal] = None  # Column doesn't exist in DB
+    foreign_price: Optional[Decimal] = None  # Price for foreign participants
     max_participants: int
     min_participants: Optional[int] = 1
     duration_minutes: int
-    # location: str  # Column doesn't exist in DB
-    address: Optional[str] = None  # Use address instead of location
+    location: Optional[str] = None  # Location for filtering
+    address: Optional[str] = None  # Use address for detailed location
     room_details: Optional[str] = None
     materials_included: Optional[List[str]] = None
     materials_to_bring: Optional[List[str]] = None
