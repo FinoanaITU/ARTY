@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
@@ -6,31 +6,44 @@ import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2 } from 'lucide-react';
+import apiService from '@/services/api';
 
 const ArtisanProfile = () => {
   const { id } = useParams();
   const { t } = useLanguage();
   const { addItem } = useCart();
   const [activeTab, setActiveTab] = useState('products');
+  const [artisan, setArtisan] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - in real app, fetch based on id
-  const artisan = {
-    id: 1,
-    name: 'Hery Rakoto',
-    specialty: 'Sculpture sur bois',
-    location: 'Antananarivo',
-    image: '/placeholder.svg',
-    rating: 4.8,
-    reviewsCount: 47,
-    joinedDate: '2022-03-15',
-    description: 'Artisan passionné depuis plus de 15 ans, je perpétue les traditions de sculpture sur bois malgache héritées de mes ancêtres. Chaque pièce que je crée raconte une histoire et porte en elle l\'âme de Madagascar.',
-    specialties: ['Sculpture traditionnelle', 'Objets décoratifs', 'Figurines', 'Masques'],
-    contact: {
-      phone: '+261 34 12 345 67',
-      email: 'hery.rakoto@artizaho.mg'
-    }
-  };
+  useEffect(() => {
+    const fetchArtisan = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:8000/api/v1/users/artisan/${id}`);
+        
+        if (!response.ok) {
+          throw new Error('Artisan non trouvé');
+        }
+        
+        const data = await response.json();
+        setArtisan(data);
+      } catch (err: any) {
+        console.error('Erreur lors du chargement du profil artisan:', err);
+        setError(err.message || 'Erreur lors du chargement du profil');
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchArtisan();
+  }, [id]);
+
+  // Mock data pour les produits (à remplacer par un appel API)
   const products = [
     {
       id: 1,
@@ -91,6 +104,8 @@ const ArtisanProfile = () => {
   ];
 
   const handleAddToCart = (product: any) => {
+    if (!artisan) return;
+    
     addItem({
       type: 'product',
       productId: product.id,
@@ -101,6 +116,39 @@ const ArtisanProfile = () => {
       image: product.image
     });
     alert('Produit ajouté au panier !');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !artisan) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
+        <Navigation />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <p className="text-red-600 text-lg mb-4">{error || 'Artisan non trouvé'}</p>
+          <Link to="/artisans">
+            <Button variant="outline">Retour aux artisans</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper pour normaliser les URLs d'images
+  const normalizeImageUrl = (url: string | undefined | null): string => {
+    if (!url) return 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+    return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
   };
 
   return (
@@ -119,7 +167,7 @@ const ArtisanProfile = () => {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="w-32 h-32 mx-auto md:mx-0 bg-orange-100 rounded-full overflow-hidden">
                 <img
-                  src={artisan.image}
+                  src={normalizeImageUrl(artisan.avatar)}
                   alt={artisan.name}
                   className="w-full h-full object-cover"
                 />
@@ -127,23 +175,26 @@ const ArtisanProfile = () => {
               
               <div className="flex-1 text-center md:text-left">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">{artisan.name}</h1>
-                <p className="text-lg text-orange-600 mb-2">{artisan.specialty}</p>
+                <p className="text-lg text-orange-600 mb-2">
+                  {artisan.artisan_profile?.main_specialty || artisan.artisan_profile?.company_name || 'Artisan'}
+                </p>
                 <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-gray-600 mb-4">
-                  <span>📍 {artisan.location}</span>
-                  <span>⭐ {artisan.rating} ({artisan.reviewsCount} avis)</span>
-                  <span>📅 Depuis {new Date(artisan.joinedDate).getFullYear()}</span>
+                  <span>📍 {artisan.artisan_profile?.region || artisan.city || 'Madagascar'}</span>
+                  <span>📅 Depuis {artisan.created_at ? new Date(artisan.created_at).getFullYear() : 'N/A'}</span>
                 </div>
                 
-                <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-                  {artisan.specialties.map((specialty, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs"
-                    >
-                      {specialty}
-                    </span>
-                  ))}
-                </div>
+                {artisan.artisan_profile?.other_skills && artisan.artisan_profile.other_skills.length > 0 && (
+                  <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                    {artisan.artisan_profile.other_skills.map((skill: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 
                 <div className="flex justify-center md:justify-start">
                   <Button variant="outline" className="border-orange-600 text-orange-600 hover:bg-orange-50">
@@ -219,17 +270,26 @@ const ArtisanProfile = () => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">À propos de {artisan.name}</h2>
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  {artisan.description}
+                  {artisan.artisan_profile?.about || 
+                   artisan.artisan_profile?.activity_description || 
+                   artisan.artisan_profile?.brand_story || 
+                   'Artisan passionné perpétuant les traditions artisanales malgaches.'}
                 </p>
                 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">Spécialités</h3>
                     <ul className="space-y-2">
-                      {artisan.specialties.map((specialty, index) => (
+                      {artisan.artisan_profile?.main_specialty && (
+                        <li className="flex items-center gap-2 text-gray-600">
+                          <span className="w-2 h-2 bg-orange-600 rounded-full"></span>
+                          {artisan.artisan_profile.main_specialty}
+                        </li>
+                      )}
+                      {artisan.artisan_profile?.other_skills?.map((skill: string, index: number) => (
                         <li key={index} className="flex items-center gap-2 text-gray-600">
                           <span className="w-2 h-2 bg-orange-600 rounded-full"></span>
-                          {specialty}
+                          {skill}
                         </li>
                       ))}
                     </ul>
@@ -238,9 +298,17 @@ const ArtisanProfile = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3">Informations</h3>
                     <div className="space-y-2 text-gray-600">
-                      <p>📍 {artisan.location}</p>
-                      <p>⭐ {artisan.rating}/5 ({artisan.reviewsCount} avis)</p>
-                      <p>📅 Membre depuis {new Date(artisan.joinedDate).getFullYear()}</p>
+                      <p>📍 {artisan.artisan_profile?.region || artisan.city || 'Madagascar'}</p>
+                      {artisan.artisan_profile?.years_experience && (
+                        <p>⏱️ {artisan.artisan_profile.years_experience} d'expérience</p>
+                      )}
+                      {artisan.email && (
+                        <p>✉️ {artisan.email}</p>
+                      )}
+                      {artisan.phone && (
+                        <p>📞 {artisan.phone}</p>
+                      )}
+                      <p>📅 Membre depuis {artisan.created_at ? new Date(artisan.created_at).getFullYear() : 'N/A'}</p>
                     </div>
                   </div>
                 </div>

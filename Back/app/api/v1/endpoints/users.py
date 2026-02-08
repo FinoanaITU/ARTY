@@ -184,6 +184,32 @@ async def delete_current_user(
     }
 
 
+@router.get("/artisan/{artisan_id}", response_model=UserOut)
+async def get_artisan_public_profile(
+    artisan_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère le profil public d'un artisan par son ID.
+    Endpoint public - pas d'authentification requise.
+    """
+    user = await UserService.get_user_with_profile(db, artisan_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Artisan non trouvé"
+        )
+    
+    # Vérifier que l'utilisateur est bien un artisan
+    if user.role != UserRole.ARTISAN:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Artisan non trouvé"
+        )
+    
+    return user
+
+
 @router.get("/{user_id}", response_model=UserOut)
 async def get_user_by_id(
     user_id: UUID,

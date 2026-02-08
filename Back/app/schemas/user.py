@@ -160,6 +160,10 @@ class UserOut(BaseModel):
     name: str
     role: str  # String pour compatibilité JSON
     avatar: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
     buyer_type: Optional[str] = None  # String pour compatibilité
     nationality: Optional[str] = None  # String pour compatibilité
     company_name: Optional[str] = None
@@ -167,6 +171,7 @@ class UserOut(BaseModel):
     specialty: Optional[str] = None  # Pour artisans
     description: Optional[str] = None  # Pour artisans
     experience: Optional[str] = None  # Pour artisans
+    artisan_profile: Optional['ArtisanProfileOut'] = None  # Profil artisan complet
     created_at: datetime
     updated_at: datetime
     
