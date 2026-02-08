@@ -479,7 +479,7 @@ class ClientType(str, Enum):
 class QuoteRequestIn(BaseModel):
     """Requête de création de devis"""
     quote_type: QuoteType
-    title: str = Field(..., min_length=5, max_length=255)
+    title: str = Field(..., min_length=3, max_length=255)
     description: str = Field(..., min_length=10)
     quantity: int = Field(1, ge=1, le=1000)
     client_type: ClientType

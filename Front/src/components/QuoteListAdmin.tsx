@@ -3,6 +3,8 @@
  * Affiche la liste des devis (pour les admins)
  */
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { Quote, QuoteStatus, QuoteListResponse } from '@/types/quote';
 import apiService from '@/services/api';
 import { toast } from 'sonner';
@@ -29,6 +31,7 @@ const STATUS_LABELS: Record<QuoteStatus, string> = {
 };
 
 export const QuoteListAdmin = ({ onSelectQuote, refreshTrigger }: QuoteListAdminProps) => {
+  const { language } = useLanguage();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,11 +103,7 @@ export const QuoteListAdmin = ({ onSelectQuote, refreshTrigger }: QuoteListAdmin
   };
 
   const formatPrice = (price?: number | null) => {
-    if (!price) return '-';
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(price);
+    return formatCurrency(price, language);
   };
 
   const totalPages = Math.ceil(total / limit);

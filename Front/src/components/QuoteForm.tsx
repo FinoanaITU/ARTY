@@ -2,7 +2,7 @@
  * QuoteForm Component
  * Form pour créer une nouvelle demande de devis
  */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { QuoteRequestIn, QuoteType, ClientType } from '@/types/quote';
 import apiService from '@/services/api';
 import { toast } from 'sonner';
@@ -26,6 +26,8 @@ const CLIENT_TYPES: { value: ClientType; label: string }[] = [
 export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+  const titleFieldRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<QuoteRequestIn>({
     quote_type: 'custom',
     title: '',
@@ -46,35 +48,76 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
       [name]: name === 'quantity' ? parseInt(value) : value,
     }));
     setError(null);
+    // Effacer l'erreur du champ spécifique
+    setFieldErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[name];
+      return newErrors;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setFieldErrors({});
 
     try {
-      // Validation basique
+      // Validation améliorée
       if (!formData.title.trim()) {
-        throw new Error('Le titre est requis');
+        const titleError = 'Le titre du devis est requis';
+        setFieldErrors({ title: titleError });
+        titleFieldRef.current?.focus();
+        toast.error(titleError);
+        setLoading(false);
+        return;
       }
+
+      if (formData.title.trim().length < 3) {
+        const titleError = 'Le titre doit contenir au moins 3 caractères';
+        setFieldErrors({ title: titleError });
+        titleFieldRef.current?.focus();
+        toast.error(titleError);
+        setLoading(false);
+        return;
+      }
+
       if (!formData.description.trim()) {
-        throw new Error('La description est requise');
+        toast.error('La description est requise');
+        setError('La description est requise');
+        setLoading(false);
+        return;
       }
+
+      if (formData.description.trim().length < 10) {
+        toast.error('La description doit contenir au moins 10 caractères');
+        setError('La description doit contenir au moins 10 caractères');
+        setLoading(false);
+        return;
+      }
+
       if (!formData.client_name.trim()) {
-        throw new Error('Le nom du client est requis');
+        toast.error('Le nom du client est requis');
+        setLoading(false);
+        return;
       }
+
       if (!formData.client_email.includes('@')) {
-        throw new Error('Email invalide');
+        toast.error('Veuillez entrer une adresse email valide');
+        setLoading(false);
+        return;
       }
+
       if (!formData.client_phone.trim()) {
-        throw new Error('Le téléphone est requis');
+        toast.error('Le téléphone du client est requis');
+        setLoading(false);
+        return;
       }
 
       const response = await apiService.createQuoteRequest(formData);
       
       if (response.id) {
-        toast.success('Devis créé avec succès');
+        toast.success('Devis créé avec succès ! 🎉');
         onSuccess?.(response.id);
         // Reset form
         setFormData({
@@ -89,9 +132,34 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
         });
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur lors de la création du devis';
+      let message = 'Erreur lors de la création du devis';
+      let fieldErrorsMap: { [key: string]: string } = {};
+
+      if (err instanceof Error) {
+        // Vérifier si c'est une erreur de validation Pydantic
+        if (err.message.includes('String should have at least')) {
+          if (err.message.includes('title')) {
+            const errorMsg = 'Le titre du devis doit contenir au moins 3 caractères';
+            fieldErrorsMap['title'] = errorMsg;
+            titleFieldRef.current?.focus();
+            message = errorMsg;
+          } else if (err.message.includes('description')) {
+            message = 'La description doit contenir au moins 10 caractères';
+          }
+        } else if (err.message.includes('validation error')) {
+          message = 'Veuillez vérifier tous les champs du formulaire';
+        } else {
+          message = err.message;
+        }
+      }
+
       setError(message);
-      toast.error(message);
+      setFieldErrors(fieldErrorsMap);
+      toast.error(message, {
+        description: message.includes('3 caractères') 
+          ? 'Vous avez actuellement ' + formData.title.length + ' caractère(s)'
+          : undefined
+      });
     } finally {
       setLoading(false);
     }
@@ -146,16 +214,29 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
         {/* Titre */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Titre du devis *
+            Titre du devis * <span className="text-gray-500 text-xs">(min. 3 caractères)</span>
           </label>
           <input
+            ref={titleFieldRef}
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
             placeholder="Ex: Création de logo personnalisé"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              fieldErrors.title
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
           />
+          {fieldErrors.title && (
+            <p className="mt-1 text-sm text-red-600 font-medium">
+              ⚠️ {fieldErrors.title}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            {formData.title.length} / 3 caractères minimum
+          </p>
         </div>
 
         {/* Description */}

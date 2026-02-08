@@ -1,4 +1,6 @@
 import React from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +36,7 @@ const QuoteStatusDisplay: React.FC<QuoteStatusDisplayProps> = ({
   quoteRequest,
   onAcceptQuote
 }) => {
+  const { language } = useLanguage();
   const getStatusInfo = () => {
     switch (quoteRequest.status) {
       case 'pending':
@@ -117,24 +120,24 @@ const QuoteStatusDisplay: React.FC<QuoteStatusDisplayProps> = ({
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Prix de base</span>
-                  <span>{quoteRequest.quoteDetails.basePrice.toLocaleString()} Ar</span>
+                  <span>{formatCurrency(quoteRequest.quoteDetails.basePrice, language)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Matériel</span>
-                  <span>{quoteRequest.quoteDetails.materialsCost.toLocaleString()} Ar</span>
+                  <span>{formatCurrency(quoteRequest.quoteDetails.materialsCost, language)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Déplacement</span>
-                  <span>{quoteRequest.quoteDetails.locationSurcharge.toLocaleString()} Ar</span>
+                  <span>{formatCurrency(quoteRequest.quoteDetails.locationSurcharge, language)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Ajustement groupe ({quoteRequest.participants} pers.)</span>
-                  <span>{quoteRequest.quoteDetails.groupSizeAdjustment.toLocaleString()} Ar</span>
+                  <span>{formatCurrency(quoteRequest.quoteDetails.groupSizeAdjustment, language)}</span>
                 </div>
                 <hr className="border-blue-300" />
                 <div className="flex justify-between font-semibold text-blue-900">
                   <span>Total</span>
-                  <span>{quoteRequest.quoteDetails.finalPrice.toLocaleString()} Ar</span>
+                  <span>{formatCurrency(quoteRequest.quoteDetails.finalPrice, language)}</span>
                 </div>
               </div>
               
@@ -157,7 +160,7 @@ const QuoteStatusDisplay: React.FC<QuoteStatusDisplayProps> = ({
           <div className="text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Euro className="h-4 w-4" />
-              Prix estimé: {quoteRequest.estimatedPrice.toLocaleString()} Ar
+              Prix estimé: {formatCurrency(quoteRequest.estimatedPrice, language)}
             </span>
             <p className="text-xs mt-1">
               Le tarif affiché est une estimation. Un devis final sera envoyé selon votre lieu, la taille du groupe, le matériel et les contraintes logistiques.
