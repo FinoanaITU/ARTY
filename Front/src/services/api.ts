@@ -32,6 +32,15 @@ import type {
   GeneratePayoutRequest,
   MarkPayoutPaidRequest
 } from '@/types/admin';
+import type {
+  Quote,
+  QuoteRequestIn,
+  QuoteUpdateIn,
+  QuoteListResponse,
+  QuoteSummaryResponse,
+  QuoteConversionResponse,
+  QuoteStats
+} from '@/types/quote';
 
 // Base URL: prefer env var, fallback to FastAPI default '/api' (no version)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -956,6 +965,96 @@ class ApiService {
       limit: limit.toString(),
     });
     const response = await this.api.get(`/admin/payouts/${artisanId}/history?${params.toString()}`);
+    return response.data;
+  }
+
+  // ===== QUOTE MANAGEMENT ENDPOINTS =====
+
+  /**
+   * Créer une demande de devis
+   */
+  async createQuoteRequest(data: QuoteRequestIn): Promise<QuoteSummaryResponse> {
+    const response = await this.api.post('/admin/quotes', data);
+    return response.data;
+  }
+
+  /**
+   * Récupérer tous les devis (admin)
+   */
+  async getAllQuotes(
+    status?: string,
+    quoteType?: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<QuoteListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    if (status) params.append('status', status);
+    if (quoteType) params.append('quote_type', quoteType);
+    
+    const response = await this.api.get(`/admin/quotes?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Récupérer mes demandes de devis (user)
+   */
+  async getMyQuotes(skip: number = 0, limit: number = 50): Promise<QuoteListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    const response = await this.api.get(`/admin/quotes/my?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Récupérer les détails d'un devis
+   */
+  async getQuoteDetails(quoteId: string): Promise<Quote> {
+    const response = await this.api.get(`/admin/quotes/${quoteId}`);
+    return response.data;
+  }
+
+  /**
+   * Mettre à jour un devis (admin: prix + notes)
+   */
+  async updateQuote(quoteId: string, data: QuoteUpdateIn): Promise<QuoteSummaryResponse> {
+    const response = await this.api.patch(`/admin/quotes/${quoteId}`, data);
+    return response.data;
+  }
+
+  /**
+   * Approuver un devis (client)
+   */
+  async approveQuote(quoteId: string): Promise<QuoteSummaryResponse> {
+    const response = await this.api.post(`/admin/quotes/${quoteId}/approve`, {});
+    return response.data;
+  }
+
+  /**
+   * Rejeter un devis (client)
+   */
+  async rejectQuote(quoteId: string): Promise<QuoteSummaryResponse> {
+    const response = await this.api.post(`/admin/quotes/${quoteId}/reject`, {});
+    return response.data;
+  }
+
+  /**
+   * Convertir un devis en commande
+   */
+  async convertQuoteToOrder(quoteId: string): Promise<QuoteConversionResponse> {
+    const response = await this.api.post(`/admin/quotes/${quoteId}/convert-to-order`, {});
+    return response.data;
+  }
+
+  /**
+   * Récupérer les statistiques des devis
+   */
+  async getQuoteStats(): Promise<QuoteStats> {
+    const response = await this.api.get('/admin/quotes/stats/overview');
     return response.data;
   }
 

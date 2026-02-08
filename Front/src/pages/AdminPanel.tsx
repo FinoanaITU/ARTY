@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QuoteRequestManager } from '@/components/QuoteRequestManager';
+import { QuoteManager } from '@/components/QuoteManager';
 import { SubscriptionManager } from '@/components/SubscriptionManager';
 import { WorkshopManager } from '@/components/WorkshopManager';
 import { WorkshopCalendar } from '@/components/WorkshopCalendar';
@@ -545,22 +545,7 @@ const AdminPanel = () => {
             </TabsContent>
 
             <TabsContent value="quotes">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Devis à traiter manuellement</h2>
-                  <Badge variant="destructive">{adminStats.pendingQuotes} en attente</Badge>
-                </div>
-                <QuoteRequestManager 
-                  quoteRequests={[]}
-                  onUpdateQuoteRequest={(id, updates) => {
-                    console.log('Quote request updated:', id, updates);
-                    toast({
-                      title: "Devis mis à jour",
-                      description: "Le statut du devis a été mis à jour"
-                    });
-                  }}
-                />
-              </div>
+              <QuoteManager />
             </TabsContent>
 
             <TabsContent value="subscriptions">
