@@ -270,10 +270,11 @@ class QuoteService:
         """
         quote = await QuoteService.get_quote_by_id(db, quote_id)
         
-        if quote.status != "quoted":
+        # Can reject pending or quoted quotes
+        if quote.status not in ["pending", "quoted"]:
             raise HTTPException(
                 status_code=400,
-                detail="Only quoted quotes can be rejected"
+                detail=f"Cannot reject quote with status '{quote.status}'. Only pending or quoted quotes can be rejected."
             )
         
         quote.status = "rejected"

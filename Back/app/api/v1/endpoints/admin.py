@@ -27,7 +27,10 @@ from app.schemas.admin import (
     ArtisanPayoutOut,
     PayoutListResponse,
     GeneratePayoutRequest,
-    MarkPayoutPaidRequest
+    MarkPayoutPaidRequest,
+    # Quote schemas
+    QuoteRequestIn,
+    QuoteOut
 )
 from app.services.admin_validation_service import AdminValidationService
 from app.services.admin_analytics_service import AdminAnalyticsService
@@ -547,7 +550,7 @@ async def get_artisan_payout_history(
     description="Permet aux utilisateurs de créer une demande de devis personnalisée"
 )
 async def create_quote_request(
-    quote_data: dict = Body(...),
+    quote_data: QuoteRequestIn,
     current_user: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -564,14 +567,12 @@ async def create_quote_request(
     - **client_phone**: Téléphone du client
     - **company_name**: Nom entreprise (optionnel)
     """
-    from app.schemas.admin import QuoteRequestIn
     from app.services.quote_service import QuoteService
     
-    quote_data_obj = QuoteRequestIn(**quote_data)
     quote = await QuoteService.create_quote_request(
         db=db,
         user_id=current_user.id,
-        quote_data=quote_data_obj
+        quote_data=quote_data
     )
     
     return {
