@@ -294,3 +294,160 @@ class UserBehaviorStatsOut(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# ===== Payment Tracking Schemas =====
+
+class PaymentStatus(str, Enum):
+    """Statut de paiement"""
+    UNPAID = "unpaid"
+    PARTIAL = "partial"
+    PAID = "paid"
+    PENDING_COLLECTION = "pending_collection"
+
+
+class PaymentMethod(str, Enum):
+    """Méthode de paiement"""
+    CASH = "cash"
+    MVOLA = "mvola"
+    ORANGE_MONEY = "orange_money"
+    BANK_TRANSFER = "bank_transfer"
+
+
+class PaymentType(str, Enum):
+    """Type de paiement"""
+    PRODUCT = "product"
+    WORKSHOP = "workshop"
+
+
+class ArtisanType(str, Enum):
+    """Type d'artisan"""
+    ARTIZAHO = "artizaho"
+    UBER = "uber"
+
+
+class PaymentOut(BaseModel):
+    """Détails d'un paiement"""
+    id: UUID
+    order_id: Optional[UUID]
+    booking_id: Optional[UUID]
+    user_id: UUID
+    artisan_id: UUID
+    type: str
+    amount_total: float
+    amount_paid: float
+    payment_status: str
+    payment_method: Optional[str]
+    artisan_type: str
+    created_at: datetime
+    updated_at: datetime
+    
+    # Informations relationnelles (optionnelles)
+    user_name: Optional[str] = None
+    artisan_name: Optional[str] = None
+    order_number: Optional[str] = None
+    booking_number: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class PaymentHistoryOut(BaseModel):
+    """Historique d'un paiement"""
+    id: UUID
+    payment_id: UUID
+    amount: float
+    payment_method: str
+    transaction_ref: Optional[str]
+    notes: Optional[str]
+    paid_at: datetime
+    recorded_by: Optional[UUID]
+    created_at: datetime
+    
+    # Informations relationnelles (optionnelles)
+    recorder_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class RecordPaymentRequest(BaseModel):
+    """Requête d'enregistrement de paiement"""
+    amount: float = Field(..., gt=0, description="Montant du paiement")
+    payment_method: PaymentMethod
+    transaction_ref: Optional[str] = Field(None, max_length=100, description="Référence de transaction")
+    notes: Optional[str] = Field(None, description="Notes sur le paiement")
+
+
+class PaymentListResponse(BaseModel):
+    """Liste de paiements"""
+    total: int
+    items: List[PaymentOut]
+    total_amount: float
+    total_paid: float
+    total_outstanding: float
+
+
+class ArtisanPayoutStatus(str, Enum):
+    """Statut de paiement artisan"""
+    PENDING = "pending"
+    PROCESSING = "processing"
+    PAID = "paid"
+
+
+class ArtisanPayoutOut(BaseModel):
+    """Détails d'un payout artisan"""
+    id: UUID
+    artisan_id: UUID
+    period_start: datetime
+    period_end: datetime
+    total_sales: float
+    commission_rate: float
+    commission_amount: float
+    net_payout: float
+    status: str
+    payment_method: Optional[str]
+    payment_ref: Optional[str]
+    paid_at: Optional[datetime]
+    notes: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    
+    # Informations relationnelles
+    artisan_name: Optional[str] = None
+    artisan_email: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class GeneratePayoutRequest(BaseModel):
+    """Requête de génération de payout"""
+    artisan_id: UUID
+    period_start: datetime
+    period_end: datetime
+
+
+class MarkPayoutPaidRequest(BaseModel):
+    """Requête de marquage payout comme payé"""
+    payment_method: PaymentMethod
+    payment_ref: Optional[str] = Field(None, max_length=100)
+    notes: Optional[str] = None
+
+
+class PayoutListResponse(BaseModel):
+    """Liste de payouts"""
+    total: int
+    items: List[ArtisanPayoutOut]
+    total_net_payout: float
+    total_commission: float
+
+
+class CommissionCalculation(BaseModel):
+    """Calcul de commission"""
+    sale_amount: float
+    commission_rate: float
+    commission_amount: float
+    net_to_artisan: float
+    artisan_type: str
+

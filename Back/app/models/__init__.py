@@ -41,6 +41,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.models.payment import PaymentTracking, PaymentTrackingHistory, ArtisanPayout
+except ImportError:
+    pass
+
 __all__ = [
     "BaseModel",
     "User",
@@ -49,4 +54,7 @@ __all__ = [
     "UserSession",
     "SocialAccount",
     "ArtisanValidation",
+    "PaymentTracking",
+    "PaymentTrackingHistory",
+    "ArtisanPayout",
 ]

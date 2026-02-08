@@ -18,10 +18,19 @@ from app.schemas.admin import (
     RevenueStatsOut,
     ArtisanStatsOut,
     ConversionStatsOut,
-    UserBehaviorStatsOut
+    UserBehaviorStatsOut,
+    # Payment tracking schemas
+    PaymentOut,
+    PaymentListResponse,
+    RecordPaymentRequest,
+    ArtisanPayoutOut,
+    PayoutListResponse,
+    GeneratePayoutRequest,
+    MarkPayoutPaidRequest
 )
 from app.services.admin_validation_service import AdminValidationService
 from app.services.admin_analytics_service import AdminAnalyticsService
+from app.services.payment_tracking_service import PaymentTrackingService
 
 router = APIRouter()
 
@@ -300,6 +309,207 @@ async def get_user_behavior_stats(
     """
     analytics_service = AdminAnalyticsService(db)
     return await analytics_service.get_user_behavior_stats()
+
+
+# ===== PAYMENT TRACKING ENDPOINTS =====
+
+@router.get(
+    "/payments",
+    response_model=PaymentListResponse,
+    summary="Liste des paiements",
+    description="Récupère tous les paiements avec filtres optionnels"
+)
+async def get_all_payments(
+    payment_status: Optional[str] = Query(None, description="Filtre par statut: unpaid/partial/paid/pending_collection"),
+    artisan_type: Optional[str] = Query(None, description="Filtre par type artisan: artizaho/uber"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Liste tous les paiements avec filtres.
+    
+    Retourne:
+    - Liste paginée des paiements
+    - Totaux: montant total, montant payé, montant restant
+    """
+    return await PaymentTrackingService.get_all_payments(
+        db=db,
+        payment_status=payment_status,
+        artisan_type=artisan_type,
+        skip=skip,
+        limit=limit
+    )
+
+
+@router.get(
+    "/payments/{payment_id}",
+    response_model=PaymentOut,
+    summary="Détails d'un paiement",
+    description="Récupère les détails d'un paiement spécifique"
+)
+async def get_payment_by_id(
+    payment_id: UUID,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère un paiement par son ID avec toutes les informations enrichies.
+    """
+    payment = await PaymentTrackingService.get_payment_by_id(db, payment_id)
+    
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Payment not found"
+        )
+    
+    return payment
+
+
+@router.post(
+    "/payments/{payment_id}/record",
+    response_model=PaymentOut,
+    summary="Enregistrer un paiement",
+    description="Enregistre un paiement (total ou partiel) pour une commande/réservation"
+)
+async def record_payment(
+    payment_id: UUID,
+    payment_request: RecordPaymentRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Enregistre un paiement (total ou partiel).
+    
+    Paramètres:
+    - **amount**: Montant du paiement
+    - **payment_method**: Méthode (cash/mvola/orange_money/bank_transfer)
+    - **transaction_ref**: Référence de transaction (optionnel)
+    - **notes**: Notes supplémentaires (optionnel)
+    
+    Met à jour automatiquement le statut du paiement.
+    """
+    return await PaymentTrackingService.record_payment(
+        db=db,
+        payment_id=payment_id,
+        request=payment_request,
+        admin_id=current_admin.id
+    )
+
+
+@router.get(
+    "/payouts/pending",
+    response_model=PayoutListResponse,
+    summary="Payouts en attente",
+    description="Récupère tous les payouts artisans en attente ou en cours de traitement"
+)
+async def get_pending_payouts(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Liste tous les payouts artisans en attente.
+    
+    Retourne:
+    - Liste paginée des payouts pending/processing
+    - Totaux: montant net total, commission totale
+    """
+    return await PaymentTrackingService.get_pending_payouts(
+        db=db,
+        skip=skip,
+        limit=limit
+    )
+
+
+@router.post(
+    "/payouts/generate",
+    response_model=ArtisanPayoutOut,
+    summary="Générer un payout artisan",
+    description="Génère un payout pour un artisan pour une période donnée"
+)
+async def generate_artisan_payout(
+    payout_request: GeneratePayoutRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Génère un payout pour un artisan.
+    
+    Paramètres:
+    - **artisan_id**: ID de l'artisan
+    - **period_start**: Date de début de période
+    - **period_end**: Date de fin de période
+    
+    Calcule automatiquement:
+    - Total des ventes (commandes payées)
+    - Commission (15% artizaho, 20% uber)
+    - Montant net à verser à l'artisan
+    """
+    return await PaymentTrackingService.generate_artisan_payout(
+        db=db,
+        request=payout_request
+    )
+
+
+@router.post(
+    "/payouts/{payout_id}/mark-paid",
+    response_model=ArtisanPayoutOut,
+    summary="Marquer payout comme payé",
+    description="Marque un payout artisan comme payé"
+)
+async def mark_payout_as_paid(
+    payout_id: UUID,
+    paid_request: MarkPayoutPaidRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Marque un payout comme payé.
+    
+    Paramètres:
+    - **payment_method**: Méthode de paiement utilisée
+    - **payment_ref**: Référence de transaction (optionnel)
+    - **notes**: Notes supplémentaires (optionnel)
+    
+    Met à jour le statut à 'paid' et enregistre la date de paiement.
+    """
+    return await PaymentTrackingService.mark_payout_as_paid(
+        db=db,
+        payout_id=payout_id,
+        request=paid_request
+    )
+
+
+@router.get(
+    "/payouts/{artisan_id}/history",
+    response_model=PayoutListResponse,
+    summary="Historique payouts artisan",
+    description="Récupère l'historique des payouts d'un artisan"
+)
+async def get_artisan_payout_history(
+    artisan_id: UUID,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère l'historique complet des payouts d'un artisan.
+    
+    Retourne:
+    - Liste paginée de tous les payouts (tous statuts)
+    - Totaux: montant net total, commission totale
+    """
+    return await PaymentTrackingService.get_artisan_payout_history(
+        db=db,
+        artisan_id=artisan_id,
+        skip=skip,
+        limit=limit
+    )
 
 
 @router.get("/")
