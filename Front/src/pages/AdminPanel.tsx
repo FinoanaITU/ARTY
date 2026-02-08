@@ -13,6 +13,7 @@ import { WorkshopManager } from '@/components/WorkshopManager';
 import { WorkshopCalendar } from '@/components/WorkshopCalendar';
 import { ValidationManager } from '@/components/ValidationManager';
 import { PaymentTracker, PaymentStatus } from '@/components/PaymentTracker';
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { toast } from '@/hooks/use-toast';
 
 const AdminPanel = () => {
@@ -537,38 +538,7 @@ const AdminPanel = () => {
             </TabsContent>
 
             <TabsContent value="analytics">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Analytiques de la plateforme</CardTitle>
-                  <CardDescription>Vue d'ensemble des performances</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Tendances des ventes</h4>
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <p className="text-green-800 font-medium">↗️ +15% ce mois</p>
-                        <p className="text-green-700 text-sm">Les ventes d'ateliers augmentent</p>
-                      </div>
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <p className="text-blue-800 font-medium">📊 Produits populaires</p>
-                        <p className="text-blue-700 text-sm">Masques traditionnels en tête</p>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Performance des artisans</h4>
-                      <div className="p-4 bg-orange-50 rounded-lg">
-                        <p className="text-orange-800 font-medium">🎯 Top artisan</p>
-                        <p className="text-orange-700 text-sm">Hery Rakoto - 12 ventes ce mois</p>
-                      </div>
-                      <div className="p-4 bg-purple-50 rounded-lg">
-                        <p className="text-purple-800 font-medium">⭐ Meilleure note</p>
-                        <p className="text-purple-700 text-sm">Ateliers sculpture: 4.9/5</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <AnalyticsDashboard />
             </TabsContent>
           </Tabs>
         </div>

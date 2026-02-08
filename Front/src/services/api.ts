@@ -18,7 +18,12 @@ import type {
 import type {
   PendingValidationsResponse,
   ValidationStats,
-  ValidationResponse
+  ValidationResponse,
+  PlatformOverview,
+  RevenueStats,
+  ArtisanStats,
+  ConversionStats,
+  UserBehaviorStats
 } from '@/types/admin';
 
 // Base URL: prefer env var, fallback to FastAPI default '/api' (no version)
@@ -790,6 +795,59 @@ class ApiService {
    */
   async getValidationStats(period: string = 'month') {
     const response = await this.api.get(`/admin/validations/stats?period=${period}`);
+    return response.data;
+  }
+
+  // ===== ADMIN ANALYTICS ENDPOINTS (PHASE 2) =====
+  
+  /**
+   * Récupère la vue d'ensemble de la plateforme
+   */
+  async getAdminPlatformOverview(): Promise<PlatformOverview> {
+    const response = await this.api.get('/admin/analytics/overview');
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques de revenus
+   * @param period - Période (day/week/month/year/all)
+   * @param startDate - Date de début (format: YYYY-MM-DD)
+   * @param endDate - Date de fin (format: YYYY-MM-DD)
+   */
+  async getAdminRevenueStats(
+    period: 'day' | 'week' | 'month' | 'year' | 'all' = 'month',
+    startDate?: string,
+    endDate?: string
+  ): Promise<RevenueStats> {
+    const params = new URLSearchParams({ period });
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    
+    const response = await this.api.get(`/admin/analytics/revenue?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques des artisans
+   */
+  async getAdminArtisanStats(): Promise<ArtisanStats> {
+    const response = await this.api.get('/admin/analytics/artisans');
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques de conversion
+   */
+  async getAdminConversionStats(): Promise<ConversionStats> {
+    const response = await this.api.get('/admin/analytics/conversion');
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques de comportement utilisateurs
+   */
+  async getAdminUserBehaviorStats(): Promise<UserBehaviorStats> {
+    const response = await this.api.get('/admin/analytics/users');
     return response.data;
   }
 
