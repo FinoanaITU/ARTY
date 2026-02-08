@@ -170,3 +170,127 @@ class WorkshopValidationOut(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# ===== Analytics Schemas =====
+
+class UsersByRole(BaseModel):
+    """Users grouped by role"""
+    buyers: int
+    artisans: int
+    admins: int
+
+
+class EntityStats(BaseModel):
+    """Generic entity statistics"""
+    active: int
+    pending: int
+    total: int
+
+
+class PublishedPendingStats(BaseModel):
+    """Statistics for published vs pending entities"""
+    published: int
+    pending: int
+    total: int
+
+
+class PlatformOverviewOut(BaseModel):
+    """Vue d'ensemble de la plateforme"""
+    total_users: int
+    users_by_role: UsersByRole
+    total_artisans: EntityStats
+    total_products: PublishedPendingStats
+    total_workshops: PublishedPendingStats
+    total_orders: int
+    total_bookings: int
+    pending_validations: int
+    
+    class Config:
+        from_attributes = True
+
+
+class DailyRevenueBreakdown(BaseModel):
+    """Daily revenue breakdown"""
+    date: str
+    revenue: float
+    orders_revenue: float
+    workshops_revenue: float
+
+
+class RevenueStatsOut(BaseModel):
+    """Statistiques de revenus"""
+    total_revenue: float
+    product_sales: float
+    workshop_sales: float
+    commission_artizaho: float
+    commission_rate: float
+    period: str
+    start_date: Optional[str]
+    end_date: Optional[str]
+    revenue_by_category: List[Dict[str, Any]]
+    daily_breakdown: List[DailyRevenueBreakdown]
+    
+    class Config:
+        from_attributes = True
+
+
+class SpecialtyStats(BaseModel):
+    """Artisan specialty statistics"""
+    specialty: str
+    count: int
+
+
+class RegionStats(BaseModel):
+    """Region statistics"""
+    region: str
+    count: int
+
+
+class TopPerformer(BaseModel):
+    """Top performing artisan"""
+    artisan_id: str
+    artisan_name: str
+    total_revenue: float
+    email: str
+
+
+class ArtisanStatsOut(BaseModel):
+    """Statistiques artisans"""
+    total_artisans: int
+    active_artisans: int
+    pending_approval: int
+    by_specialty: List[SpecialtyStats]
+    by_region: List[RegionStats]
+    new_this_month: int
+    top_performers: List[TopPerformer]
+    
+    class Config:
+        from_attributes = True
+
+
+class ConversionStatsOut(BaseModel):
+    """Taux de conversion"""
+    product_view_to_sale_rate: float
+    workshop_to_booking_rate: float
+    visitor_to_buyer_conversion: float
+    products_with_sales: int
+    products_with_views: int
+    workshops_with_bookings: int
+    users_with_orders: int
+    
+    class Config:
+        from_attributes = True
+
+
+class UserBehaviorStatsOut(BaseModel):
+    """Statistiques comportement utilisateurs"""
+    avg_order_value: float
+    avg_cart_size: float
+    repeat_customers_rate: float
+    total_customers: int
+    repeat_customers: int
+    payment_method_stats: Dict[str, int]
+    
+    class Config:
+        from_attributes = True

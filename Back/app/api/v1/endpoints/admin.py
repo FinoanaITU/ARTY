@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, Body, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Optional
 from uuid import UUID
+from datetime import date
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_admin
@@ -12,9 +13,15 @@ from app.schemas.admin import (
     ValidationStatsOut,
     ArtisanProfileValidationOut,
     ProductValidationOut,
-    WorkshopValidationOut
+    WorkshopValidationOut,
+    PlatformOverviewOut,
+    RevenueStatsOut,
+    ArtisanStatsOut,
+    ConversionStatsOut,
+    UserBehaviorStatsOut
 )
 from app.services.admin_validation_service import AdminValidationService
+from app.services.admin_analytics_service import AdminAnalyticsService
 
 router = APIRouter()
 
@@ -169,6 +176,130 @@ async def get_validation_stats(
         db=db,
         period=period
     )
+
+
+# ===== ANALYTICS ENDPOINTS =====
+
+@router.get(
+    "/analytics/overview",
+    response_model=PlatformOverviewOut,
+    summary="Vue d'ensemble de la plateforme",
+    description="Récupère les statistiques générales de la plateforme"
+)
+async def get_platform_overview(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère une vue d'ensemble complète de la plateforme.
+    
+    Inclut:
+    - Nombre total d'utilisateurs (par rôle)
+    - Statistiques artisans (actifs, en attente)
+    - Statistiques produits et ateliers
+    - Nombre de commandes et réservations
+    - Validations en attente
+    """
+    analytics_service = AdminAnalyticsService(db)
+    return await analytics_service.get_platform_overview()
+
+
+@router.get(
+    "/analytics/revenue",
+    response_model=RevenueStatsOut,
+    summary="Statistiques de revenus",
+    description="Récupère les statistiques de revenus pour une période donnée"
+)
+async def get_revenue_stats(
+    period: str = Query("month", description="Période: day/week/month/year/all"),
+    start_date: Optional[date] = Query(None, description="Date de début personnalisée"),
+    end_date: Optional[date] = Query(None, description="Date de fin personnalisée"),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les statistiques de revenus.
+    
+    Inclut:
+    - Revenus totaux (produits + ateliers)
+    - Commissions Artizaho
+    - Répartition par catégorie
+    - Évolution journalière (pour période week/month)
+    """
+    analytics_service = AdminAnalyticsService(db)
+    return await analytics_service.get_revenue_stats(
+        period=period,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+
+@router.get(
+    "/analytics/artisans",
+    response_model=ArtisanStatsOut,
+    summary="Statistiques artisans",
+    description="Récupère les statistiques complètes sur les artisans"
+)
+async def get_artisan_stats(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les statistiques sur les artisans.
+    
+    Inclut:
+    - Nombre total et actifs
+    - Répartition par spécialité et région
+    - Top performers (par ventes)
+    - Nouveaux artisans ce mois
+    """
+    analytics_service = AdminAnalyticsService(db)
+    return await analytics_service.get_artisan_stats()
+
+
+@router.get(
+    "/analytics/conversion",
+    response_model=ConversionStatsOut,
+    summary="Taux de conversion",
+    description="Récupère les taux de conversion de la plateforme"
+)
+async def get_conversion_stats(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les taux de conversion.
+    
+    Inclut:
+    - Taux vue → vente (produits)
+    - Taux vue → réservation (ateliers)
+    - Taux visiteur → acheteur
+    """
+    analytics_service = AdminAnalyticsService(db)
+    return await analytics_service.get_conversion_stats()
+
+
+@router.get(
+    "/analytics/users",
+    response_model=UserBehaviorStatsOut,
+    summary="Comportement utilisateurs",
+    description="Récupère les statistiques de comportement utilisateurs"
+)
+async def get_user_behavior_stats(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les statistiques de comportement utilisateurs.
+    
+    Inclut:
+    - Panier moyen (AOV)
+    - Nombre moyen d'articles par commande
+    - Taux de clients récurrents
+    - Méthodes de paiement préférées
+    """
+    analytics_service = AdminAnalyticsService(db)
+    return await analytics_service.get_user_behavior_stats()
 
 
 @router.get("/")
