@@ -1,6 +1,6 @@
 """Service for admin subscription management"""
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, cast, Integer
 from datetime import datetime, timedelta, date
 from uuid import UUID
 from decimal import Decimal
@@ -462,9 +462,12 @@ class AdminSubscriptionService:
             func.avg(Subscription.monthly_price)
         ).filter(Subscription.status == 'active').scalar() or Decimal("0")
         
-        # Average lifetime
+        # Average lifetime - PostgreSQL compatible
+        # In PostgreSQL, date - date returns integer directly (days)
         lifetime_subs = db.query(
-            func.avg(func.datediff(Subscription.end_date, Subscription.start_date))
+            func.avg(
+                cast(Subscription.end_date - Subscription.start_date, Integer)
+            )
         ).scalar()
         
         return {

@@ -30,7 +30,15 @@ import type {
   PayoutListResponse,
   ArtisanPayoutOut,
   GeneratePayoutRequest,
-  MarkPayoutPaidRequest
+  MarkPayoutPaidRequest,
+  SubscriptionOut,
+  SubscriptionListResponse,
+  SubscriptionOverviewResponse,
+  SubscriptionCancelRequest,
+  SubscriptionExtendRequest,
+  SubscriptionAddCreditsRequest,
+  SubscriptionHistoryResponse,
+  SubscriptionStatsResponse
 } from '@/types/admin';
 import type {
   Quote,
@@ -1055,6 +1063,103 @@ class ApiService {
    */
   async getQuoteStats(): Promise<QuoteStats> {
     const response = await this.api.get('/admin/quotes/stats/overview');
+    return response.data;
+  }
+
+  // ===== SUBSCRIPTION ADMIN ENDPOINTS (PHASE 5) =====
+
+  /**
+   * Vue d'ensemble des abonnements
+   */
+  async getSubscriptionsOverview(): Promise<SubscriptionOverviewResponse> {
+    const response = await this.api.get('/admin/subscriptions/overview');
+    return response.data;
+  }
+
+  /**
+   * Liste des abonnements avec filtres
+   */
+  async getSubscriptionsList(
+    status?: string,
+    plan?: string,
+    userId?: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<SubscriptionListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    if (status) params.append('status', status);
+    if (plan) params.append('plan', plan);
+    if (userId) params.append('user_id', userId);
+    
+    const response = await this.api.get(`/admin/subscriptions/list?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Détails complets d'un abonnement
+   */
+  async getSubscriptionDetail(subscriptionId: string): Promise<SubscriptionOut> {
+    const response = await this.api.get(`/admin/subscriptions/${subscriptionId}`);
+    return response.data;
+  }
+
+  /**
+   * Annuler un abonnement (action admin)
+   */
+  async cancelSubscription(
+    subscriptionId: string,
+    data: SubscriptionCancelRequest
+  ): Promise<SubscriptionOut> {
+    const response = await this.api.post(`/admin/subscriptions/${subscriptionId}/cancel`, data);
+    return response.data;
+  }
+
+  /**
+   * Prolonger un abonnement (geste commercial)
+   */
+  async extendSubscription(
+    subscriptionId: string,
+    data: SubscriptionExtendRequest
+  ): Promise<SubscriptionOut> {
+    const response = await this.api.post(`/admin/subscriptions/${subscriptionId}/extend`, data);
+    return response.data;
+  }
+
+  /**
+   * Ajouter des crédits bonus à un abonnement
+   */
+  async addBonusCredits(
+    subscriptionId: string,
+    data: SubscriptionAddCreditsRequest
+  ): Promise<SubscriptionOut> {
+    const response = await this.api.post(`/admin/subscriptions/${subscriptionId}/add-credits`, data);
+    return response.data;
+  }
+
+  /**
+   * Historique des modifications d'un abonnement  
+   */
+  async getSubscriptionHistory(
+    subscriptionId: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<SubscriptionHistoryResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    const response = await this.api.get(`/admin/subscriptions/${subscriptionId}/history?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Statistiques détaillées des abonnements
+   */
+  async getSubscriptionStats(): Promise<SubscriptionStatsResponse> {
+    const response = await this.api.get('/admin/subscriptions/stats/detailed');
     return response.data;
   }
 

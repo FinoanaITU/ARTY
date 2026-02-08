@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QuoteManager } from '@/components/QuoteManager';
 import { SubscriptionManager } from '@/components/SubscriptionManager';
+import { AdminSubscriptionManager } from '@/components/admin/AdminSubscriptionManager';
 import { WorkshopManager } from '@/components/WorkshopManager';
 import { WorkshopCalendar } from '@/components/WorkshopCalendar';
 import { ValidationManager } from '@/components/ValidationManager';
@@ -552,23 +553,7 @@ const AdminPanel = () => {
             </TabsContent>
 
             <TabsContent value="subscriptions">
-              <SubscriptionManager 
-                subscriptions={[]}
-                onUpdateSubscription={(id, updates) => {
-                  console.log('Subscription updated:', id, updates);
-                  toast({
-                    title: "Abonnement mis à jour",
-                    description: "L'abonnement a été mis à jour avec succès"
-                  });
-                }}
-                onDeleteSubscription={(id) => {
-                  console.log('Subscription deleted:', id);
-                  toast({
-                    title: "Abonnement supprimé",
-                    description: "L'abonnement a été supprimé avec succès"
-                  });
-                }}
-              />
+              <AdminSubscriptionManager />
             </TabsContent>
 
             <TabsContent value="analytics">

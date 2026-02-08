@@ -332,3 +332,117 @@ export interface PayoutListResponse {
   total_net_payout: number;
   total_commission: number;
 }
+
+// ============================================
+// SUBSCRIPTION ADMIN TYPES (PHASE 5)
+// ============================================
+
+export enum SubscriptionPlanType {
+  BASIC = 'basic',
+  PLUS = 'plus',
+  PRO = 'pro',
+  ENTERPRISE = 'enterprise'
+}
+
+export enum SubscriptionStatusType {
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+  CANCELLED = 'cancelled',
+  EXPIRED = 'expired',
+  PENDING = 'pending'
+}
+
+export enum SubscriptionBillingCycle {
+  MONTHLY = 'monthly',
+  ANNUAL = 'annual'
+}
+
+export interface SubscriptionOut {
+  id: string;
+  user_id: string;
+  plan: SubscriptionPlanType;
+  status: SubscriptionStatusType;
+  monthly_price: number;
+  billing_cycle: SubscriptionBillingCycle;
+  start_date: string;
+  end_date: string;
+  renewal_date?: string;
+  features?: Record<string, any>;
+  available_credits: number;
+  used_credits: number;
+  total_spent: number;
+  auto_renew: boolean;
+  cancellation_reason?: string;
+  cancelled_at?: string;
+  cancelled_by?: string;
+  admin_notes?: string;
+  payment_method?: string;
+  payment_method_details?: Record<string, any>;
+  last_payment_at?: string;
+  next_verification_date?: string;
+  bonus_credits_added: number;
+  times_renewed: number;
+  created_at: string;
+  updated_at: string;
+  // Computed/joined fields
+  user_name?: string;
+  user_email?: string;
+}
+
+export interface SubscriptionListResponse {
+  total: number;
+  skip: number;
+  limit: number;
+  subscriptions: SubscriptionOut[];
+}
+
+export interface SubscriptionOverviewResponse {
+  total_active: number;
+  total_by_plan: Record<string, number>;
+  total_by_status: Record<string, number>;
+  monthly_recurring_revenue: number;
+  churned_this_month: number;
+  renewal_rate_percent: number;
+  timestamp: string;
+}
+
+export interface SubscriptionCancelRequest {
+  reason?: string;
+}
+
+export interface SubscriptionExtendRequest {
+  days: number;
+  notes?: string;
+}
+
+export interface SubscriptionAddCreditsRequest {
+  amount: number;
+  reason?: string;
+}
+
+export interface SubscriptionHistoryOut {
+  id: string;
+  subscription_id: string;
+  action_type: string;
+  action_by?: string;
+  old_values?: Record<string, any>;
+  new_values?: Record<string, any>;
+  notes?: string;
+  action_at: string;
+  actor_name?: string;
+}
+
+export interface SubscriptionHistoryResponse {
+  total: number;
+  skip: number;
+  limit: number;
+  history: SubscriptionHistoryOut[];
+}
+
+export interface SubscriptionStatsResponse {
+  total_subscriptions: number;
+  total_revenue: number;
+  average_subscription_value: number;
+  average_lifetime_days: number;
+  overview: SubscriptionOverviewResponse;
+}
