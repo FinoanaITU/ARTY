@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +35,7 @@ interface SubscriptionRegistrationFormProps {
 }
 
 const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrationFormProps) => {
+  const { language } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
   const { createSubscription } = useSubscription();
   const { user } = useUser();
@@ -101,7 +104,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
         </CardTitle>
         <div className="flex items-center gap-2">
           <Star className="h-5 w-5 text-yellow-500" />
-          <span className="text-lg font-semibold">{plan.price.toLocaleString()} Ar</span>
+          <span className="text-lg font-semibold">{formatCurrency(plan.price, language)}</span>
           <span className="text-muted-foreground">/ {plan.duration}</span>
           {plan.recommended && (
             <Badge className="bg-primary text-primary-foreground">Recommandé</Badge>
@@ -218,7 +221,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
             <div className="bg-muted p-4 rounded-lg space-y-3">
               <div className="flex justify-between items-center">
                 <span>Abonnement {plan.name}</span>
-                <span className="font-medium">{plan.price.toLocaleString()} Ar</span>
+                <span className="font-medium">{formatCurrency(plan.price, language)}</span>
               </div>
               
               <div className="flex justify-between items-center">
@@ -235,7 +238,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
               
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>Total</span>
-                <span className="text-brand-terracotta">{plan.price.toLocaleString()} Ar</span>
+                <span className="text-brand-terracotta">{formatCurrency(plan.price, language)}</span>
               </div>
             </div>
           </div>

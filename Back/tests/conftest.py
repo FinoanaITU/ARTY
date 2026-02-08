@@ -660,3 +660,127 @@ def created_product(db: Session, created_artisan: User, test_category):
             pass
     
     return product
+
+
+@pytest.fixture
+def admin_user(db_session: Session) -> User:
+    """Crée un utilisateur admin pour les tests"""
+    from sqlalchemy import text
+    import json
+    
+    admin_id = uuid.uuid4()
+    
+    # Créer l'admin avec SQL brut
+    db_session.execute(
+        text("""
+            INSERT INTO users (id, email, password_hash, name, role, is_active, is_email_verified, created_at, updated_at)
+            VALUES (:id, :email, :password_hash, :name, :role, :is_active, :is_email_verified, datetime('now'), datetime('now'))
+        """),
+        {
+            "id": str(admin_id),
+            "email": "admin@artizaho.com",
+            "password_hash": get_password_hash("admin123"),
+            "name": "Admin User",
+            "role": UserRole.ADMIN.value,
+            "is_active": True,
+            "is_email_verified": True
+        }
+    )
+    
+    db_session.commit()
+    
+    # Récupérer l'admin créé
+    admin = db_session.query(User).filter(User.id == str(admin_id)).first()
+    if not admin:
+        try:
+            admin = db_session.query(User).filter(User.id == admin_id).first()
+        except:
+            pass
+    
+    return admin
+
+
+@pytest.fixture
+def admin_token(client: TestClient, admin_user: User) -> str:
+    """Crée un token d'authentification pour un admin"""
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "admin@artizaho.com",
+            "password": "admin123"
+        }
+    )
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    return token
+
+
+@pytest.fixture
+def artisan_user(db_session: Session) -> User:
+    """Crée un utilisateur artisan pour les tests"""
+    from sqlalchemy import text
+    import json
+    
+    artisan_id = uuid.uuid4()
+    profile_id = uuid.uuid4()
+    
+    # Créer l'artisan avec SQL brut
+    db_session.execute(
+        text("""
+            INSERT INTO users (id, email, password_hash, name, role, is_active, is_email_verified, created_at, updated_at)
+            VALUES (:id, :email, :password_hash, :name, :role, :is_active, :is_email_verified, datetime('now'), datetime('now'))
+        """),
+        {
+            "id": str(artisan_id),
+            "email": "artisan@test.com",
+            "password_hash": get_password_hash("artisan123"),
+            "name": "Test Artisan",
+            "role": UserRole.ARTISAN.value,
+            "is_active": True,
+            "is_email_verified": True
+        }
+    )
+    
+    # Créer le profil artisan
+    db_session.execute(
+        text("""
+            INSERT INTO artisan_profiles (id, user_id, company_name, main_specialty, activity_description, status, created_at, updated_at)
+            VALUES (:id, :user_id, :company_name, :main_specialty, :activity_description, :status, datetime('now'), datetime('now'))
+        """),
+        {
+            "id": str(profile_id),
+            "user_id": str(artisan_id),
+            "company_name": "Test Artisan Co",
+            "main_specialty": "Sculpture",
+            "activity_description": "Test artisan description",
+            "status": ProfileStatus.PUBLISHED.value
+        }
+    )
+    
+    db_session.commit()
+    
+    # Récupérer l'artisan créé
+    artisan = db_session.query(User).filter(User.id == str(artisan_id)).first()
+    if not artisan:
+        try:
+            artisan = db_session.query(User).filter(User.id == artisan_id).first()
+        except:
+            pass
+    
+    return artisan
+
+
+@pytest.fixture
+def artisan_token(client: TestClient, artisan_user: User) -> str:
+    """Crée un token d'authentification pour un artisan"""
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "artisan@test.com",
+            "password": "artisan123"
+        }
+    )
+    assert response.status_code == 200
+    token = response.json()["access_token"]
+    return token
+

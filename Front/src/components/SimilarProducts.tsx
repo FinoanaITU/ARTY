@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -13,6 +15,7 @@ interface SimilarProductsProps {
 }
 
 const SimilarProducts = ({ currentProductId, category }: SimilarProductsProps) => {
+  const { language } = useLanguage();
   const [similarProducts, setSimilarProducts] = useState<ProductListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -93,7 +96,7 @@ const SimilarProducts = ({ currentProductId, category }: SimilarProductsProps) =
             <CardContent>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xl font-bold text-orange-600">
-                  {product.price.toLocaleString('fr-FR')} Ar
+                  {formatCurrency(product.price, language)}
                 </span>
                 {product.stock > 0 ? (
                   <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">

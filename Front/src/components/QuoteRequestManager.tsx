@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +25,7 @@ export const QuoteRequestManager: React.FC<QuoteRequestManagerProps> = ({
   quoteRequests,
   onUpdateQuoteRequest
 }) => {
+  const { language } = useLanguage();
   const [selectedRequest, setSelectedRequest] = useState<QuoteRequest | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -149,7 +152,7 @@ export const QuoteRequestManager: React.FC<QuoteRequestManagerProps> = ({
                     </TableCell>
                     <TableCell>{request.eventDetails.participants}</TableCell>
                     <TableCell>
-                      {request.estimatedPrice ? `${request.estimatedPrice.toLocaleString()} Ar` : '-'}
+                      {request.estimatedPrice ? formatCurrency(request.estimatedPrice, language) : '-'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
@@ -279,7 +282,7 @@ export const QuoteRequestManager: React.FC<QuoteRequestManagerProps> = ({
           
           <div className="space-y-4">
             <div>
-              <Label htmlFor="finalPrice">Prix final (Ar) *</Label>
+              <Label htmlFor="finalPrice">Prix final ({language === 'fr' ? '€' : 'Ar'}) *</Label>
               <Input
                 id="finalPrice"
                 type="number"

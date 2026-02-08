@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +23,7 @@ interface BulkOrderFormProps {
 }
 
 const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
+  const { language } = useLanguage();
   const [quantity, setQuantity] = useState<number | string>(product.minBulkQuantity || 5);
   const [loading, setLoading] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
@@ -143,26 +145,26 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Prix unitaire de base:</span>
-                    <span className="font-medium">{product.price.toLocaleString('fr-FR')} Ar</span>
+                    <span className="font-medium">{formatCurrency(product.price, language)}</span>
                   </div>
                   {discountPercentage > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Remise ({discountPercentage.toFixed(0)}%):</span>
-                      <span className="font-medium">-{discountAmount.toLocaleString('fr-FR')} Ar</span>
+                      <span className="font-medium">-{formatCurrency(discountAmount, language)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span>Prix unitaire (avec remise):</span>
-                    <span className="font-medium">{unitPrice.toLocaleString('fr-FR')} Ar</span>
+                    <span className="font-medium">{formatCurrency(unitPrice, language)}</span>
                   </div>
                   <div className="flex justify-between border-t pt-2 mt-2">
                     <span className="font-semibold">Prix total:</span>
-                    <span className="font-bold text-lg">{totalPrice.toLocaleString('fr-FR')} Ar</span>
+                    <span className="font-bold text-lg">{formatCurrency(totalPrice, language)}</span>
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Économies totales:</span>
-                      <span className="font-medium">-{discountAmount.toLocaleString('fr-FR')} Ar</span>
+                      <span className="font-medium">-{formatCurrency(discountAmount, language)}</span>
                     </div>
                   )}
                 </div>

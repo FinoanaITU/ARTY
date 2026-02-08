@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Edit, Trash2, Calendar as CalendarIcon, Eye } from 'lucide-react';
 import { Workshop, WorkshopFormData } from '@/types/workshop';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
@@ -45,6 +47,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
   onUpdateWorkshop,
   onDeleteWorkshop
 }) => {
+  const { language } = useLanguage();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingWorkshop, setEditingWorkshop] = useState<Workshop | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -328,7 +331,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="basePrice">Prix local (Ar)</Label>
+                    <Label htmlFor="basePrice">Prix local ({language === 'fr' ? '€' : 'Ar'})</Label>
                     <Input
                       id="basePrice"
                       type="number"
@@ -340,7 +343,7 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="foreignPrice">Prix étranger (Ar)</Label>
+                    <Label htmlFor="foreignPrice">Prix étranger ({language === 'fr' ? '€' : 'Ar'})</Label>
                     <Input
                       id="foreignPrice"
                       type="number"
@@ -552,7 +555,9 @@ export const WorkshopManager: React.FC<WorkshopManagerProps> = ({
                     <TableCell>
                       {workshop.date ? format(workshop.date, 'dd/MM/yyyy') : '-'}
                     </TableCell>
-                    <TableCell>{workshop.basePrice.toLocaleString()} Ar</TableCell>
+                    <TableCell>
+                      {formatCurrency(workshop.basePrice, language)}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                     </TableCell>

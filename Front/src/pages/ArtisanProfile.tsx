@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { useCart } from '@/contexts/CartContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import apiService from '@/services/api';
 
 const ArtisanProfile = () => {
   const { id } = useParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { addItem } = useCart();
   const [activeTab, setActiveTab] = useState('products');
   const [artisan, setArtisan] = useState<any>(null);
@@ -224,7 +225,7 @@ const ArtisanProfile = () => {
                         <CardContent>
                           <div className="flex justify-between items-center mb-4">
                             <span className="text-xl font-bold text-orange-600">
-                              {product.price.toLocaleString()} Ar
+                              {formatCurrency(product.price, language)}
                             </span>
                             <span className={`px-2 py-1 rounded-full text-xs ${
                               inStock 

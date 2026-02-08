@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { useCart } from '@/contexts/CartContext';
 import { useUser } from '@/contexts/UserContext';
 import Navigation from '@/components/Navigation';
@@ -22,7 +23,7 @@ import type { ProductOut } from '@/types/product';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { addItem } = useCart();
   const { user, isLoggedIn } = useUser();
   const navigate = useNavigate();
@@ -208,7 +209,7 @@ const ProductDetail = () => {
                 <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200 mb-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-orange-600">
-                      {product.price.toLocaleString('fr-FR')} Ar
+                      {formatCurrency(product.price, language)}
                     </div>
                   </div>
                 </div>

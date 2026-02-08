@@ -36,6 +36,26 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.models.validation import ArtisanValidation, ValidationType, ValidationStatus
+except ImportError:
+    pass
+
+try:
+    from app.models.payment import PaymentTracking, PaymentTrackingHistory, ArtisanPayout
+except ImportError:
+    pass
+
+try:
+    from app.models.quote import Quote
+except ImportError:
+    pass
+
+try:
+    from app.models.subscription import Subscription, SubscriptionHistory, SubscriptionPlan, SubscriptionStatus
+except ImportError:
+    pass
+
 __all__ = [
     "BaseModel",
     "User",
@@ -43,4 +63,9 @@ __all__ = [
     "ArtisanPhoto",
     "UserSession",
     "SocialAccount",
+    "ArtisanValidation",
+    "PaymentTracking",
+    "PaymentTrackingHistory",
+    "ArtisanPayout",
+    "Quote",
 ]

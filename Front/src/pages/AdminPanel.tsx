@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,99 +9,301 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QuoteRequestManager } from '@/components/QuoteRequestManager';
+import { QuoteManager } from '@/components/QuoteManager';
 import { SubscriptionManager } from '@/components/SubscriptionManager';
+import { AdminSubscriptionManager } from '@/components/admin/AdminSubscriptionManager';
 import { WorkshopManager } from '@/components/WorkshopManager';
 import { WorkshopCalendar } from '@/components/WorkshopCalendar';
 import { ValidationManager } from '@/components/ValidationManager';
 import { PaymentTracker, PaymentStatus } from '@/components/PaymentTracker';
+import { PayoutTracker } from '@/components/PayoutTracker';
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { toast } from '@/hooks/use-toast';
+import apiService from '@/services/api';
+import type { PaymentTrackingOut, RecordPaymentRequest, ArtisanPayoutOut, PaymentTrackingMethod } from '@/types/admin';
 
 const AdminPanel = () => {
   const { user } = useUser();
+  const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
+  const [payments, setPayments] = useState<PaymentStatus[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsError, setPaymentsError] = useState<string | null>(null);
+  const [payouts, setPayouts] = useState<ArtisanPayoutOut[]>([]);
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
+  const [payoutsError, setPayoutsError] = useState<string | null>(null);
 
-  // Mock data for admin overview - Back office Artizaho
-  const adminStats = {
-    totalProductSales: 2450000, // Ventes totales produits
-    totalWorkshopSales: 890000, // Ventes totales ateliers
-    totalArtisans: 23,
-    totalOrders: 89,
-    pendingQuotes: 7, // Devis à faire manuellement
-    activeSubscriptions: 45 // Abonnements actifs
+  // States pour les données réelles (remplace les mocks)
+  const [adminStats, setAdminStats] = useState({
+    totalProductSales: 0,
+    totalWorkshopSales: 0,
+    totalArtisans: 0,
+    totalOrders: 0,
+    pendingQuotes: 0,
+    activeSubscriptions: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
+
+  const [upcomingWorkshops, setUpcomingWorkshops] = useState<any[]>([]);
+  const [workshopsLoading, setWorkshopsLoading] = useState(false);
+
+  const [recentArtisans, setRecentArtisans] = useState<any[]>([]);
+  const [artisansLoading, setArtisansLoading] = useState(false);
+
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  const mapPaymentToStatus = (payment: PaymentTrackingOut): PaymentStatus => {
+    const reference = payment.type === 'workshop'
+      ? (payment.booking_number || payment.booking_id?.slice(0, 8))
+      : (payment.order_number || payment.order_id?.slice(0, 8));
+    const titlePrefix = payment.type === 'workshop' ? 'Reservation atelier' : 'Commande';
+
+    return {
+      id: payment.id,
+      type: payment.type,
+      title: reference ? `${titlePrefix} ${reference}` : titlePrefix,
+      artisanName: payment.artisan_name || payment.artisan_id,
+      artisanType: payment.artisan_type,
+      totalAmount: payment.amount_total,
+      paidAmount: payment.amount_paid,
+      remainingAmount: Math.max(0, payment.amount_total - payment.amount_paid),
+      paymentStatus: payment.payment_status,
+      paymentMethod: payment.payment_method,
+      clientName: payment.user_name || payment.user_id,
+      bookingDate: new Date(payment.created_at),
+      workshopDate: undefined,
+      paymentHistory: [],
+      notes: undefined
+    };
   };
 
-  // Mock data for upcoming workshops calendar
-  const upcomingWorkshops = [
-    {
-      id: '1',
-      title: 'Sculpture sur bois traditionnel',
-      date: new Date('2024-06-15'),
-      time: '14h00-17h00',
-      artisan: 'Hery Rakoto',
-      type: 'artizaho' as const,
-      participants: 8,
-      maxParticipants: 12
-    },
-    {
-      id: '2',
-      title: 'Poterie Malagasy',
-      date: new Date('2024-06-18'),
-      time: '10h00-13h00',
-      artisan: 'Voahangy Razafy',
-      type: 'uber' as const,
-      participants: 5,
-      maxParticipants: 10
-    },
-    {
-      id: '3',
-      title: 'Atelier Bijouterie',
-      date: new Date('2024-06-20'),
-      time: '15h00-18h00',
-      artisan: 'Fidy Andrianaivoson',
-      type: 'artizaho' as const,
-      participants: 10,
-      maxParticipants: 15
+  const loadPayments = async () => {
+    setPaymentsLoading(true);
+    try {
+      const response = await apiService.getAdminPayments();
+      setPayments(response.items.map(mapPaymentToStatus));
+      setPaymentsError(null);
+    } catch (error) {
+      setPaymentsError('Impossible de charger les paiements.');
+      setPayments([]);
+    } finally {
+      setPaymentsLoading(false);
     }
-  ];
+  };
 
-  const recentArtisans = [
-    {
-      id: 1,
-      name: 'Naina Rasoarivelo',
-      specialty: 'Poterie',
-      location: 'Toliara',
-      joinDate: '2024-05-20',
-      status: 'pending'
-    },
-    {
-      id: 2,
-      name: 'Fidy Andrianaivoson',
-      specialty: 'Bijouterie',
-      location: 'Mahajanga',
-      joinDate: '2024-05-18',
-      status: 'approved'
+  const handleRecordPayment = async (paymentId: string, payload: RecordPaymentRequest) => {
+    try {
+      await apiService.recordAdminPayment(paymentId, payload);
+      toast({
+        title: 'Paiement enregistré',
+        description: 'Le paiement a été enregistré avec succès.'
+      });
+      await loadPayments();
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'enregistrer le paiement.',
+        variant: 'destructive'
+      });
     }
-  ];
+  };
 
-  const recentOrders = [
-    {
-      id: 1,
-      buyer: 'Marie Dubois',
-      artisan: 'Hery Rakoto',
-      amount: 45000,
-      date: '2024-05-25',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      buyer: 'Jean Martin',
-      artisan: 'Voahangy Razafy',
-      amount: 65000,
-      date: '2024-05-24',
-      status: 'processing'
+  const loadPayouts = async () => {
+    setPayoutsLoading(true);
+    try {
+      const response = await apiService.getAdminPendingPayouts();
+      setPayouts(response.items);
+      setPayoutsError(null);
+    } catch (error) {
+      setPayoutsError('Impossible de charger les payouts.');
+      setPayouts([]);
+    } finally {
+      setPayoutsLoading(false);
     }
-  ];
+  };
+
+  const handleMarkPayoutPaid = async (
+    payoutId: string, 
+    payment_method: PaymentTrackingMethod, 
+    transaction_ref?: string, 
+    notes?: string
+  ) => {
+    try {
+      await apiService.markAdminPayoutPaid(payoutId, {
+        payment_method,
+        payment_ref: transaction_ref,
+        notes
+      });
+      toast({
+        title: 'Payout marqué comme payé',
+        description: 'Le payout a été enregistré avec succès.'
+      });
+      await loadPayouts();
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de marquer le payout comme payé.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Chargement des stats globales
+  const loadAdminStats = async () => {
+    try {
+      setStatsLoading(true);
+      setStatsError(null);
+
+      const [overview, revenue, artisansData, quotesData, subscriptionsData] = await Promise.all([
+        apiService.getAdminPlatformOverview().catch(() => ({ total_orders: 0 })),
+        apiService.getAdminRevenueStats('month').catch(() => ({ total_product_revenue: 0, total_workshop_revenue: 0 })),
+        apiService.getAdminArtisanStats().catch(() => ({ total_artisans: 0 })),
+        apiService.getQuoteStats().catch(() => ({ pending_count: 0 })),
+        apiService.getSubscriptionsOverview().catch(() => ({ total_active: 0 }))
+      ]);
+
+      setAdminStats({
+        totalProductSales: revenue.total_product_revenue || 0,
+        totalWorkshopSales: revenue.total_workshop_revenue || 0,
+        totalArtisans: artisansData.total_artisans || 0,
+        totalOrders: overview.total_orders || 0,
+        pendingQuotes: quotesData.pending_count || 0,
+        activeSubscriptions: subscriptionsData.total_active || 0
+      });
+    } catch (error) {
+      console.error('Erreur chargement stats:', error);
+      setStatsError('Impossible de charger les statistiques');
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Chargement des ateliers à venir
+  const loadUpcomingWorkshops = async () => {
+    try {
+      setWorkshopsLoading(true);
+      const response = await apiService.getWorkshops({
+        skip: 0,
+        limit: 10,
+        status: 'published'
+      });
+
+      // Transformer et filtrer pour obtenir les 3 prochains ateliers
+      const now = new Date();
+      const items = response.items || [];
+      const workshops = items
+        .filter((ws: any) => ws.start_date && new Date(ws.start_date) > now)
+        .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+        .slice(0, 3)
+        .map((ws: any) => {
+          const startDate = new Date(ws.start_date);
+          const endDate = ws.end_date ? new Date(ws.end_date) : startDate;
+          
+          return {
+            id: ws.id,
+            title: ws.title,
+            date: startDate,
+            time: `${startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}-${endDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+            artisan: ws.artisan_name || 'N/A',
+            type: 'artizaho' as const,
+            participants: ws.current_bookings || 0,
+            maxParticipants: ws.max_participants || 0
+          };
+        });
+
+      setUpcomingWorkshops(workshops);
+    } catch (error) {
+      console.error('Erreur chargement ateliers:', error);
+      setUpcomingWorkshops([]);
+    } finally {
+      setWorkshopsLoading(false);
+    }
+  };
+
+  // Chargement des artisans
+  const loadArtisans = async () => {
+    try {
+      setArtisansLoading(true);
+      // Note: Pas d'endpoint /users pour lister les utilisateurs
+      // On utilise les données analytics pour l'instant
+      const artisansData = await apiService.getAdminArtisanStats();
+      
+      // Pour l'instant, on affiche un message indiquant le nombre total
+      // En attendant un vrai endpoint de listing
+      setRecentArtisans([
+        {
+          id: 'summary',
+          name: `${artisansData.total_artisans || 0} artisans inscrits`,
+          specialty: 'Utilisez l\'onglet Analytiques pour plus de détails',
+          location: 'Madagascar',
+          joinDate: new Date().toISOString().split('T')[0],
+          status: 'info',
+          email: '',
+          avatar: ''
+        }
+      ]);
+    } catch (error) {
+      console.error('Erreur chargement artisans:', error);
+      setRecentArtisans([]);
+    } finally {
+      setArtisansLoading(false);
+    }
+  };
+
+  // Chargement des commandes
+  const loadOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      const response = await apiService.getOrders({
+        page: 1,
+        limit: 10
+      });
+
+      const items = response.items || [];
+      const orders = items.map((order: any) => ({
+        id: order.id,
+        buyer: order.user_name || 'N/A',
+        artisan: 'N/A', // Les items contiennent l'artisan, pas la commande directement
+        amount: order.total_amount || 0,
+        date: order.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        status: order.status || 'pending',
+        orderNumber: order.order_number
+      }));
+
+      setRecentOrders(orders);
+    } catch (error) {
+      console.error('Erreur chargement commandes:', error);
+      setRecentOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  // Handlers pour les actions artisans
+  const handleViewArtisanProfile = (artisanId: string) => {
+    window.location.href = `/artisans/${artisanId}`;
+  };
+
+  const handleManageArtisanProducts = (artisanId: string) => {
+    // Future: navigate to admin products page filtered by artisan
+    toast({
+      title: 'Fonction à venir',
+      description: 'Gestion des produits artisan en cours de développement'
+    });
+  };
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      loadPayments();
+      loadPayouts();
+      loadAdminStats();
+      loadUpcomingWorkshops();
+      loadArtisans();
+      loadOrders();
+    }
+  }, [user?.role]);
 
   if (!user || user.role !== 'admin') {
     return (
@@ -139,62 +343,76 @@ const AdminPanel = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {adminStats.totalProductSales.toLocaleString()} Ar
-                </div>
-                <p className="text-sm text-gray-600">Ventes Produits</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {adminStats.totalWorkshopSales.toLocaleString()} Ar
-                </div>
-                <p className="text-sm text-gray-600">Ventes Ateliers</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {adminStats.totalArtisans}
-                </div>
-                <p className="text-sm text-gray-600">Artisans</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {adminStats.totalOrders}
-                </div>
-                <p className="text-sm text-gray-600">Commandes</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">
-                  {adminStats.pendingQuotes}
-                </div>
-                <p className="text-sm text-gray-600">Devis en attente</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {adminStats.activeSubscriptions}
-                </div>
-                <p className="text-sm text-gray-600">Abonnements</p>
-              </CardContent>
-            </Card>
-          </div>
+          {statsLoading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Chargement des statistiques...</p>
+            </div>
+          ) : statsError ? (
+            <div className="text-center py-8">
+              <p className="text-red-600">{statsError}</p>
+              <Button onClick={loadAdminStats} variant="outline" className="mt-4">
+                Réessayer
+              </Button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(adminStats.totalProductSales, language)}
+                  </div>
+                  <p className="text-sm text-gray-600">Ventes Produits</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(adminStats.totalWorkshopSales, language)}
+                  </div>
+                  <p className="text-sm text-gray-600">Ventes Ateliers</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {adminStats.totalArtisans}
+                  </div>
+                  <p className="text-sm text-gray-600">Artisans</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {adminStats.totalOrders}
+                  </div>
+                  <p className="text-sm text-gray-600">Commandes</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-red-600">
+                    {adminStats.pendingQuotes}
+                  </div>
+                  <p className="text-sm text-gray-600">Devis en attente</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {adminStats.activeSubscriptions}
+                  </div>
+                  <p className="text-sm text-gray-600">Abonnements</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 mb-6">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6">
               <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
               <TabsTrigger value="artisans">Artisans</TabsTrigger>
               <TabsTrigger value="orders">Commandes & Ateliers</TabsTrigger>
+              <TabsTrigger value="payouts">Payouts</TabsTrigger>
               <TabsTrigger value="validation">Validation</TabsTrigger>
               <TabsTrigger value="quotes">Devis manuels</TabsTrigger>
               <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
@@ -203,39 +421,23 @@ const AdminPanel = () => {
 
             <TabsContent value="overview">
               <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <Card>
+                {/* Section Activité récente commentée - en attente d'un endpoint API */}
+                {/* <Card>
                   <CardHeader>
                     <CardTitle>Activité récente</CardTitle>
                     <CardDescription>Les dernières actions sur la plateforme</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                        <span className="text-sm">Atelier Artizaho réservé</span>
-                        <Badge variant="secondary">Il y a 1h</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                        <span className="text-sm">Nouvel abonnement Premium</span>
-                        <Badge variant="secondary">Il y a 2h</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                        <span className="text-sm">Devis manuel demandé</span>
-                        <Badge variant="secondary">Il y a 3h</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                        <span className="text-sm">Inscription atelier validée</span>
-                        <Badge variant="secondary">Il y a 4h</Badge>
-                      </div>
-                    </div>
+                    <p className="text-gray-500 text-sm">Fonctionnalité en cours de développement</p>
                   </CardContent>
-                </Card>
+                </Card> */}
 
-                <Card>
+                <Card className="md:col-span-2">
                   <CardHeader>
                     <CardTitle>Actions rapides</CardTitle>
                     <CardDescription>Raccourcis vers les tâches courantes</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="grid md:grid-cols-2 gap-3">
                     <Button 
                       className="w-full justify-start"
                       onClick={() => setActiveTab('quotes')}
@@ -245,16 +447,16 @@ const AdminPanel = () => {
                     <Button 
                       className="w-full justify-start" 
                       variant="outline"
-                      onClick={() => setActiveTab('workshops')}
+                      onClick={() => setActiveTab('orders')}
                     >
-                      Gérer les ateliers Artizaho
+                      Suivre les commandes ({adminStats.totalOrders})
                     </Button>
                     <Button 
                       className="w-full justify-start" 
                       variant="outline"
-                      onClick={() => setActiveTab('orders')}
+                      onClick={() => setActiveTab('artisans')}
                     >
-                      Suivre les commandes
+                      Gérer les artisans ({adminStats.totalArtisans})
                     </Button>
                     <Button 
                       className="w-full justify-start" 
@@ -280,29 +482,47 @@ const AdminPanel = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentArtisans.map((artisan) => (
-                      <div key={artisan.id} className="flex justify-between items-center p-4 border rounded-lg">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{artisan.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {artisan.specialty} - {artisan.location}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Inscrit le {new Date(artisan.joinDate).toLocaleDateString('fr-FR')}
-                          </p>
+                  {artisansLoading ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">Chargement des artisans...</p>
+                    </div>
+                  ) : recentArtisans.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">Aucun artisan trouvé</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentArtisans.map((artisan) => (
+                        <div key={artisan.id} className="flex justify-between items-center p-4 border rounded-lg">
+                          <div>
+                            <h3 className="font-medium text-gray-900">{artisan.name}</h3>
+                            <p className="text-sm text-gray-600">
+                              {artisan.specialty} - {artisan.location}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Inscrit le {new Date(artisan.joinDate).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewArtisanProfile(artisan.id)}
+                            >
+                              Voir profil
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleManageArtisanProducts(artisan.id)}
+                            >
+                              Gérer produits
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            Voir profil
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            Gérer produits
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -324,288 +544,92 @@ const AdminPanel = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
-                          {recentOrders.map((order) => (
-                            <div key={order.id} className="flex justify-between items-center p-4 border rounded-lg">
-                              <div>
-                                <h3 className="font-medium text-gray-900">Commande #{order.id}</h3>
-                                <p className="text-sm text-gray-600">
-                                  {order.buyer} → {order.artisan}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {new Date(order.date).toLocaleDateString('fr-FR')}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-medium text-orange-600 mb-1">
-                                  {order.amount.toLocaleString()} Ar
+                        {ordersLoading ? (
+                          <div className="text-center py-8">
+                            <p className="text-gray-600">Chargement des commandes...</p>
+                          </div>
+                        ) : recentOrders.length === 0 ? (
+                          <div className="text-center py-8">
+                            <p className="text-gray-500">Aucune commande trouvée</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {recentOrders.map((order) => (
+                              <div key={order.id} className="flex justify-between items-center p-4 border rounded-lg">
+                                <div>
+                                  <h3 className="font-medium text-gray-900">
+                                    Commande #{order.orderNumber || order.id.toString().slice(0, 8)}
+                                  </h3>
+                                  <p className="text-sm text-gray-600">
+                                    {order.buyer} → {order.artisan}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(order.date).toLocaleDateString('fr-FR')}
+                                  </p>
                                 </div>
-                                <span className={`px-2 py-1 rounded-full text-xs ${
-                                  order.status === 'completed' 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : 'bg-orange-100 text-orange-700'
-                                }`}>
-                                  {order.status === 'completed' ? 'Terminé' : 'En cours'}
-                                </span>
+                                <div className="text-right">
+                                  <div className="font-medium text-orange-600 mb-1">
+                                    {formatCurrency(order.amount, language)}
+                                  </div>
+                                  <span className={`px-2 py-1 rounded-full text-xs ${
+                                    order.status === 'completed' 
+                                      ? 'bg-green-100 text-green-700' 
+                                      : order.status === 'processing'
+                                      ? 'bg-orange-100 text-orange-700'
+                                      : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    {order.status === 'completed' ? 'Terminé' : 
+                                     order.status === 'processing' ? 'En cours' : 
+                                     order.status}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </TabsContent>
 
                   <TabsContent value="workshop-bookings" className="mt-6">
-                    <PaymentTracker 
-                      payments={[
-                        {
-                          id: 'pay1',
-                          type: 'workshop',
-                          title: 'Sculpture sur bois traditionnel',
-                          artisanName: 'Hery Rakoto',
-                          artisanType: 'artizaho',
-                          totalAmount: 65000,
-                          paidAmount: 32500,
-                          remainingAmount: 32500,
-                          paymentStatus: 'partial',
-                          clientName: 'Marie Dupont',
-                          bookingDate: new Date('2024-06-10'),
-                          workshopDate: new Date('2024-06-15'),
-                          paymentHistory: [
-                            {
-                              date: new Date('2024-06-10'),
-                              amount: 32500,
-                              method: 'Mobile Money',
-                              note: 'Acompte 50% à la réservation'
-                            }
-                          ],
-                          notes: 'Reste 50% à récupérer à la fin de l\'atelier'
-                        },
-                        {
-                          id: 'pay2',
-                          type: 'workshop',
-                          title: 'Poterie Malagasy',
-                          artisanName: 'Voahangy Razafy',
-                          artisanType: 'uber',
-                          totalAmount: 45000,
-                          paidAmount: 0,
-                          remainingAmount: 45000,
-                          paymentStatus: 'unpaid',
-                          clientName: 'Jean Martin',
-                          bookingDate: new Date('2024-06-12'),
-                          workshopDate: new Date('2024-06-18'),
-                          paymentHistory: []
-                        },
-                        {
-                          id: 'pay3',
-                          type: 'workshop',
-                          title: 'Bijouterie traditionnelle',
-                          artisanName: 'Fidy Andrianaivoson',
-                          artisanType: 'artizaho',
-                          totalAmount: 85000,
-                          paidAmount: 42500,
-                          remainingAmount: 42500,
-                          paymentStatus: 'pending_collection',
-                          clientName: 'Sophie Rakotozafy',
-                          bookingDate: new Date('2024-06-08'),
-                          workshopDate: new Date('2024-06-20'),
-                          paymentHistory: [
-                            {
-                              date: new Date('2024-06-08'),
-                              amount: 42500,
-                              method: 'Espèces',
-                              note: 'Acompte 50% - reste à la fin de l\'atelier'
-                            }
-                          ]
-                        },
-                        {
-                          id: 'pay4',
-                          type: 'product',
-                          title: 'Commande Masques traditionnels',
-                          artisanName: 'Hery Rakoto',
-                          artisanType: 'artizaho',
-                          totalAmount: 120000,
-                          paidAmount: 120000,
-                          remainingAmount: 0,
-                          paymentStatus: 'paid',
-                          clientName: 'Hotel Sakamanga',
-                          bookingDate: new Date('2024-06-05'),
-                          paymentHistory: [
-                            {
-                              date: new Date('2024-06-05'),
-                              amount: 60000,
-                              method: 'Virement bancaire',
-                              note: 'Acompte 50%'
-                            },
-                            {
-                              date: new Date('2024-06-15'),
-                              amount: 60000,
-                              method: 'Virement bancaire',
-                              note: 'Solde à la livraison'
-                            }
-                          ]
-                        }
-                      ]}
-                      onUpdatePayment={(id, updates) => {
-                        console.log('Payment updated:', id, updates);
-                        toast({
-                          title: "Paiement mis à jour",
-                          description: "Le statut de paiement a été mis à jour avec succès"
-                        });
-                      }}
+                    {paymentsError && (
+                      <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        {paymentsError}
+                      </div>
+                    )}
+                    <PaymentTracker
+                      payments={payments}
+                      isLoading={paymentsLoading}
+                      onRecordPayment={handleRecordPayment}
                     />
                   </TabsContent>
                 </Tabs>
               </div>
             </TabsContent>
 
+            <TabsContent value="payouts">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Gestion des Payouts Artisans</h2>
+                  <Badge variant="secondary">
+                    {payouts.filter(p => p.status === 'pending').length} en attente
+                  </Badge>
+                </div>
+                {payoutsError && (
+                  <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {payoutsError}
+                  </div>
+                )}
+                <PayoutTracker
+                  payouts={payouts}
+                  isLoading={payoutsLoading}
+                  onMarkPaid={handleMarkPayoutPaid}
+                />
+              </div>
+            </TabsContent>
+
             <TabsContent value="validation">
-              <ValidationManager 
-                pendingProducts={[
-                  {
-                    id: 'p1',
-                    name: 'Masque tribal Sakalava',
-                    description: 'Masque traditionnel sculpté dans du bois de palissandre',
-                    category: 'Sculpture',
-                    price: 55000,
-                    images: [],
-                    materials: ['Bois de palissandre', 'Pigments naturels'],
-                    availableColors: ['Naturel', 'Brun foncé'],
-                    stock: 3,
-                    customizable: false,
-                    productionTime: 7,
-                    status: 'pending_approval',
-                    artisanId: 'artisan-1',
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    adminNotes: 'Vérifier l\'authenticité du design'
-                  },
-                  {
-                    id: 'p2',
-                    name: 'Panier en raphia',
-                    description: 'Panier tissé à la main avec raphia naturel',
-                    category: 'Vannerie',
-                    price: 25000,
-                    images: [],
-                    materials: ['Raphia', 'Fibres naturelles'],
-                    availableColors: ['Naturel', 'Beige clair', 'Marron'],
-                    stock: 8,
-                    customizable: true,
-                    productionTime: 3,
-                    status: 'pending_approval',
-                    artisanId: 'artisan-2',
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                  }
-                ]}
-                pendingWorkshops={[
-                  {
-                    id: 'w1',
-                    title: 'Initiation à la sculpture sur bois',
-                    description: 'Apprenez les bases de la sculpture traditionnelle malgache',
-                    artisanName: 'Hery Rakoto',
-                    artisanId: 'artisan-1',
-                    duration: 4,
-                    price: 35000,
-                    maxParticipants: 8,
-                    materials: ['Bois tendre', 'Outils de sculpture'],
-                    status: 'pending_approval',
-                    submittedAt: new Date()
-                  },
-                  {
-                    id: 'w2',
-                    title: 'Atelier vannerie traditionnelle',
-                    description: 'Créez votre propre panier en raphia',
-                    artisanName: 'Voahangy Razafy',
-                    artisanId: 'artisan-2',
-                    duration: 3,
-                    price: 25000,
-                    maxParticipants: 12,
-                    materials: ['Raphia', 'Colorants naturels'],
-                    status: 'pending_approval',
-                    submittedAt: new Date(),
-                    adminNotes: 'Matériaux à vérifier'
-                  }
-                ]}
-                pendingProfiles={[
-                  {
-                    id: 'prof1',
-                    userId: 'user-1',
-                    name: 'Hery Rakoto',
-                    about: 'Artisan sculpteur traditionnel avec 15 ans d\'expérience',
-                    specialties: ['Sculpture sur bois', 'Art traditionnel'],
-                    location: {
-                      region: 'Antananarivo',
-                      city: 'Antananarivo',
-                      address: 'Lot 123 Analakely'
-                    },
-                    memberSince: new Date('2024-01-15'),
-                    experience: 'Plus de 15 ans dans l\'artisanat traditionnel malgache',
-                    artisanType: 'artizaho' as const,
-                    businessInfo: {
-                      hasExistingBrand: false,
-                      currentSalesChannels: ['Facebook', 'Marché local'],
-                      workshopExperience: 'none' as const,
-                      businessDescription: 'Je vends mes sculptures sur Facebook et au marché local. Je n\'ai jamais organisé d\'ateliers mais j\'aimerais partager mon savoir-faire.'
-                    },
-                    status: 'pending_approval' as const,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    adminNotes: 'Vérifier la qualité du portfolio'
-                  },
-                  {
-                    id: 'prof2',
-                    userId: 'user-2',
-                    name: 'Voahangy Razafy - Malagasy Craft',
-                    about: 'Marque établie spécialisée dans l\'artisanat malagasy authentique',
-                    specialties: ['Vannerie', 'Poterie', 'Textile traditionnel'],
-                    location: {
-                      region: 'Fianarantsoa',
-                      city: 'Fianarantsoa',
-                      address: 'Boutique Centre-ville'
-                    },
-                    memberSince: new Date('2024-02-01'),
-                    experience: 'Marque établie depuis 2018, reconnue pour la qualité',
-                    artisanType: 'uber' as const,
-                    businessInfo: {
-                      hasExistingBrand: true,
-                      currentSalesChannels: ['Boutique physique', 'Instagram', 'Site web', 'Exportation'],
-                      workshopExperience: 'experienced' as const,
-                      businessDescription: 'Marque établie depuis 2018, nous organisons déjà des ateliers pour touristes et locaux. Nous cherchons de nouveaux canaux de distribution.'
-                    },
-                    status: 'pending_approval' as const,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                  }
-                ]}
-                onValidateProduct={(id, action, notes) => {
-                  console.log('Product validation:', id, action, notes);
-                  toast({
-                    title: action === 'approve' ? "Produit approuvé" : "Produit rejeté",
-                    description: action === 'approve' 
-                      ? "Le produit a été publié sur la plateforme" 
-                      : "L'artisan a été notifié du rejet"
-                  });
-                }}
-                onValidateWorkshop={(id, action, notes) => {
-                  console.log('Workshop validation:', id, action, notes);
-                  toast({
-                    title: action === 'approve' ? "Atelier approuvé" : "Atelier rejeté",
-                    description: action === 'approve' 
-                      ? "L'atelier est maintenant disponible à la réservation" 
-                      : "L'artisan a été notifié du rejet"
-                  });
-                }}
-                onValidateProfile={(id, action, notes) => {
-                  console.log('Profile validation:', id, action, notes);
-                  toast({
-                    title: action === 'approve' ? "Profil artisan approuvé" : "Profil artisan rejeté",
-                    description: action === 'approve' 
-                      ? "L'artisan peut maintenant utiliser la plateforme" 
-                      : "L'artisan a été notifié du rejet avec les raisons"
-                  });
-                }}
-              />
+              <ValidationManager />
             </TabsContent>
 
             <TabsContent value="workshops">
@@ -643,77 +667,15 @@ const AdminPanel = () => {
             </TabsContent>
 
             <TabsContent value="quotes">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Devis à traiter manuellement</h2>
-                  <Badge variant="destructive">{adminStats.pendingQuotes} en attente</Badge>
-                </div>
-                <QuoteRequestManager 
-                  quoteRequests={[]}
-                  onUpdateQuoteRequest={(id, updates) => {
-                    console.log('Quote request updated:', id, updates);
-                    toast({
-                      title: "Devis mis à jour",
-                      description: "Le statut du devis a été mis à jour"
-                    });
-                  }}
-                />
-              </div>
+              <QuoteManager />
             </TabsContent>
 
             <TabsContent value="subscriptions">
-              <SubscriptionManager 
-                subscriptions={[]}
-                onUpdateSubscription={(id, updates) => {
-                  console.log('Subscription updated:', id, updates);
-                  toast({
-                    title: "Abonnement mis à jour",
-                    description: "L'abonnement a été mis à jour avec succès"
-                  });
-                }}
-                onDeleteSubscription={(id) => {
-                  console.log('Subscription deleted:', id);
-                  toast({
-                    title: "Abonnement supprimé",
-                    description: "L'abonnement a été supprimé avec succès"
-                  });
-                }}
-              />
+              <AdminSubscriptionManager />
             </TabsContent>
 
             <TabsContent value="analytics">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Analytiques de la plateforme</CardTitle>
-                  <CardDescription>Vue d'ensemble des performances</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Tendances des ventes</h4>
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <p className="text-green-800 font-medium">↗️ +15% ce mois</p>
-                        <p className="text-green-700 text-sm">Les ventes d'ateliers augmentent</p>
-                      </div>
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <p className="text-blue-800 font-medium">📊 Produits populaires</p>
-                        <p className="text-blue-700 text-sm">Masques traditionnels en tête</p>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Performance des artisans</h4>
-                      <div className="p-4 bg-orange-50 rounded-lg">
-                        <p className="text-orange-800 font-medium">🎯 Top artisan</p>
-                        <p className="text-orange-700 text-sm">Hery Rakoto - 12 ventes ce mois</p>
-                      </div>
-                      <div className="p-4 bg-purple-50 rounded-lg">
-                        <p className="text-purple-800 font-medium">⭐ Meilleure note</p>
-                        <p className="text-purple-700 text-sm">Ateliers sculpture: 4.9/5</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <AnalyticsDashboard />
             </TabsContent>
           </Tabs>
         </div>

@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, Numeric, JSON, ForeignKey, Date
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID, ArrayType
 
@@ -65,6 +66,11 @@ class Product(BaseModel):
     rating_average = Column(Numeric(3, 2), default=0)
     rating_count = Column(Integer, default=0)
     published_at = Column(DateTime)
+    
+    # Approval fields
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    approved_at = Column(DateTime, nullable=True)
+    approval_notes = Column(Text, nullable=True)
     
     # Relationships
     # Temporarily commented out relationships that cause circular dependency issues

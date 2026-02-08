@@ -1,6 +1,7 @@
 import React from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,7 +18,7 @@ import { Order, OrderUpdate } from '@/types/order';
 
 const Dashboard = () => {
   const { user } = useUser();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState('orders');
 
@@ -302,7 +303,7 @@ const Dashboard = () => {
                     Commandé le {new Date(order.date).toLocaleDateString('fr-FR')}
                   </span>
                   <span className="font-semibold text-orange-600">
-                    {order.total.toLocaleString()} Ar
+                    {formatCurrency(order.total, language)}
                   </span>
                 </div>
               </CardContent>

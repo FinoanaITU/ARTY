@@ -15,6 +15,40 @@ import type {
   BookingConfirmation,
   AvailabilityResponse
 } from '@/types/workshop';
+import type {
+  PendingValidationsResponse,
+  ValidationStats,
+  ValidationResponse,
+  PlatformOverview,
+  RevenueStats,
+  ArtisanStats,
+  ConversionStats,
+  UserBehaviorStats,
+  PaymentListResponse,
+  PaymentTrackingOut,
+  RecordPaymentRequest,
+  PayoutListResponse,
+  ArtisanPayoutOut,
+  GeneratePayoutRequest,
+  MarkPayoutPaidRequest,
+  SubscriptionOut,
+  SubscriptionListResponse,
+  SubscriptionOverviewResponse,
+  SubscriptionCancelRequest,
+  SubscriptionExtendRequest,
+  SubscriptionAddCreditsRequest,
+  SubscriptionHistoryResponse,
+  SubscriptionStatsResponse
+} from '@/types/admin';
+import type {
+  Quote,
+  QuoteRequestIn,
+  QuoteUpdateIn,
+  QuoteListResponse,
+  QuoteSummaryResponse,
+  QuoteConversionResponse,
+  QuoteStats
+} from '@/types/quote';
 
 // Base URL: prefer env var, fallback to FastAPI default '/api' (no version)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -185,6 +219,36 @@ class ApiService {
     const response = await this.api.post('/auth/refresh', { refresh_token: refreshToken });
     return response.data;
   }
+
+  /**
+   * Récupère la liste des utilisateurs avec filtres
+   * @param role - Filtre par rôle (artisan/client/admin)
+   * @param skip - Pagination
+   * @param limit - Pagination
+   */
+  // NOTE: Endpoint GET /users n'existe pas dans le backend
+  // Pour récupérer la liste des utilisateurs/artisans, utiliser:
+  // - getAdminArtisanStats() pour les statistiques artisans
+  // - getArtisan(id) pour un artisan spécifique
+  /*
+  async getUsers(params?: {
+    role?: string;
+    skip?: number;
+    limit?: number;
+    sort_by?: string;
+    order?: 'asc' | 'desc';
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.role) searchParams.append('role', params.role);
+    if (params?.skip !== undefined) searchParams.append('skip', params.skip.toString());
+    if (params?.limit !== undefined) searchParams.append('limit', params.limit.toString());
+    if (params?.sort_by) searchParams.append('sort_by', params.sort_by);
+    if (params?.order) searchParams.append('order', params.order);
+    
+    const response = await this.api.get(`/users?${searchParams.toString()}`);
+    return response.data;
+  }
+  */
 
   async logout() {
     try {
@@ -696,6 +760,436 @@ class ApiService {
     documents?: any;
   }) {
     const response = await this.api.put('/users/me/artisan', data);
+    return response.data;
+  }
+
+  // ===== ADMIN VALIDATION ENDPOINTS =====
+  
+  /**
+   * Récupère la liste des validations en attente
+   * @param validationType - Type de validation (profile/product/workshop/all)
+   * @param skip - Nombre d'items à sauter pour la pagination
+   * @param limit - Nombre d'items à retourner
+   */
+  async getAdminPendingValidations(
+    validationType?: string,
+    skip: number = 0,
+    limit: number = 50
+  ) {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    
+    if (validationType) {
+      params.append('validation_type', validationType);
+    }
+    
+    const response = await this.api.get(`/admin/validations/pending?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Valider un profil artisan (approve/reject)
+   * @param artisanId - ID de l'artisan
+   * @param action - Action (approve/reject)
+   * @param notes - Notes optionnelles de l'administrateur
+   */
+  async validateArtisanProfile(
+    artisanId: string,
+    action: 'approve' | 'reject',
+    notes?: string
+  ) {
+    const response = await this.api.post(
+      `/admin/validations/artisan/${artisanId}`,
+      { action, notes }
+    );
+    return response.data;
+  }
+
+  /**
+   * Valider un produit (approve/reject)
+   * @param productId - ID du produit
+   * @param action - Action (approve/reject)
+   * @param notes - Notes optionnelles de l'administrateur
+   */
+  async validateProduct(
+    productId: string,
+    action: 'approve' | 'reject',
+    notes?: string
+  ) {
+    const response = await this.api.post(
+      `/admin/validations/product/${productId}`,
+      { action, notes }
+    );
+    return response.data;
+  }
+
+  /**
+   * Valider un atelier (approve/reject)
+   * @param workshopId - ID de l'atelier
+   * @param action - Action (approve/reject)
+   * @param notes - Notes optionnelles de l'administrateur
+   */
+  async validateWorkshop(
+    workshopId: string,
+    action: 'approve' | 'reject',
+    notes?: string
+  ) {
+    const response = await this.api.post(
+      `/admin/validations/workshop/${workshopId}`,
+      { action, notes }
+    );
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques de validation
+   * @param period - Période (day/week/month/all)
+   */
+  async getValidationStats(period: string = 'month') {
+    const response = await this.api.get(`/admin/validations/stats?period=${period}`);
+    return response.data;
+  }
+
+  // ===== ADMIN ANALYTICS ENDPOINTS (PHASE 2) =====
+  
+  /**
+   * Récupère la vue d'ensemble de la plateforme
+   */
+  async getAdminPlatformOverview(): Promise<PlatformOverview> {
+    const response = await this.api.get('/admin/analytics/overview');
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques de revenus
+   * @param period - Période (day/week/month/year/all)
+   * @param startDate - Date de début (format: YYYY-MM-DD)
+   * @param endDate - Date de fin (format: YYYY-MM-DD)
+   */
+  async getAdminRevenueStats(
+    period: 'day' | 'week' | 'month' | 'year' | 'all' = 'month',
+    startDate?: string,
+    endDate?: string
+  ): Promise<RevenueStats> {
+    const params = new URLSearchParams({ period });
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    
+    const response = await this.api.get(`/admin/analytics/revenue?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques des artisans
+   */
+  async getAdminArtisanStats(): Promise<ArtisanStats> {
+    const response = await this.api.get('/admin/analytics/artisans');
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques de conversion
+   */
+  async getAdminConversionStats(): Promise<ConversionStats> {
+    const response = await this.api.get('/admin/analytics/conversion');
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques de comportement utilisateurs
+   */
+  async getAdminUserBehaviorStats(): Promise<UserBehaviorStats> {
+    const response = await this.api.get('/admin/analytics/users');
+    return response.data;
+  }
+
+  // ===== ADMIN PAYMENT TRACKING ENDPOINTS (PHASE 3) =====
+
+  /**
+   * Récupère la liste des paiements
+   * @param paymentStatus - Filtre par statut (unpaid/partial/paid/pending_collection)
+   * @param artisanType - Filtre par type artisan (artizaho/uber)
+   * @param skip - Pagination
+   * @param limit - Pagination
+   */
+  async getAdminPayments(
+    paymentStatus?: string,
+    artisanType?: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<PaymentListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+
+    if (paymentStatus) params.append('payment_status', paymentStatus);
+    if (artisanType) params.append('artisan_type', artisanType);
+
+    const response = await this.api.get(`/admin/payments?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Récupère un paiement par ID
+   * @param paymentId - ID du paiement
+   */
+  async getAdminPaymentById(paymentId: string): Promise<PaymentTrackingOut> {
+    const response = await this.api.get(`/admin/payments/${paymentId}`);
+    return response.data;
+  }
+
+  /**
+   * Enregistrer un paiement (total/partiel)
+   * @param paymentId - ID du paiement
+   * @param data - Détails de paiement
+   */
+  async recordAdminPayment(
+    paymentId: string,
+    data: RecordPaymentRequest
+  ): Promise<PaymentTrackingOut> {
+    const response = await this.api.post(`/admin/payments/${paymentId}/record`, data);
+    return response.data;
+  }
+
+  /**
+   * Récupère les payouts artisans en attente
+   */
+  async getAdminPendingPayouts(
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<PayoutListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    const response = await this.api.get(`/admin/payouts/pending?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Générer un payout artisan pour une période
+   */
+  async generateAdminPayout(
+    data: GeneratePayoutRequest
+  ): Promise<ArtisanPayoutOut> {
+    const response = await this.api.post('/admin/payouts/generate', data);
+    return response.data;
+  }
+
+  /**
+   * Marquer un payout comme payé
+   */
+  async markAdminPayoutPaid(
+    payoutId: string,
+    data: MarkPayoutPaidRequest
+  ): Promise<ArtisanPayoutOut> {
+    const response = await this.api.post(`/admin/payouts/${payoutId}/mark-paid`, data);
+    return response.data;
+  }
+
+  /**
+   * Historique payouts d'un artisan
+   */
+  async getAdminPayoutHistory(
+    artisanId: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<PayoutListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    const response = await this.api.get(`/admin/payouts/${artisanId}/history?${params.toString()}`);
+    return response.data;
+  }
+
+  // ===== QUOTE MANAGEMENT ENDPOINTS =====
+
+  /**
+   * Créer une demande de devis
+   */
+  async createQuoteRequest(data: QuoteRequestIn): Promise<QuoteSummaryResponse> {
+    const response = await this.api.post('/admin/quotes', data);
+    return response.data;
+  }
+
+  /**
+   * Récupérer tous les devis (admin)
+   */
+  async getAllQuotes(
+    status?: string,
+    quoteType?: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<QuoteListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    if (status) params.append('status', status);
+    if (quoteType) params.append('quote_type', quoteType);
+    
+    const response = await this.api.get(`/admin/quotes?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Récupérer mes demandes de devis (user)
+   */
+  async getMyQuotes(skip: number = 0, limit: number = 50): Promise<QuoteListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    const response = await this.api.get(`/admin/quotes/my?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Récupérer les détails d'un devis
+   */
+  async getQuoteDetails(quoteId: string): Promise<Quote> {
+    const response = await this.api.get(`/admin/quotes/${quoteId}`);
+    return response.data;
+  }
+
+  /**
+   * Mettre à jour un devis (admin: prix + notes)
+   */
+  async updateQuote(quoteId: string, data: QuoteUpdateIn): Promise<QuoteSummaryResponse> {
+    const response = await this.api.patch(`/admin/quotes/${quoteId}`, data);
+    return response.data;
+  }
+
+  /**
+   * Approuver un devis (client)
+   */
+  async approveQuote(quoteId: string): Promise<QuoteSummaryResponse> {
+    const response = await this.api.post(`/admin/quotes/${quoteId}/approve`, {});
+    return response.data;
+  }
+
+  /**
+   * Rejeter un devis (client)
+   */
+  async rejectQuote(quoteId: string): Promise<QuoteSummaryResponse> {
+    const response = await this.api.post(`/admin/quotes/${quoteId}/reject`, {});
+    return response.data;
+  }
+
+  /**
+   * Convertir un devis en commande
+   */
+  async convertQuoteToOrder(quoteId: string): Promise<QuoteConversionResponse> {
+    const response = await this.api.post(`/admin/quotes/${quoteId}/convert-to-order`, {});
+    return response.data;
+  }
+
+  /**
+   * Récupérer les statistiques des devis
+   */
+  async getQuoteStats(): Promise<QuoteStats> {
+    const response = await this.api.get('/admin/quotes/stats/overview');
+    return response.data;
+  }
+
+  // ===== SUBSCRIPTION ADMIN ENDPOINTS (PHASE 5) =====
+
+  /**
+   * Vue d'ensemble des abonnements
+   */
+  async getSubscriptionsOverview(): Promise<SubscriptionOverviewResponse> {
+    const response = await this.api.get('/admin/subscriptions/overview');
+    return response.data;
+  }
+
+  /**
+   * Liste des abonnements avec filtres
+   */
+  async getSubscriptionsList(
+    status?: string,
+    plan?: string,
+    userId?: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<SubscriptionListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    if (status) params.append('status', status);
+    if (plan) params.append('plan', plan);
+    if (userId) params.append('user_id', userId);
+    
+    const response = await this.api.get(`/admin/subscriptions/list?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Détails complets d'un abonnement
+   */
+  async getSubscriptionDetail(subscriptionId: string): Promise<SubscriptionOut> {
+    const response = await this.api.get(`/admin/subscriptions/${subscriptionId}`);
+    return response.data;
+  }
+
+  /**
+   * Annuler un abonnement (action admin)
+   */
+  async cancelSubscription(
+    subscriptionId: string,
+    data: SubscriptionCancelRequest
+  ): Promise<SubscriptionOut> {
+    const response = await this.api.post(`/admin/subscriptions/${subscriptionId}/cancel`, data);
+    return response.data;
+  }
+
+  /**
+   * Prolonger un abonnement (geste commercial)
+   */
+  async extendSubscription(
+    subscriptionId: string,
+    data: SubscriptionExtendRequest
+  ): Promise<SubscriptionOut> {
+    const response = await this.api.post(`/admin/subscriptions/${subscriptionId}/extend`, data);
+    return response.data;
+  }
+
+  /**
+   * Ajouter des crédits bonus à un abonnement
+   */
+  async addBonusCredits(
+    subscriptionId: string,
+    data: SubscriptionAddCreditsRequest
+  ): Promise<SubscriptionOut> {
+    const response = await this.api.post(`/admin/subscriptions/${subscriptionId}/add-credits`, data);
+    return response.data;
+  }
+
+  /**
+   * Historique des modifications d'un abonnement  
+   */
+  async getSubscriptionHistory(
+    subscriptionId: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<SubscriptionHistoryResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    const response = await this.api.get(`/admin/subscriptions/${subscriptionId}/history?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Statistiques détaillées des abonnements
+   */
+  async getSubscriptionStats(): Promise<SubscriptionStatsResponse> {
+    const response = await this.api.get('/admin/subscriptions/stats/detailed');
     return response.data;
   }
 

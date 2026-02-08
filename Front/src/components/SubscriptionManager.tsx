@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Eye, Edit, Trash2, Plus } from 'lucide-react';
 import { Subscription } from '@/types/workshop';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
@@ -43,6 +45,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   onUpdateSubscription,
   onDeleteSubscription
 }) => {
+  const { language } = useLanguage();
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -209,7 +212,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
                     <TableCell>
                       <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                     </TableCell>
-                    <TableCell>{subscription.price.toLocaleString()} Ar</TableCell>
+                    <TableCell>{formatCurrency(subscription.price, language)}</TableCell>
                     <TableCell>{format(subscription.startDate, 'dd/MM/yyyy')}</TableCell>
                     <TableCell>{format(subscription.endDate, 'dd/MM/yyyy')}</TableCell>
                     <TableCell>
@@ -279,7 +282,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
                   <h4 className="font-medium text-gray-900 mb-2">Détails de l'abonnement</h4>
                   <div className="space-y-1 text-sm">
                     <p><strong>Plan:</strong> {subscriptionPlans[selectedSubscription.plan].name}</p>
-                    <p><strong>Prix:</strong> {selectedSubscription.price.toLocaleString()} Ar</p>
+                    <p><strong>Prix:</strong> {formatCurrency(selectedSubscription.price, language)}</p>
                     <p><strong>Statut:</strong> <Badge variant={getStatusBadge(selectedSubscription.status).variant}>
                       {getStatusBadge(selectedSubscription.status).label}
                     </Badge></p>
