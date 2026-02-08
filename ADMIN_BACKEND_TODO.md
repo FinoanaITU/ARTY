@@ -3,7 +3,7 @@
 **Branche:** `feature/admin`  
 **Priorité:** Fonctionnalités critiques pour le back-office Artizaho  
 **Effort estimé total:** 120-150 heures (3-4 semaines)  
-**Progression:** 🟢 Phase 1 + Phase 2 + Phase 3 complétées (55% du total)
+**Progression:** � Phase 1 + Phase 2 + Phase 3 + Phase 4 complétées (73% du total)
 
 ---
 
@@ -14,7 +14,7 @@
 | Phase 1 - Validation & Approbation | ✅ Complété | 100% | 8 fév 2026 |
 | Phase 2 - Analytics Admin | ✅ Complété | 100% | 8 fév 2026 |
 | Phase 3 - Payment Tracker | ✅ Complété | 100% | 8 fév 2026 |
-| Phase 4 - Quote Manager | ⏳ À faire | 0% | - |
+| Phase 4 - Quote Manager | ✅ Complété | 100% | 8 fév 2026 |
 | Phase 5 - Subscription Admin | ⏳ À faire | 0% | - |
 | Phase 6 - Promo Code Manager | ⏳ À faire | 0% | - |
 | Phase 7 - Admin Notifications | ⏳ À faire | 0% | - |
@@ -27,7 +27,7 @@
 1. ✅ **Validation Manager** - Approbation contenus artisans ✅ **COMPLÉTÉ (8 fév 2026)**
 2. ✅ **Admin Analytics** - Statistiques plateforme ✅ **COMPLÉTÉ (8 fév 2026)**
 3. ✅ **Payment Tracker** - Suivi paiements et commissions ✅ **COMPLÉTÉ (8 fév 2026)**
-4. ⏳ **Quote Manager** - Gestion devis personnalisés
+4. ✅ **Quote Manager** - Gestion devis personnalisés ✅ **COMPLÉTÉ (8 fév 2026)**
 5. ⏳ **Subscription Admin** - Gestion abonnements
 6. ⏳ **Promo Code Manager** - Codes promotionnels
 7. ⏳ **Admin Notifications** - Système notifications
@@ -449,13 +449,14 @@
 
 ---
 
-## 📝 PHASE 4 - QUOTE MANAGER (Priorité MOYENNE)
+## 📝 PHASE 4 - QUOTE MANAGER (Priorité MOYENNE) ✅ **COMPLÉTÉE**
 **Durée estimée:** 3 jours (24h)
+**Date de complétion:** 8 février 2026
 
 ### 4.1 Modèles
-**Migration:** `create_quotes_table.py`
+**Migration:** `011_add_quotes_table.py` ✅
 
-- [ ] Table `quotes`
+- [x] Table `quotes`
   ```python
   # id, user_id, artisan_id, quote_type (workshop/product/custom),
   # title, description, quantity, client_type (particulier/entreprise),
@@ -466,30 +467,130 @@
   ```
 
 ### 4.2 Service
-**Fichier:** `Back/app/services/quote_service.py`
+**Fichier:** `Back/app/services/quote_service.py` ✅
 
-- [ ] `create_quote_request()` - Client crée demande
-- [ ] `get_all_quotes()` - Admin liste toutes demandes
-- [ ] `update_quote()` - Admin met à jour prix/notes
-- [ ] `approve_quote()` - Client approuve
-- [ ] `convert_quote_to_order()` - Convertir en commande
+- [x] `create_quote_request()` - Client crée demande
+  ```python
+  async def create_quote_request(
+      db: Session,
+      user_id: UUID,
+      quote_data: QuoteRequestIn
+  ) -> Quote
+  ```
+
+- [x] `get_all_quotes()` - Admin liste toutes demandes
+  ```python
+  async def get_all_quotes(
+      db: Session,
+      status: str = None,
+      quote_type: str = None,
+      skip: int = 0,
+      limit: int = 50
+  ) -> dict
+  ```
+
+- [x] `get_user_quotes()` - Utilisateur voit ses demandes
+  ```python
+  async def get_user_quotes(
+      db: Session,
+      user_id: UUID,
+      skip: int = 0,
+      limit: int = 50
+  ) -> dict
+  ```
+
+- [x] `get_quote_by_id()` - Récupère devis par ID
+- [x] `update_quote()` - Admin met à jour prix/notes
+- [x] `approve_quote()` - Client approuve
+- [x] `reject_quote()` - Client rejette
+- [x] `convert_quote_to_order()` - Convertir en commande
+- [x] `get_quote_stats()` - Statistiques devis
 
 ### 4.3 Endpoints
-**Fichier:** `Back/app/api/v1/endpoints/quotes.py` (nouveau)
+**Fichier:** `Back/app/api/v1/endpoints/admin.py` ✅
 
-- [ ] `POST /api/v1/quotes/request`
-- [ ] `GET /api/v1/quotes/` (user voit ses demandes)
-- [ ] `GET /api/v1/admin/quotes/` (admin voit toutes)
-- [ ] `PATCH /api/v1/admin/quotes/{quote_id}`
-- [ ] `POST /api/v1/quotes/{quote_id}/approve`
-- [ ] `POST /api/v1/quotes/{quote_id}/reject`
-- [ ] `POST /api/v1/quotes/{quote_id}/convert-to-order`
+- [x] `POST /api/v1/admin/quotes` - Créer demande
+- [x] `GET /api/v1/admin/quotes` - Admin liste toutes
+- [x] `GET /api/v1/admin/quotes/my` - Utilisateur ses demandes
+- [x] `GET /api/v1/admin/quotes/{quote_id}` - Détails devis
+- [x] `PATCH /api/v1/admin/quotes/{quote_id}` - Admin mise à jour
+- [x] `POST /api/v1/admin/quotes/{quote_id}/approve` - Client approuve
+- [x] `POST /api/v1/admin/quotes/{quote_id}/reject` - Client rejette
+- [x] `POST /api/v1/admin/quotes/{quote_id}/convert-to-order` - Convertir ordre
+- [x] `GET /api/v1/admin/quotes/stats/overview` - Stats devis
 
 ### 4.4 Tests
-- [ ] Test création quote request
-- [ ] Test admin update avec prix
-- [ ] Test conversion vers order
-- [ ] Test workflow complet
+**Fichier:** `Back/tests/test_quote_service.py` ✅
+
+- [x] Test création quote request
+- [x] Test admin update avec prix
+- [x] Test conversion vers order
+- [x] Test workflow complet
+- [x] Test validation permissions
+- [x] Test filtres et pagination
+- [x] Test statistiques
+- [x] 13 tests totaux
+
+### 📝 Notes d'implémentation Phase 4
+
+**Fichiers créés:**
+- ✅ `Back/alembic/versions/011_add_quotes_table.py` - Migration DB
+- ✅ `Back/app/models/quote.py` - Modèle Quote SQLAlchemy
+- ✅ `Back/app/services/quote_service.py` - Service complet avec 8 méthodes
+- ✅ `Back/tests/test_quote_service.py` - Tests unitaires (13 tests)
+
+**Fichiers modifiés:**
+- ✅ `Back/app/schemas/admin.py` - Ajout schemas Quote (enums + schemas)
+- ✅ `Back/app/api/v1/endpoints/admin.py` - Ajout 9 endpoints Quote
+- ✅ `Back/app/models/__init__.py` - Import du modèle Quote
+
+**Fonctionnalités implémentées:**
+1. ✅ **Création devis** - Utilisateurs créent demandes de devis personnalisées
+2. ✅ **Gestion devis admin** - Lister, filtrer, ajouter prix et notes
+3. ✅ **Workflow approbation** - Client approuve/rejette devis cotés
+4. ✅ **Conversion commande** - Convertir devis approuvé en commande
+5. ✅ **Statistiques** - Stats: totaux par statut, taux approval/conversion, valeur
+
+**Endpoints disponibles:**
+```bash
+✅ POST /api/v1/admin/quotes - Créer demande
+✅ GET /api/v1/admin/quotes - Lister toutes (avec filtres)
+✅ GET /api/v1/admin/quotes/my - Mes demandes
+✅ GET /api/v1/admin/quotes/{id} - Détails
+✅ PATCH /api/v1/admin/quotes/{id} - Mettre à jour
+✅ POST /api/v1/admin/quotes/{id}/approve - Approuver
+✅ POST /api/v1/admin/quotes/{id}/reject - Rejeter
+✅ POST /api/v1/admin/quotes/{id}/convert-to-order - Convertir
+✅ GET /api/v1/admin/quotes/stats/overview - Statistiques
+```
+
+**Base de données:**
+- ✅ Table quotes avec 20 colonnes
+- ✅ Relations avec users (requester + provider)
+- ✅ Indexes sur: status, quote_type, user_id, artisan_id, requested_at
+- ✅ Timestamps: requested_at, quoted_at, responded_at, completed_at
+
+**Tests:**
+- ✅ Tests création (user exists, email validation)
+- ✅ Tests listing (all, filter by status, filter by type)
+- ✅ Tests permissions (unauthorized, not found)
+- ✅ Tests workflow (pending → quoted → approved → completed)
+- ✅ Tests stats (totaux, taux, valeur)
+- ✅ 13 tests au total
+
+**Statuses et Workflow:**
+```
+pending → quoted → approved → completed
+              ↓
+            rejected
+```
+
+**À faire ultérieurement:**
+- [ ] Notifications aux clients lors d'une cotation
+- [ ] Notifications aux artisans pour nouvelles demandes
+- [ ] Export CSV/PDF des devis
+- [ ] Intégration avec système de paiement
+- [ ] Rappels automatiques pour devis non répondus (> 7 jours)
 
 ---
 

@@ -451,3 +451,102 @@ class CommissionCalculation(BaseModel):
     net_to_artisan: float
     artisan_type: str
 
+
+# ===== Quote Manager Schemas =====
+
+class QuoteStatus(str, Enum):
+    """Statut d'une demande de devis"""
+    PENDING = "pending"
+    QUOTED = "quoted"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    COMPLETED = "completed"
+
+
+class QuoteType(str, Enum):
+    """Type de devis"""
+    WORKSHOP = "workshop"
+    PRODUCT = "product"
+    CUSTOM = "custom"
+
+
+class ClientType(str, Enum):
+    """Type de client"""
+    PARTICULIER = "particulier"
+    ENTREPRISE = "entreprise"
+
+
+class QuoteRequestIn(BaseModel):
+    """Requête de création de devis"""
+    quote_type: QuoteType
+    title: str = Field(..., min_length=5, max_length=255)
+    description: str = Field(..., min_length=10)
+    quantity: int = Field(1, ge=1, le=1000)
+    client_type: ClientType
+    client_name: str = Field(..., min_length=2, max_length=255)
+    client_email: str = Field(..., description="Email du client")
+    client_phone: str = Field(..., min_length=7, max_length=20)
+    company_name: Optional[str] = Field(None, max_length=255)
+    
+    @field_validator("client_email")
+    @classmethod
+    def validate_email(cls, v):
+        if "@" not in v:
+            raise ValueError("Email invalide")
+        return v.lower()
+
+
+class QuoteOut(BaseModel):
+    """Réponse devis"""
+    id: UUID
+    user_id: UUID
+    artisan_id: Optional[UUID]
+    quote_type: QuoteType
+    title: str
+    description: str
+    quantity: int
+    client_type: ClientType
+    client_name: str
+    client_email: str
+    client_phone: str
+    company_name: Optional[str]
+    status: QuoteStatus
+    estimated_price: Optional[float]
+    final_price: Optional[float]
+    admin_notes: Optional[str]
+    requested_at: datetime
+    quoted_at: Optional[datetime]
+    responded_at: Optional[datetime]
+    completed_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class QuoteUpdateIn(BaseModel):
+    """Requête de mise à jour de devis (admin)"""
+    final_price: Optional[float] = Field(None, ge=0)
+    admin_notes: Optional[str] = None
+    artisan_id: Optional[UUID] = None
+
+
+class QuoteApprovalIn(BaseModel):
+    """Requête d'approbation de devis (client)"""
+    approved: bool
+
+
+class QuoteListResponse(BaseModel):
+    """Liste de devis"""
+    total: int
+    items: List[QuoteOut]
+    pending_count: int
+    quoted_count: int
+
+
+class QuoteStatusUpdate(BaseModel):
+    """Mise à jour de statut de devis"""
+    status: QuoteStatus
+    notes: Optional[str] = None
+

@@ -46,6 +46,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.models.quote import Quote
+except ImportError:
+    pass
+
 __all__ = [
     "BaseModel",
     "User",
@@ -57,4 +62,5 @@ __all__ = [
     "PaymentTracking",
     "PaymentTrackingHistory",
     "ArtisanPayout",
+    "Quote",
 ]

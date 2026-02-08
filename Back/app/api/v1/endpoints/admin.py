@@ -537,6 +537,290 @@ async def get_artisan_payout_history(
     )
 
 
+
+# ===== QUOTE MANAGER ENDPOINTS =====
+
+@router.post(
+    "/quotes",
+    response_model=dict,
+    summary="Créer une demande de devis",
+    description="Permet aux utilisateurs de créer une demande de devis personnalisée"
+)
+async def create_quote_request(
+    quote_data: dict = Body(...),
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Crée une nouvelle demande de devis.
+    
+    - **quote_type**: workshop/product/custom
+    - **title**: Titre du devis
+    - **description**: Description détaillée
+    - **quantity**: Quantité (par défaut 1)
+    - **client_type**: particulier/entreprise
+    - **client_name**: Nom du client
+    - **client_email**: Email du client
+    - **client_phone**: Téléphone du client
+    - **company_name**: Nom entreprise (optionnel)
+    """
+    from app.schemas.admin import QuoteRequestIn
+    from app.services.quote_service import QuoteService
+    
+    quote_data_obj = QuoteRequestIn(**quote_data)
+    quote = await QuoteService.create_quote_request(
+        db=db,
+        user_id=current_user.id,
+        quote_data=quote_data_obj
+    )
+    
+    return {
+        "id": str(quote.id),
+        "status": "pending",
+        "message": "Quote request created successfully"
+    }
+
+
+@router.get(
+    "/quotes",
+    summary="Lister tous les devis",
+    description="Liste tous les devis avec filtres optionnels"
+)
+async def get_all_quotes(
+    status: Optional[str] = Query(None, description="Filter by status"),
+    quote_type: Optional[str] = Query(None, description="Filter by type"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère tous les devis avec filtres optionnels.
+    
+    Paramètres:
+    - **status**: pending/quoted/approved/rejected/completed
+    - **quote_type**: workshop/product/custom
+    - **skip**: Offset pour pagination
+    - **limit**: Nombre de résultats
+    
+    Retourne:
+    - Liste paginée de devis
+    - Compte total et compteurs par statut
+    """
+    from app.services.quote_service import QuoteService
+    
+    result = await QuoteService.get_all_quotes(
+        db=db,
+        status=status,
+        quote_type=quote_type,
+        skip=skip,
+        limit=limit
+    )
+    
+    return result
+
+
+@router.get(
+    "/quotes/my",
+    summary="Mes demandes de devis",
+    description="Liste les devis de l'utilisateur actuel"
+)
+async def get_my_quotes(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère tous les devis de l'utilisateur actuel.
+    """
+    from app.services.quote_service import QuoteService
+    
+    result = await QuoteService.get_user_quotes(
+        db=db,
+        user_id=current_user.id,
+        skip=skip,
+        limit=limit
+    )
+    
+    return result
+
+
+@router.get(
+    "/quotes/{quote_id}",
+    summary="Détails d'un devis",
+    description="Récupère les détails complets d'une demande de devis"
+)
+async def get_quote_details(
+    quote_id: UUID,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les détails complets d'une demande de devis.
+    """
+    from app.services.quote_service import QuoteService
+    
+    quote = await QuoteService.get_quote_by_id(db=db, quote_id=quote_id)
+    
+    return {
+        "id": str(quote.id),
+        "user_id": str(quote.user_id),
+        "artisan_id": str(quote.artisan_id) if quote.artisan_id else None,
+        "quote_type": quote.quote_type,
+        "title": quote.title,
+        "description": quote.description,
+        "quantity": quote.quantity,
+        "client_type": quote.client_type,
+        "client_name": quote.client_name,
+        "client_email": quote.client_email,
+        "client_phone": quote.client_phone,
+        "company_name": quote.company_name,
+        "status": quote.status,
+        "estimated_price": float(quote.estimated_price) if quote.estimated_price else None,
+        "final_price": float(quote.final_price) if quote.final_price else None,
+        "admin_notes": quote.admin_notes,
+        "requested_at": quote.requested_at.isoformat(),
+        "quoted_at": quote.quoted_at.isoformat() if quote.quoted_at else None,
+        "responded_at": quote.responded_at.isoformat() if quote.responded_at else None,
+        "completed_at": quote.completed_at.isoformat() if quote.completed_at else None,
+    }
+
+
+@router.patch(
+    "/quotes/{quote_id}",
+    summary="Mettre à jour un devis",
+    description="Admin: Ajouter prix et notes au devis"
+)
+async def update_quote(
+    quote_id: UUID,
+    update_data: dict = Body(...),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Met à jour un devis avec prix et notes (action admin uniquement).
+    
+    - **final_price**: Prix final proposé (optionnel)
+    - **admin_notes**: Notes administrateur (optionnel)
+    - **artisan_id**: ID de l'artisan assigné (optionnel)
+    """
+    from app.schemas.admin import QuoteUpdateIn
+    from app.services.quote_service import QuoteService
+    
+    update_obj = QuoteUpdateIn(**update_data)
+    quote = await QuoteService.update_quote(
+        db=db,
+        quote_id=quote_id,
+        update_data=update_obj
+    )
+    
+    return {
+        "id": str(quote.id),
+        "status": quote.status,
+        "final_price": float(quote.final_price) if quote.final_price else None,
+        "message": "Quote updated successfully"
+    }
+
+
+@router.post(
+    "/quotes/{quote_id}/approve",
+    summary="Approuver un devis",
+    description="Client: Approuver un devis avant conversion en commande"
+)
+async def approve_quote(
+    quote_id: UUID,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Approuve un devis (action client uniquement).
+    Permet ensuite la conversion en commande.
+    """
+    from app.services.quote_service import QuoteService
+    
+    quote = await QuoteService.approve_quote(db=db, quote_id=quote_id)
+    
+    return {
+        "id": str(quote.id),
+        "status": quote.status,
+        "message": "Quote approved successfully"
+    }
+
+
+@router.post(
+    "/quotes/{quote_id}/reject",
+    summary="Rejeter un devis",
+    description="Client: Rejeter un devis"
+)
+async def reject_quote(
+    quote_id: UUID,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Rejette un devis (action client uniquement).
+    """
+    from app.services.quote_service import QuoteService
+    
+    quote = await QuoteService.reject_quote(db=db, quote_id=quote_id)
+    
+    return {
+        "id": str(quote.id),
+        "status": quote.status,
+        "message": "Quote rejected"
+    }
+
+
+@router.post(
+    "/quotes/{quote_id}/convert-to-order",
+    summary="Convertir devis en commande",
+    description="Convertir un devis approuvé en commande"
+)
+async def convert_quote_to_order(
+    quote_id: UUID,
+    current_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Convertit un devis approuvé en commande.
+    Retourne les données nécessaires pour créer la commande.
+    """
+    from app.services.quote_service import QuoteService
+    
+    order_data = await QuoteService.convert_quote_to_order(db=db, quote_id=quote_id)
+    
+    return {
+        **order_data,
+        "message": "Quote converted to order successfully"
+    }
+
+
+@router.get(
+    "/quotes/stats/overview",
+    summary="Statistiques des devis",
+    description="Vue d'ensemble des statistiques des demandes de devis"
+)
+async def get_quote_stats(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les statistiques complètes des devis.
+    
+    Retourne:
+    - Nombre total de devis par statut
+    - Taux d'approbation et de conversion
+    - Temps moyen de réponse
+    - Valeur totale des devis
+    """
+    from app.services.quote_service import QuoteService
+    
+    stats = await QuoteService.get_quote_stats(db=db)
+    
+    return stats
+
+
 @router.get("/")
 async def get_admin_dashboard():
     return {"message": "Admin dashboard"}
