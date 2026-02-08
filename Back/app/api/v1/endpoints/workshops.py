@@ -89,9 +89,20 @@ async def get_workshop(
     db: Session = Depends(get_db),
 ):
     """
-    Récupérer les détails d'un atelier
+    Récupérer les détails d'un atelier avec les informations de l'artisan
     """
     workshop = WorkshopService.get_workshop(db, workshop_id)
+    
+    # Enrichir les informations de l'instructeur depuis la relation artisan si vides
+    if workshop.artisan:
+        if not workshop.instructor_name:
+            workshop.instructor_name = workshop.artisan.name
+        if not workshop.instructor_image and workshop.artisan.avatar:
+            workshop.instructor_image = workshop.artisan.avatar
+        if not workshop.instructor_bio and hasattr(workshop.artisan, 'artisan_profile') and workshop.artisan.artisan_profile:
+            # Utiliser about ou activity_description depuis le profil artisan
+            workshop.instructor_bio = workshop.artisan.artisan_profile.about or workshop.artisan.artisan_profile.activity_description
+    
     return WorkshopOut.model_validate(workshop)
 
 

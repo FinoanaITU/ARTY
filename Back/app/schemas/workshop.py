@@ -300,6 +300,7 @@ class WorkshopOut(BaseModel):
     instructor_name: Optional[str] = None
     instructor_image: Optional[str] = None
     instructor_bio: Optional[str] = None
+    artisan_id: Optional[UUID] = None  # ID de l'artisan pour le lien profil
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

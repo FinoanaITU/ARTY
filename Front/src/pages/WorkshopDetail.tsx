@@ -27,6 +27,7 @@ interface WorkshopData {
   id: string | number;
   title: string;
   description: string;
+  artisan_id?: string;
   instructor_name?: string;
   instructor?: string;
   instructor_image?: string;
@@ -537,11 +538,13 @@ const WorkshopDetail = () => {
                   <p className="text-sm text-gray-600 mb-3">
                     {workshop.instructor_bio || "Artisan passionné avec plus de 15 ans d'expérience dans l'artisanat traditionnel malgache."}
                   </p>
-                  <Link to={`/artisan/1`}>
-                    <Button variant="outline" size="sm" className="w-full border-brand-brown text-brand-brown hover:bg-brand-brown hover:text-white">
-                      Voir le profil
-                    </Button>
-                  </Link>
+                  {(apiWorkshop?.artisan_id || workshop.id) && (
+                    <Link to={`/artisan/${apiWorkshop?.artisan_id || workshop.id}`}>
+                      <Button variant="outline" size="sm" className="w-full border-brand-brown text-brand-brown hover:bg-brand-brown hover:text-white">
+                        Voir le profil
+                      </Button>
+                    </Link>
+                  )}
                 </CardContent>
               </Card>
 

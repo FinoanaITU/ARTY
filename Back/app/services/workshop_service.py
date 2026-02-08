@@ -7,7 +7,7 @@ from typing import List, Optional, Dict, Tuple
 from datetime import datetime, timedelta
 from uuid import UUID
 from decimal import Decimal
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_
 
 from app.models.workshop import (
@@ -104,8 +104,10 @@ class WorkshopService:
 
     @staticmethod
     def get_workshop(db: Session, workshop_id: UUID) -> Workshop:
-        """Récupérer un atelier par ID"""
-        workshop = db.query(Workshop).filter(Workshop.id == workshop_id).first()
+        """Récupérer un atelier par ID avec les informations de l'artisan"""
+        workshop = db.query(Workshop).options(
+            joinedload(Workshop.artisan)
+        ).filter(Workshop.id == workshop_id).first()
         if not workshop:
             raise ResourceNotFound("Workshop not found")
         return workshop
