@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Body, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from datetime import date
 
@@ -23,6 +23,7 @@ from app.schemas.admin import (
     PaymentOut,
     PaymentListResponse,
     RecordPaymentRequest,
+    PaymentHistoryOut,
     ArtisanPayoutOut,
     PayoutListResponse,
     GeneratePayoutRequest,
@@ -366,6 +367,30 @@ async def get_payment_by_id(
         )
     
     return payment
+
+
+@router.get(
+    "/payments/{payment_id}/history",
+    response_model=List[PaymentHistoryOut],
+    summary="Historique d'un paiement",
+    description="Récupère l'historique des transactions pour un paiement"
+)
+async def get_payment_history(
+    payment_id: UUID,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère l'historique complet des transactions pour un paiement.
+    
+    Retourne:
+    - Liste de toutes les transactions enregistrées pour ce paiement
+    - Avec montants, méthodes, références et notes
+    """
+    return await PaymentTrackingService.get_payment_history(
+        db=db,
+        payment_id=str(payment_id)
+    )
 
 
 @router.post(

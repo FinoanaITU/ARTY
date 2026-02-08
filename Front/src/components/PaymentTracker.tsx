@@ -3,31 +3,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { DollarSign, Clock, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
+import { DollarSign, Clock, CheckCircle, Calendar } from 'lucide-react';
+import type { PaymentTrackingMethod, PaymentTrackingStatus, ArtisanType } from '@/types/admin';
 
 export interface PaymentStatus {
   id: string;
   type: 'workshop' | 'product';
   title: string;
   artisanName: string;
-  artisanType: 'artizaho' | 'uber';
+  artisanType: ArtisanType;
   totalAmount: number;
   paidAmount: number;
   remainingAmount: number;
-  paymentStatus: 'unpaid' | 'partial' | 'paid' | 'pending_collection';
-  paymentMethod?: 'cash' | 'mobile_money' | 'bank_transfer';
+  paymentStatus: PaymentTrackingStatus;
+  paymentMethod?: PaymentTrackingMethod;
   clientName: string;
   bookingDate: Date;
   workshopDate?: Date;
   paymentHistory: Array<{
     date: Date;
     amount: number;
-    method: string;
+    method: PaymentTrackingMethod | string;
     note?: string;
   }>;
   notes?: string;
@@ -35,18 +36,31 @@ export interface PaymentStatus {
 
 interface PaymentTrackerProps {
   payments: PaymentStatus[];
-  onUpdatePayment: (id: string, update: Partial<PaymentStatus>) => void;
+  onRecordPayment: (
+    id: string,
+    payload: {
+      amount: number;
+      payment_method: PaymentTrackingMethod;
+      transaction_ref?: string;
+      notes?: string;
+    }
+  ) => Promise<void> | void;
+  onUpdateStatus?: (id: string, status: PaymentTrackingStatus) => Promise<void> | void;
+  isLoading?: boolean;
 }
 
 export const PaymentTracker: React.FC<PaymentTrackerProps> = ({ 
   payments, 
-  onUpdatePayment 
+  onRecordPayment,
+  onUpdateStatus,
+  isLoading = false
 }) => {
   const [selectedPayment, setSelectedPayment] = useState<PaymentStatus | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newPaymentAmount, setNewPaymentAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentTrackingMethod | ''>('');
   const [paymentNote, setPaymentNote] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const getPaymentStatusBadge = (status: string, paidAmount: number, totalAmount: number) => {
     const percentage = (paidAmount / totalAmount) * 100;
@@ -77,45 +91,31 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
       : { label: 'Artisan Uber', color: 'bg-purple-100 text-purple-700' };
   };
 
-  const handleAddPayment = () => {
+  const handleAddPayment = async () => {
     if (!selectedPayment || !newPaymentAmount || !paymentMethod) return;
 
     const amount = parseFloat(newPaymentAmount);
-    const updatedPaidAmount = selectedPayment.paidAmount + amount;
-    const updatedRemainingAmount = selectedPayment.totalAmount - updatedPaidAmount;
-    
-    let newStatus: string = selectedPayment.paymentStatus;
-    if (updatedRemainingAmount <= 0) {
-      newStatus = 'paid';
-    } else if (updatedPaidAmount > 0) {
-      newStatus = 'partial';
-    }
+    if (Number.isNaN(amount) || amount <= 0) return;
 
-    const newPaymentHistory = [
-      ...selectedPayment.paymentHistory,
-      {
-        date: new Date(),
+    setIsSaving(true);
+    try {
+      await onRecordPayment(selectedPayment.id, {
         amount,
-        method: paymentMethod,
-        note: paymentNote
-      }
-    ];
-
-    onUpdatePayment(selectedPayment.id, {
-      paidAmount: updatedPaidAmount,
-      remainingAmount: Math.max(0, updatedRemainingAmount),
-      paymentStatus: newStatus as any,
-      paymentHistory: newPaymentHistory
-    });
-
-    setNewPaymentAmount('');
-    setPaymentMethod('');
-    setPaymentNote('');
-    setDialogOpen(false);
+        payment_method: paymentMethod,
+        notes: paymentNote || undefined,
+      });
+      setNewPaymentAmount('');
+      setPaymentMethod('');
+      setPaymentNote('');
+      setDialogOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleStatusChange = (paymentId: string, newStatus: string) => {
-    onUpdatePayment(paymentId, { paymentStatus: newStatus as any });
+  const handleStatusChange = (paymentId: string, newStatus: PaymentTrackingStatus) => {
+    if (!onUpdateStatus) return;
+    onUpdateStatus(paymentId, newStatus);
   };
 
   // Statistiques des paiements
@@ -128,6 +128,14 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
     totalRevenue: payments.reduce((sum, p) => sum + p.paidAmount, 0),
     pendingRevenue: payments.reduce((sum, p) => sum + p.remainingAmount, 0)
   };
+
+  if (isLoading && payments.length === 0) {
+    return (
+      <div className="p-4 text-sm text-gray-600">
+        Chargement des paiements...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -183,6 +191,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
               key={payment.id} 
               payment={payment} 
               onUpdateStatus={handleStatusChange}
+              canUpdateStatus={Boolean(onUpdateStatus)}
               onManagePayment={(p) => {
                 setSelectedPayment(p);
                 setDialogOpen(true);
@@ -197,6 +206,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
               key={payment.id} 
               payment={payment} 
               onUpdateStatus={handleStatusChange}
+              canUpdateStatus={Boolean(onUpdateStatus)}
               onManagePayment={(p) => {
                 setSelectedPayment(p);
                 setDialogOpen(true);
@@ -211,6 +221,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
               key={payment.id} 
               payment={payment} 
               onUpdateStatus={handleStatusChange}
+              canUpdateStatus={Boolean(onUpdateStatus)}
               onManagePayment={(p) => {
                 setSelectedPayment(p);
                 setDialogOpen(true);
@@ -225,6 +236,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
               key={payment.id} 
               payment={payment} 
               onUpdateStatus={handleStatusChange}
+              canUpdateStatus={Boolean(onUpdateStatus)}
               onManagePayment={(p) => {
                 setSelectedPayment(p);
                 setDialogOpen(true);
@@ -239,6 +251,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
               key={payment.id} 
               payment={payment} 
               onUpdateStatus={handleStatusChange}
+              canUpdateStatus={Boolean(onUpdateStatus)}
               onManagePayment={(p) => {
                 setSelectedPayment(p);
                 setDialogOpen(true);
@@ -318,13 +331,14 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
                     </div>
                     <div>
                       <Label htmlFor="payment-method">Méthode de paiement</Label>
-                      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentTrackingMethod)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Choisir méthode" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="cash">Espèces</SelectItem>
-                          <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                          <SelectItem value="mvola">MVola</SelectItem>
+                          <SelectItem value="orange_money">Orange Money</SelectItem>
                           <SelectItem value="bank_transfer">Virement bancaire</SelectItem>
                         </SelectContent>
                       </Select>
@@ -341,10 +355,10 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
                   </div>
                   <Button 
                     onClick={handleAddPayment}
-                    disabled={!newPaymentAmount || !paymentMethod}
+                    disabled={!newPaymentAmount || !paymentMethod || isSaving}
                     className="w-full"
                   >
-                    Enregistrer le paiement
+                    {isSaving ? 'Enregistrement...' : 'Enregistrer le paiement'}
                   </Button>
                 </div>
               )}
@@ -359,9 +373,10 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
 // Composant PaymentCard séparé pour la lisibilité
 const PaymentCard: React.FC<{
   payment: PaymentStatus;
-  onUpdateStatus: (id: string, status: string) => void;
+  onUpdateStatus: (id: string, status: PaymentTrackingStatus) => void;
+  canUpdateStatus: boolean;
   onManagePayment: (payment: PaymentStatus) => void;
-}> = ({ payment, onUpdateStatus, onManagePayment }) => {
+}> = ({ payment, onUpdateStatus, canUpdateStatus, onManagePayment }) => {
   const getPaymentStatusBadge = (status: string, paidAmount: number, totalAmount: number) => {
     const percentage = (paidAmount / totalAmount) * 100;
     
@@ -459,7 +474,7 @@ const PaymentCard: React.FC<{
             Gérer paiement
           </Button>
           
-          {payment.paymentStatus === 'partial' && (
+          {canUpdateStatus && payment.paymentStatus === 'partial' && (
             <Button
               size="sm"
               variant="outline"
@@ -470,7 +485,7 @@ const PaymentCard: React.FC<{
             </Button>
           )}
 
-          {payment.paymentStatus === 'pending_collection' && (
+          {canUpdateStatus && payment.paymentStatus === 'pending_collection' && (
             <Button
               size="sm"
               className="bg-green-600 hover:bg-green-700"

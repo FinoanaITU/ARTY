@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,21 @@ import { WorkshopManager } from '@/components/WorkshopManager';
 import { WorkshopCalendar } from '@/components/WorkshopCalendar';
 import { ValidationManager } from '@/components/ValidationManager';
 import { PaymentTracker, PaymentStatus } from '@/components/PaymentTracker';
+import { PayoutTracker } from '@/components/PayoutTracker';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { toast } from '@/hooks/use-toast';
+import apiService from '@/services/api';
+import type { PaymentTrackingOut, RecordPaymentRequest, ArtisanPayoutOut, PaymentTrackingMethod } from '@/types/admin';
 
 const AdminPanel = () => {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState('overview');
+  const [payments, setPayments] = useState<PaymentStatus[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsError, setPaymentsError] = useState<string | null>(null);
+  const [payouts, setPayouts] = useState<ArtisanPayoutOut[]>([]);
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
+  const [payoutsError, setPayoutsError] = useState<string | null>(null);
 
   // Mock data for admin overview - Back office Artizaho
   const adminStats = {
@@ -101,6 +110,109 @@ const AdminPanel = () => {
       status: 'processing'
     }
   ];
+
+  const mapPaymentToStatus = (payment: PaymentTrackingOut): PaymentStatus => {
+    const reference = payment.type === 'workshop'
+      ? (payment.booking_number || payment.booking_id?.slice(0, 8))
+      : (payment.order_number || payment.order_id?.slice(0, 8));
+    const titlePrefix = payment.type === 'workshop' ? 'Reservation atelier' : 'Commande';
+
+    return {
+      id: payment.id,
+      type: payment.type,
+      title: reference ? `${titlePrefix} ${reference}` : titlePrefix,
+      artisanName: payment.artisan_name || payment.artisan_id,
+      artisanType: payment.artisan_type,
+      totalAmount: payment.amount_total,
+      paidAmount: payment.amount_paid,
+      remainingAmount: Math.max(0, payment.amount_total - payment.amount_paid),
+      paymentStatus: payment.payment_status,
+      paymentMethod: payment.payment_method,
+      clientName: payment.user_name || payment.user_id,
+      bookingDate: new Date(payment.created_at),
+      workshopDate: undefined,
+      paymentHistory: [],
+      notes: undefined
+    };
+  };
+
+  const loadPayments = async () => {
+    setPaymentsLoading(true);
+    try {
+      const response = await apiService.getAdminPayments();
+      setPayments(response.items.map(mapPaymentToStatus));
+      setPaymentsError(null);
+    } catch (error) {
+      setPaymentsError('Impossible de charger les paiements.');
+      setPayments([]);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
+  const handleRecordPayment = async (paymentId: string, payload: RecordPaymentRequest) => {
+    try {
+      await apiService.recordAdminPayment(paymentId, payload);
+      toast({
+        title: 'Paiement enregistré',
+        description: 'Le paiement a été enregistré avec succès.'
+      });
+      await loadPayments();
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'enregistrer le paiement.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const loadPayouts = async () => {
+    setPayoutsLoading(true);
+    try {
+      const response = await apiService.getAdminPendingPayouts();
+      setPayouts(response.items);
+      setPayoutsError(null);
+    } catch (error) {
+      setPayoutsError('Impossible de charger les payouts.');
+      setPayouts([]);
+    } finally {
+      setPayoutsLoading(false);
+    }
+  };
+
+  const handleMarkPayoutPaid = async (
+    payoutId: string, 
+    payment_method: PaymentTrackingMethod, 
+    transaction_ref?: string, 
+    notes?: string
+  ) => {
+    try {
+      await apiService.markAdminPayoutPaid(payoutId, {
+        payment_method,
+        payment_ref: transaction_ref,
+        notes
+      });
+      toast({
+        title: 'Payout marqué comme payé',
+        description: 'Le payout a été enregistré avec succès.'
+      });
+      await loadPayouts();
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de marquer le payout comme payé.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      loadPayments();
+      loadPayouts();
+    }
+  }, [user?.role]);
 
   if (!user || user.role !== 'admin') {
     return (
@@ -192,10 +304,11 @@ const AdminPanel = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 mb-6">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6">
               <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
               <TabsTrigger value="artisans">Artisans</TabsTrigger>
               <TabsTrigger value="orders">Commandes & Ateliers</TabsTrigger>
+              <TabsTrigger value="payouts">Payouts</TabsTrigger>
               <TabsTrigger value="validation">Validation</TabsTrigger>
               <TabsTrigger value="quotes">Devis manuels</TabsTrigger>
               <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
@@ -357,106 +470,39 @@ const AdminPanel = () => {
                   </TabsContent>
 
                   <TabsContent value="workshop-bookings" className="mt-6">
-                    <PaymentTracker 
-                      payments={[
-                        {
-                          id: 'pay1',
-                          type: 'workshop',
-                          title: 'Sculpture sur bois traditionnel',
-                          artisanName: 'Hery Rakoto',
-                          artisanType: 'artizaho',
-                          totalAmount: 65000,
-                          paidAmount: 32500,
-                          remainingAmount: 32500,
-                          paymentStatus: 'partial',
-                          clientName: 'Marie Dupont',
-                          bookingDate: new Date('2024-06-10'),
-                          workshopDate: new Date('2024-06-15'),
-                          paymentHistory: [
-                            {
-                              date: new Date('2024-06-10'),
-                              amount: 32500,
-                              method: 'Mobile Money',
-                              note: 'Acompte 50% à la réservation'
-                            }
-                          ],
-                          notes: 'Reste 50% à récupérer à la fin de l\'atelier'
-                        },
-                        {
-                          id: 'pay2',
-                          type: 'workshop',
-                          title: 'Poterie Malagasy',
-                          artisanName: 'Voahangy Razafy',
-                          artisanType: 'uber',
-                          totalAmount: 45000,
-                          paidAmount: 0,
-                          remainingAmount: 45000,
-                          paymentStatus: 'unpaid',
-                          clientName: 'Jean Martin',
-                          bookingDate: new Date('2024-06-12'),
-                          workshopDate: new Date('2024-06-18'),
-                          paymentHistory: []
-                        },
-                        {
-                          id: 'pay3',
-                          type: 'workshop',
-                          title: 'Bijouterie traditionnelle',
-                          artisanName: 'Fidy Andrianaivoson',
-                          artisanType: 'artizaho',
-                          totalAmount: 85000,
-                          paidAmount: 42500,
-                          remainingAmount: 42500,
-                          paymentStatus: 'pending_collection',
-                          clientName: 'Sophie Rakotozafy',
-                          bookingDate: new Date('2024-06-08'),
-                          workshopDate: new Date('2024-06-20'),
-                          paymentHistory: [
-                            {
-                              date: new Date('2024-06-08'),
-                              amount: 42500,
-                              method: 'Espèces',
-                              note: 'Acompte 50% - reste à la fin de l\'atelier'
-                            }
-                          ]
-                        },
-                        {
-                          id: 'pay4',
-                          type: 'product',
-                          title: 'Commande Masques traditionnels',
-                          artisanName: 'Hery Rakoto',
-                          artisanType: 'artizaho',
-                          totalAmount: 120000,
-                          paidAmount: 120000,
-                          remainingAmount: 0,
-                          paymentStatus: 'paid',
-                          clientName: 'Hotel Sakamanga',
-                          bookingDate: new Date('2024-06-05'),
-                          paymentHistory: [
-                            {
-                              date: new Date('2024-06-05'),
-                              amount: 60000,
-                              method: 'Virement bancaire',
-                              note: 'Acompte 50%'
-                            },
-                            {
-                              date: new Date('2024-06-15'),
-                              amount: 60000,
-                              method: 'Virement bancaire',
-                              note: 'Solde à la livraison'
-                            }
-                          ]
-                        }
-                      ]}
-                      onUpdatePayment={(id, updates) => {
-                        console.log('Payment updated:', id, updates);
-                        toast({
-                          title: "Paiement mis à jour",
-                          description: "Le statut de paiement a été mis à jour avec succès"
-                        });
-                      }}
+                    {paymentsError && (
+                      <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        {paymentsError}
+                      </div>
+                    )}
+                    <PaymentTracker
+                      payments={payments}
+                      isLoading={paymentsLoading}
+                      onRecordPayment={handleRecordPayment}
                     />
                   </TabsContent>
                 </Tabs>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="payouts">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Gestion des Payouts Artisans</h2>
+                  <Badge variant="secondary">
+                    {payouts.filter(p => p.status === 'pending').length} en attente
+                  </Badge>
+                </div>
+                {payoutsError && (
+                  <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {payoutsError}
+                  </div>
+                )}
+                <PayoutTracker
+                  payouts={payouts}
+                  isLoading={payoutsLoading}
+                  onMarkPaid={handleMarkPayoutPaid}
+                />
               </div>
             </TabsContent>
 

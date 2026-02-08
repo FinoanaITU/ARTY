@@ -23,7 +23,14 @@ import type {
   RevenueStats,
   ArtisanStats,
   ConversionStats,
-  UserBehaviorStats
+  UserBehaviorStats,
+  PaymentListResponse,
+  PaymentTrackingOut,
+  RecordPaymentRequest,
+  PayoutListResponse,
+  ArtisanPayoutOut,
+  GeneratePayoutRequest,
+  MarkPayoutPaidRequest
 } from '@/types/admin';
 
 // Base URL: prefer env var, fallback to FastAPI default '/api' (no version)
@@ -848,6 +855,107 @@ class ApiService {
    */
   async getAdminUserBehaviorStats(): Promise<UserBehaviorStats> {
     const response = await this.api.get('/admin/analytics/users');
+    return response.data;
+  }
+
+  // ===== ADMIN PAYMENT TRACKING ENDPOINTS (PHASE 3) =====
+
+  /**
+   * Récupère la liste des paiements
+   * @param paymentStatus - Filtre par statut (unpaid/partial/paid/pending_collection)
+   * @param artisanType - Filtre par type artisan (artizaho/uber)
+   * @param skip - Pagination
+   * @param limit - Pagination
+   */
+  async getAdminPayments(
+    paymentStatus?: string,
+    artisanType?: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<PaymentListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+
+    if (paymentStatus) params.append('payment_status', paymentStatus);
+    if (artisanType) params.append('artisan_type', artisanType);
+
+    const response = await this.api.get(`/admin/payments?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Récupère un paiement par ID
+   * @param paymentId - ID du paiement
+   */
+  async getAdminPaymentById(paymentId: string): Promise<PaymentTrackingOut> {
+    const response = await this.api.get(`/admin/payments/${paymentId}`);
+    return response.data;
+  }
+
+  /**
+   * Enregistrer un paiement (total/partiel)
+   * @param paymentId - ID du paiement
+   * @param data - Détails de paiement
+   */
+  async recordAdminPayment(
+    paymentId: string,
+    data: RecordPaymentRequest
+  ): Promise<PaymentTrackingOut> {
+    const response = await this.api.post(`/admin/payments/${paymentId}/record`, data);
+    return response.data;
+  }
+
+  /**
+   * Récupère les payouts artisans en attente
+   */
+  async getAdminPendingPayouts(
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<PayoutListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    const response = await this.api.get(`/admin/payouts/pending?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Générer un payout artisan pour une période
+   */
+  async generateAdminPayout(
+    data: GeneratePayoutRequest
+  ): Promise<ArtisanPayoutOut> {
+    const response = await this.api.post('/admin/payouts/generate', data);
+    return response.data;
+  }
+
+  /**
+   * Marquer un payout comme payé
+   */
+  async markAdminPayoutPaid(
+    payoutId: string,
+    data: MarkPayoutPaidRequest
+  ): Promise<ArtisanPayoutOut> {
+    const response = await this.api.post(`/admin/payouts/${payoutId}/mark-paid`, data);
+    return response.data;
+  }
+
+  /**
+   * Historique payouts d'un artisan
+   */
+  async getAdminPayoutHistory(
+    artisanId: string,
+    skip: number = 0,
+    limit: number = 50
+  ): Promise<PayoutListResponse> {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    const response = await this.api.get(`/admin/payouts/${artisanId}/history?${params.toString()}`);
     return response.data;
   }
 

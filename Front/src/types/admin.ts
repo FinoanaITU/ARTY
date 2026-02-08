@@ -234,3 +234,101 @@ export interface UserBehaviorStats {
  * Période pour les statistiques
  */
 export type StatsPeriod = 'day' | 'week' | 'month' | 'year' | 'all';
+
+// ============================================
+// PAYMENT TRACKING TYPES (PHASE 3)
+// ============================================
+
+export type PaymentTrackingStatus = 'unpaid' | 'partial' | 'paid' | 'pending_collection';
+export type PaymentTrackingMethod = 'cash' | 'mvola' | 'orange_money' | 'bank_transfer';
+export type PaymentTrackingType = 'product' | 'workshop';
+export type ArtisanType = 'artizaho' | 'uber';
+
+export interface PaymentTrackingOut {
+  id: string;
+  order_id?: string;
+  booking_id?: string;
+  user_id: string;
+  artisan_id: string;
+  type: PaymentTrackingType;
+  amount_total: number;
+  amount_paid: number;
+  payment_status: PaymentTrackingStatus;
+  payment_method?: PaymentTrackingMethod;
+  artisan_type: ArtisanType;
+  created_at: string;
+  updated_at: string;
+  user_name?: string;
+  artisan_name?: string;
+  order_number?: string;
+  booking_number?: string;
+}
+
+export interface PaymentTrackingHistoryOut {
+  id: string;
+  payment_id: string;
+  amount: number;
+  payment_method: PaymentTrackingMethod;
+  transaction_ref?: string;
+  notes?: string;
+  paid_at: string;
+  recorded_by?: string;
+  created_at: string;
+  recorder_name?: string;
+}
+
+export interface RecordPaymentRequest {
+  amount: number;
+  payment_method: PaymentTrackingMethod;
+  transaction_ref?: string;
+  notes?: string;
+}
+
+export interface PaymentListResponse {
+  total: number;
+  items: PaymentTrackingOut[];
+  total_amount: number;
+  total_paid: number;
+  total_outstanding: number;
+}
+
+export type ArtisanPayoutStatus = 'pending' | 'processing' | 'paid';
+
+export interface ArtisanPayoutOut {
+  id: string;
+  artisan_id: string;
+  period_start: string;
+  period_end: string;
+  total_sales: number;
+  commission_rate: number;
+  commission_amount: number;
+  net_payout: number;
+  status: ArtisanPayoutStatus;
+  payment_method?: PaymentTrackingMethod;
+  payment_ref?: string;
+  paid_at?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  artisan_name?: string;
+  artisan_email?: string;
+}
+
+export interface GeneratePayoutRequest {
+  artisan_id: string;
+  period_start: string;
+  period_end: string;
+}
+
+export interface MarkPayoutPaidRequest {
+  payment_method: PaymentTrackingMethod;
+  payment_ref?: string;
+  notes?: string;
+}
+
+export interface PayoutListResponse {
+  total: number;
+  items: ArtisanPayoutOut[];
+  total_net_payout: number;
+  total_commission: number;
+}

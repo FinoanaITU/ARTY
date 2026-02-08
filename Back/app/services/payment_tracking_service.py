@@ -515,6 +515,45 @@ class PaymentTrackingService:
             artisan_name=artisan.name if artisan else None,
             artisan_email=artisan.email if artisan else None
         )
+
+    @staticmethod
+    async def get_payment_history(
+        db: Session,
+        payment_id: str,
+    ) -> List[PaymentHistoryOut]:
+        """
+        Récupère l'historique des transactions pour un paiement
+        
+        Args:
+            db: Session DB
+            payment_id: ID du paiement
+        
+        Returns:
+            Liste des transactions de paiement
+        """
+        history = db.query(PaymentTrackingHistory).filter(
+            PaymentTrackingHistory.payment_id == payment_id
+        ).order_by(desc(PaymentTrackingHistory.created_at)).all()
+        
+        items = []
+        for h in history:
+            recorder = db.query(User).filter(User.id == h.recorded_by).first() if h.recorded_by else None
+            
+            items.append(PaymentHistoryOut(
+                id=h.id,
+                payment_id=h.payment_id,
+                amount=float(h.amount),
+                payment_method=h.payment_method,
+                transaction_ref=h.transaction_ref,
+                notes=h.notes,
+                paid_at=h.paid_at,
+                recorded_by=h.recorded_by,
+                created_at=h.created_at,
+                recorder_name=recorder.name if recorder else None
+            ))
+        
+        return items
+
     
     @staticmethod
     async def get_artisan_payout_history(
