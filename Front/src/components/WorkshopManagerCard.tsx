@@ -11,6 +11,16 @@ import { Edit2, Trash2, Eye, MoreVertical, Send, Archive, Lock, Unlock } from 'l
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Clock, Users, MapPin, CreditCard, Loader2 } from 'lucide-react';
 
+// Helper pour normaliser les URLs d'images
+const normalizeImageUrl = (url: string | undefined | null): string => {
+  if (!url) return '';
+  // Si l'URL commence par http:// or https://, la laisser telle quelle
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Construire l'URL complète avec la base du backend
+  const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+  return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
+};
+
 interface WorkshopManagerCardProps {
   workshop: WorkshopOut;
   onEdit?: () => void;
@@ -70,9 +80,10 @@ export const WorkshopManagerCard: React.FC<WorkshopManagerCardProps> = ({
         <div className="aspect-video relative overflow-hidden bg-muted">
           {workshop.featured_image_url && (
             <img 
-              src={workshop.featured_image_url} 
+              src={normalizeImageUrl(workshop.featured_image_url)} 
               alt={workshop.title}
               className="w-full h-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Image+non+disponible'; }}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

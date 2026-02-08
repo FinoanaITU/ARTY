@@ -296,6 +296,16 @@ const Workshops = () => {
     error: inscriptionError
   } = useInscriptionWorkshops();
   
+  // Helper pour normaliser les URLs d'images (comme dans ArtisanProductManager)
+  const normalizeImageUrl = (url: string | undefined | null): string => {
+    if (!url) return '';
+    // Si l'URL commence par http:// or https://, la laisser telle quelle
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    // Construire l'URL complète avec la base du backend
+    const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+    return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
+  };
+  
   // Load workshops from API on component mount
   useEffect(() => {
     loadWorkshops({ limit: 50, page: 1 });
@@ -429,7 +439,12 @@ const Workshops = () => {
               <Card key={workshop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="aspect-video relative">
                   {workshop.featured_image_url && (
-                    <img src={workshop.featured_image_url} alt={workshop.title} className="w-full h-full object-cover" />
+                    <img 
+                      src={normalizeImageUrl(workshop.featured_image_url)} 
+                      alt={workshop.title} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Image+non+disponible'; }}
+                    />
                   )}
                   <Badge className="absolute top-2 right-2 bg-purple-600 text-white">Sur Réservation</Badge>
                   <Badge className="absolute bottom-2 left-2 bg-primary">{workshop.skill_level}</Badge>
@@ -441,9 +456,10 @@ const Workshops = () => {
                   <div className="flex items-center gap-2 mt-2">
                     {workshop.artisan?.avatar && (
                       <img
-                        src={workshop.artisan.avatar}
+                        src={normalizeImageUrl(workshop.artisan.avatar)}
                         alt={workshop.artisan.name}
                         className="w-8 h-8 rounded-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/32?text=A'; }}
                       />
                     )}
                     <div>
@@ -666,7 +682,12 @@ const Workshops = () => {
           {inscriptionWorkshops.map((workshop) => (
             <Card key={workshop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="aspect-video relative">
-                <img src={workshop.featured_image_url} alt={workshop.title} className="w-full h-full object-cover" />
+                <img 
+                  src={normalizeImageUrl(workshop.featured_image_url)} 
+                  alt={workshop.title} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Image+non+disponible'; }}
+                />
                 <Badge className="absolute top-2 right-2 bg-orange-600 text-white">Sur Inscription</Badge>
                 <Badge className="absolute bottom-2 left-2 bg-primary">{workshop.skill_level}</Badge>
                 <div className="absolute top-2 left-2 flex flex-wrap gap-1">
@@ -681,7 +702,7 @@ const Workshops = () => {
               <div className="flex items-center gap-2 mt-2">
                 {workshop.artisan.avatar ? (
                   <img
-                    src={workshop.artisan.avatar}
+                    src={normalizeImageUrl(workshop.artisan.avatar)}
                     alt={workshop.artisan.name}
                     className="w-8 h-8 rounded-full object-cover"
                   />

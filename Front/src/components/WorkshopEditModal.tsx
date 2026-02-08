@@ -39,6 +39,16 @@ interface WorkshopFormData {
   tags: string[];
 }
 
+// Helper pour normaliser les URLs d'images
+const normalizeImageUrl = (url: string | undefined | null): string => {
+  if (!url) return '';
+  // Si l'URL commence par http:// or https://, la laisser telle quelle
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Construire l'URL complète avec la base du backend
+  const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+  return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
+};
+
 export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
   workshop,
   isOpen,
@@ -120,10 +130,10 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
           // Afficher les images existantes
           const existingPreviews: string[] = [];
           if (fullWorkshopData.featured_image_url) {
-            existingPreviews.push(`http://localhost:8000/static/uploads/${fullWorkshopData.featured_image_url}`);
+            existingPreviews.push(normalizeImageUrl(fullWorkshopData.featured_image_url));
           }
           if (fullWorkshopData.gallery_images) {
-            existingPreviews.push(...fullWorkshopData.gallery_images.map(img => `http://localhost:8000/static/uploads/${img}`));
+            existingPreviews.push(...fullWorkshopData.gallery_images.map(img => normalizeImageUrl(img)));
           }
           setPhotoPreviews(existingPreviews);
           setPhotos([]);

@@ -89,6 +89,16 @@ const normalizeWorkshopData = (apiWorkshop: any, mockWorkshop: any): WorkshopDat
   }
 };
 
+// Helper pour normaliser les URLs d'images
+const normalizeImageUrl = (url: string | undefined | null): string => {
+  if (!url) return 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop';
+  // Si l'URL commence par http:// or https://, la laisser telle quelle
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Construire l'URL complète avec la base du backend
+  const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+  return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
+};
+
 const WorkshopDetail = () => {
   const { id } = useParams();
   const { t } = useLanguage();
@@ -270,9 +280,14 @@ const WorkshopDetail = () => {
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
             <div className="aspect-video bg-brand-beige relative">
               <img
-                src={workshop.image || 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop'}
+                src={normalizeImageUrl(
+                  (apiWorkshop?.featured_image_url as string) || 
+                  workshop.image || 
+                  'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop'
+                )}
                 alt={workshop.title}
                 className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop'; }}
               />
               
               {/* Workshop Type Badge */}

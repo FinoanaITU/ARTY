@@ -11,6 +11,28 @@ from enum import Enum
 from uuid import UUID
 
 
+# ============ HELPERS ============
+
+def resolve_image_url(url: Optional[str]) -> Optional[str]:
+    """
+    Transforme une URL relative en URL absolue pour les images uploadées.
+    Les URLs Unsplash et autres URLs complètes sont laissées telles quelles.
+    """
+    if not url:
+        return url
+    
+    # Si l'URL commence déjà par http:// ou https://, la laisser telle quelle
+    if url.startswith(('http://', 'https://')):
+        return url
+    
+    # Si l'URL commence par /, la laisser telle quelle (déjà absolue relative au domaine)
+    if url.startswith('/'):
+        return url
+    
+    # Sinon, ajouter le préfixe /static/uploads/
+    return f"/static/uploads/{url}"
+
+
 # ============ ENUMS ============
 
 class WorkshopType(str, Enum):
@@ -279,6 +301,23 @@ class WorkshopOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+    @validator("featured_image_url", pre=True)
+    def resolve_featured_image_url(cls, v):
+        """Transforme les URLs relatives en URLs absolues"""
+        return resolve_image_url(v)
+    
+    @validator("gallery_images", pre=True)
+    def resolve_gallery_images(cls, v):
+        """Transforme les URLs relatives en URLs absolues pour la galerie"""
+        if not v:
+            return v
+        return [resolve_image_url(url) for url in v]
+    
+    @validator("instructor_image", pre=True)
+    def resolve_instructor_image(cls, v):
+        """Transforme les URLs relatives en URLs absolues"""
+        return resolve_image_url(v)
+
     class Config:
         from_attributes = True
 
@@ -302,6 +341,11 @@ class WorkshopListItem(BaseModel):
     rating_average: Optional[Decimal] = None
     rating_count: Optional[int] = 0
     status: Optional[str] = None  # Changed to string to match DB
+
+    @validator("featured_image_url", pre=True)
+    def resolve_featured_image_url(cls, v):
+        """Transforme les URLs relatives en URLs absolues"""
+        return resolve_image_url(v)
 
     class Config:
         from_attributes = True
