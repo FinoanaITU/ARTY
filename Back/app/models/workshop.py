@@ -58,8 +58,13 @@ class Workshop(BaseModel):
     instructor_image = Column(String(500))
     instructor_bio = Column(Text)
     
+    # Approval fields
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    approved_at = Column(DateTime, nullable=True)
+    approval_notes = Column(Text, nullable=True)
+    
     # Relationships
-    artisan = relationship("User", back_populates="workshops")
+    artisan = relationship("User", foreign_keys=[artisan_id], back_populates="workshops")
     sessions = relationship("WorkshopSession", back_populates="workshop", cascade="all, delete-orphan")
     bookings = relationship("WorkshopBooking", back_populates="workshop", cascade="all, delete-orphan")
 

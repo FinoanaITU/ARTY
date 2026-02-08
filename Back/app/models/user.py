@@ -94,6 +94,11 @@ class User(BaseModel):
     is_email_verified = Column(Boolean, default=False, nullable=False)
     last_login_at = Column(DateTime, nullable=True)
     
+    # Approval fields (for artisan profile validation)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    approved_at = Column(DateTime, nullable=True)
+    approval_notes = Column(Text, nullable=True)
+    
     # Relationships (using strings to avoid circular imports)
     artisan_profile = relationship("ArtisanProfile", back_populates="user", uselist=False, lazy="select")
     # Temporarily comment out relationships that cause circular import issues
@@ -101,7 +106,12 @@ class User(BaseModel):
     # orders = relationship("Order", back_populates="buyer", lazy="dynamic")
     # cart_items = relationship("CartItem", back_populates="user", lazy="dynamic")
     sessions = relationship("UserSession", back_populates="user", lazy="dynamic")
-    workshops = relationship("Workshop", back_populates="artisan", lazy="dynamic")
+    workshops = relationship(
+        "Workshop",
+        foreign_keys="Workshop.artisan_id",
+        back_populates="artisan",
+        lazy="dynamic"
+    )
     workshop_bookings = relationship("WorkshopBooking", back_populates="user", lazy="dynamic")
 
 

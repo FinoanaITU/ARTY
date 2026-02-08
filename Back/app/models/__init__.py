@@ -36,6 +36,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.models.validation import ArtisanValidation, ValidationType, ValidationStatus
+except ImportError:
+    pass
+
 __all__ = [
     "BaseModel",
     "User",
@@ -43,4 +48,5 @@ __all__ = [
     "ArtisanPhoto",
     "UserSession",
     "SocialAccount",
+    "ArtisanValidation",
 ]
