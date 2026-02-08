@@ -550,3 +550,116 @@ class QuoteStatusUpdate(BaseModel):
     status: QuoteStatus
     notes: Optional[str] = None
 
+
+# ===== Subscription Schemas =====
+
+class SubscriptionPlanType(str, Enum):
+    """Available subscription plans"""
+    BASIC = "basic"
+    PLUS = "plus"
+    PRO = "pro"
+    ENTERPRISE = "enterprise"
+
+
+class SubscriptionStatusType(str, Enum):
+    """Subscription status"""
+    ACTIVE = "active"
+    PAUSED = "paused"
+    CANCELLED = "cancelled"
+    EXPIRED = "expired"
+    PENDING = "pending"
+
+
+class SubscriptionOut(BaseModel):
+    """Subscription response"""
+    id: UUID
+    user_id: UUID
+    plan: str
+    status: str
+    monthly_price: float
+    billing_cycle: str
+    start_date: str  # Date
+    end_date: str    # Date
+    renewal_date: Optional[str]
+    available_credits: float
+    used_credits: float
+    total_spent: float
+    auto_renew: bool
+    bonus_credits_added: float
+    times_renewed: int
+    last_payment_at: Optional[datetime]
+    cancelled_at: Optional[datetime]
+    admin_notes: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class SubscriptionListResponse(BaseModel):
+    """List of subscriptions"""
+    total: int
+    skip: int
+    limit: int
+    subscriptions: List[SubscriptionOut]
+
+
+class SubscriptionOverviewResponse(BaseModel):
+    """Subscription overview/statistics"""
+    total_active: int
+    total_by_plan: Dict[str, int]
+    total_by_status: Dict[str, int]
+    monthly_recurring_revenue: float
+    churned_this_month: int
+    renewal_rate_percent: float
+    timestamp: str
+
+
+class SubscriptionCancelRequest(BaseModel):
+    """Request to cancel subscription"""
+    reason: Optional[str] = Field(None, description="Cancellation reason")
+
+
+class SubscriptionExtendRequest(BaseModel):
+    """Request to extend subscription"""
+    days: int = Field(default=30, ge=1, le=365, description="Days to extend")
+    notes: Optional[str] = Field(None, description="Admin notes on extension")
+
+
+class SubscriptionAddCreditsRequest(BaseModel):
+    """Request to add bonus credits"""
+    amount: float = Field(..., gt=0, description="Amount of credits to add")
+    reason: Optional[str] = Field(None, description="Reason for adding credits")
+
+
+class SubscriptionHistoryOut(BaseModel):
+    """Subscription history/audit trail entry"""
+    id: UUID
+    subscription_id: UUID
+    action_type: str
+    action_by: UUID
+    old_values: Optional[Dict[str, Any]]
+    new_values: Optional[Dict[str, Any]]
+    notes: Optional[str]
+    action_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class SubscriptionHistoryResponse(BaseModel):
+    """List of subscription history"""
+    total: int
+    skip: int
+    limit: int
+    history: List[SubscriptionHistoryOut]
+
+
+class SubscriptionStatsResponse(BaseModel):
+    """Subscription statistics"""
+    total_subscriptions: int
+    total_revenue: float
+    average_subscription_value: float
+    average_lifetime_days: Optional[int]
+    overview: SubscriptionOverviewResponse

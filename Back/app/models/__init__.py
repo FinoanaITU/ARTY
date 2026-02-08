@@ -51,6 +51,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from app.models.subscription import Subscription, SubscriptionHistory, SubscriptionPlan, SubscriptionStatus
+except ImportError:
+    pass
+
 __all__ = [
     "BaseModel",
     "User",

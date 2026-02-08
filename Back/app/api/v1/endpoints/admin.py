@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from uuid import UUID
 from datetime import date
+from decimal import Decimal
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_admin
@@ -30,7 +31,16 @@ from app.schemas.admin import (
     MarkPayoutPaidRequest,
     # Quote schemas
     QuoteRequestIn,
-    QuoteOut
+    QuoteOut,
+    # Subscription schemas
+    SubscriptionOut,
+    SubscriptionListResponse,
+    SubscriptionOverviewResponse,
+    SubscriptionCancelRequest,
+    SubscriptionExtendRequest,
+    SubscriptionAddCreditsRequest,
+    SubscriptionHistoryResponse,
+    SubscriptionStatsResponse
 )
 from app.services.admin_validation_service import AdminValidationService
 from app.services.admin_analytics_service import AdminAnalyticsService
@@ -819,6 +829,247 @@ async def get_quote_stats(
     
     stats = await QuoteService.get_quote_stats(db=db)
     
+    return stats
+
+
+# ===== SUBSCRIPTION ENDPOINTS =====
+
+@router.get(
+    "/subscriptions/overview",
+    response_model=SubscriptionOverviewResponse,
+    summary="Vue d'ensemble des abonnements",
+    description="Statistiques globales des abonnements: total, par plan, revenue, churn"
+)
+async def get_subscriptions_overview(
+    perspective: Optional[str] = Query("current", description="current (actifs) ou all"),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère une vue d'ensemble des abonnements avec statistiques clés.
+    
+    Retourne:
+    - Total d'abonnements actifs par plan
+    - Revenue mensuelle récurrente (MRR)
+    - Taux de churn (churned ce mois)
+    - Taux de renouvellement
+    """
+    from app.services.admin_subscription_service import AdminSubscriptionService
+    
+    overview = await AdminSubscriptionService.get_subscriptions_overview(
+        db=db,
+        period=perspective
+    )
+    return overview
+
+
+@router.get(
+    "/subscriptions/list",
+    response_model=SubscriptionListResponse,
+    summary="Liste des abonnements",
+    description="Liste tous les abonnements avec filtres optionnels"
+)
+async def get_subscriptions_list(
+    status: Optional[str] = Query(None, description="Filtre par statut"),
+    plan: Optional[str] = Query(None, description="Filtre par plan"),
+    user_id: Optional[str] = Query(None, description="Filtre par user_id"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Liste tous les abonnements avec pagination et filtres.
+    
+    Filtres disponibles:
+    - status: active/paused/cancelled/expired
+    - plan: basic/plus/pro/enterprise
+    - user_id: UUID de l'utilisateur
+    """
+    from app.services.admin_subscription_service import AdminSubscriptionService
+    
+    result = await AdminSubscriptionService.get_subscriptions_list(
+        db=db,
+        status=status,
+        plan=plan,
+        user_id=user_id,
+        skip=skip,
+        limit=limit
+    )
+    return result
+
+
+@router.get(
+    "/subscriptions/{subscription_id}",
+    response_model=SubscriptionOut,
+    summary="Détails d'un abonnement",
+    description="Récupère les détails complets d'un abonnement"
+)
+async def get_subscription_detail(
+    subscription_id: str,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les détails complets d'un abonnement.
+    """
+    from app.services.admin_subscription_service import AdminSubscriptionService
+    
+    subscription = await AdminSubscriptionService.get_subscription_detail(
+        db=db,
+        subscription_id=subscription_id
+    )
+    return subscription
+
+
+@router.post(
+    "/subscriptions/{subscription_id}/cancel",
+    response_model=SubscriptionOut,
+    summary="Annuler un abonnement",
+    description="Admin: Annuler un abonnement (geste commercial ou autre raison)"
+)
+async def cancel_subscription(
+    subscription_id: str,
+    cancel_request: SubscriptionCancelRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Annule un abonnement (action admin).
+    
+    Paramètres:
+    - subscription_id: ID de l'abonnement
+    - reason: Raison de l'annulation
+    """
+    from app.services.admin_subscription_service import AdminSubscriptionService
+    
+    subscription = await AdminSubscriptionService.cancel_subscription(
+        db=db,
+        subscription_id=subscription_id,
+        admin_id=str(current_admin.id),
+        reason=cancel_request.reason
+    )
+    return subscription
+
+
+@router.post(
+    "/subscriptions/{subscription_id}/extend",
+    response_model=SubscriptionOut,
+    summary="Prolonger un abonnement",
+    description="Admin: Prolonger la durée d'un abonnement (geste commercial)"
+)
+async def extend_subscription(
+    subscription_id: str,
+    extend_request: SubscriptionExtendRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Prolonge un abonnement actif ou en pause.
+    
+    Paramètres:
+    - subscription_id: ID de l'abonnement
+    - days: Nombre de jours à ajouter (1-365, défaut: 30)
+    - notes: Notes admin (optionnel)
+    """
+    from app.services.admin_subscription_service import AdminSubscriptionService
+    
+    subscription = await AdminSubscriptionService.extend_subscription(
+        db=db,
+        subscription_id=subscription_id,
+        admin_id=str(current_admin.id),
+        days=extend_request.days,
+        notes=extend_request.notes
+    )
+    return subscription
+
+
+@router.post(
+    "/subscriptions/{subscription_id}/add-credits",
+    response_model=SubscriptionOut,
+    summary="Ajouter des crédits bonus",
+    description="Admin: Ajouter des crédits bonus à un abonnement"
+)
+async def add_bonus_credits(
+    subscription_id: str,
+    credits_request: SubscriptionAddCreditsRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Ajoute des crédits bonus à un abonnement.
+    
+    Paramètres:
+    - subscription_id: ID de l'abonnement
+    - amount: Montant de crédits à ajouter
+    - reason: Raison de l'ajout (support client, promotion, etc.)
+    """
+    from app.services.admin_subscription_service import AdminSubscriptionService
+    
+    # Convert amount to Decimal
+    amount = Decimal(str(credits_request.amount))
+    
+    subscription = await AdminSubscriptionService.add_bonus_credits(
+        db=db,
+        subscription_id=subscription_id,
+        admin_id=str(current_admin.id),
+        amount=amount,
+        reason=credits_request.reason
+    )
+    return subscription
+
+
+@router.get(
+    "/subscriptions/{subscription_id}/history",
+    response_model=SubscriptionHistoryResponse,
+    summary="Historique d'un abonnement",
+    description="Audit trail complet des modifications d'un abonnement"
+)
+async def get_subscription_history(
+    subscription_id: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère l'historique complet (audit trail) d'un abonnement.
+    Affiche toutes les modifications avec qui, quand et pourquoi.
+    """
+    from app.services.admin_subscription_service import AdminSubscriptionService
+    
+    history = await AdminSubscriptionService.get_subscription_history(
+        db=db,
+        subscription_id=subscription_id,
+        skip=skip,
+        limit=limit
+    )
+    return history
+
+
+@router.get(
+    "/subscriptions/stats/detailed",
+    response_model=SubscriptionStatsResponse,
+    summary="Statistiques détaillées", 
+    description="Statistiques complètes sur les abonnements"
+)
+async def get_subscription_stats(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère des statistiques détaillées sur les abonnements.
+    
+    Retourne:
+    - Total des abonnements
+    - Revenue totale
+    - Valeur moyenne d'abonnement
+    - Durée de vie moyenne
+    - Vue d'ensemble complète
+    """
+    from app.services.admin_subscription_service import AdminSubscriptionService
+    
+    stats = await AdminSubscriptionService.get_subscription_stats(db=db)
     return stats
 
 
