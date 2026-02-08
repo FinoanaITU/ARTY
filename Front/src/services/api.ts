@@ -15,6 +15,11 @@ import type {
   BookingConfirmation,
   AvailabilityResponse
 } from '@/types/workshop';
+import type {
+  PendingValidationsResponse,
+  ValidationStats,
+  ValidationResponse
+} from '@/types/admin';
 
 // Base URL: prefer env var, fallback to FastAPI default '/api' (no version)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -696,6 +701,95 @@ class ApiService {
     documents?: any;
   }) {
     const response = await this.api.put('/users/me/artisan', data);
+    return response.data;
+  }
+
+  // ===== ADMIN VALIDATION ENDPOINTS =====
+  
+  /**
+   * Récupère la liste des validations en attente
+   * @param validationType - Type de validation (profile/product/workshop/all)
+   * @param skip - Nombre d'items à sauter pour la pagination
+   * @param limit - Nombre d'items à retourner
+   */
+  async getAdminPendingValidations(
+    validationType?: string,
+    skip: number = 0,
+    limit: number = 50
+  ) {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    
+    if (validationType) {
+      params.append('validation_type', validationType);
+    }
+    
+    const response = await this.api.get(`/admin/validations/pending?${params.toString()}`);
+    return response.data;
+  }
+
+  /**
+   * Valider un profil artisan (approve/reject)
+   * @param artisanId - ID de l'artisan
+   * @param action - Action (approve/reject)
+   * @param notes - Notes optionnelles de l'administrateur
+   */
+  async validateArtisanProfile(
+    artisanId: string,
+    action: 'approve' | 'reject',
+    notes?: string
+  ) {
+    const response = await this.api.post(
+      `/admin/validations/artisan/${artisanId}`,
+      { action, notes }
+    );
+    return response.data;
+  }
+
+  /**
+   * Valider un produit (approve/reject)
+   * @param productId - ID du produit
+   * @param action - Action (approve/reject)
+   * @param notes - Notes optionnelles de l'administrateur
+   */
+  async validateProduct(
+    productId: string,
+    action: 'approve' | 'reject',
+    notes?: string
+  ) {
+    const response = await this.api.post(
+      `/admin/validations/product/${productId}`,
+      { action, notes }
+    );
+    return response.data;
+  }
+
+  /**
+   * Valider un atelier (approve/reject)
+   * @param workshopId - ID de l'atelier
+   * @param action - Action (approve/reject)
+   * @param notes - Notes optionnelles de l'administrateur
+   */
+  async validateWorkshop(
+    workshopId: string,
+    action: 'approve' | 'reject',
+    notes?: string
+  ) {
+    const response = await this.api.post(
+      `/admin/validations/workshop/${workshopId}`,
+      { action, notes }
+    );
+    return response.data;
+  }
+
+  /**
+   * Récupère les statistiques de validation
+   * @param period - Période (day/week/month/all)
+   */
+  async getValidationStats(period: string = 'month') {
+    const response = await this.api.get(`/admin/validations/stats?period=${period}`);
     return response.data;
   }
 
