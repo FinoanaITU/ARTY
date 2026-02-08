@@ -33,87 +33,26 @@ const AdminPanel = () => {
   const [payoutsLoading, setPayoutsLoading] = useState(false);
   const [payoutsError, setPayoutsError] = useState<string | null>(null);
 
-  // Mock data for admin overview - Back office Artizaho
-  const adminStats = {
-    totalProductSales: 2450000, // Ventes totales produits
-    totalWorkshopSales: 890000, // Ventes totales ateliers
-    totalArtisans: 23,
-    totalOrders: 89,
-    pendingQuotes: 7, // Devis à faire manuellement
-    activeSubscriptions: 45 // Abonnements actifs
-  };
+  // States pour les données réelles (remplace les mocks)
+  const [adminStats, setAdminStats] = useState({
+    totalProductSales: 0,
+    totalWorkshopSales: 0,
+    totalArtisans: 0,
+    totalOrders: 0,
+    pendingQuotes: 0,
+    activeSubscriptions: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
-  // Mock data for upcoming workshops calendar
-  const upcomingWorkshops = [
-    {
-      id: '1',
-      title: 'Sculpture sur bois traditionnel',
-      date: new Date('2024-06-15'),
-      time: '14h00-17h00',
-      artisan: 'Hery Rakoto',
-      type: 'artizaho' as const,
-      participants: 8,
-      maxParticipants: 12
-    },
-    {
-      id: '2',
-      title: 'Poterie Malagasy',
-      date: new Date('2024-06-18'),
-      time: '10h00-13h00',
-      artisan: 'Voahangy Razafy',
-      type: 'uber' as const,
-      participants: 5,
-      maxParticipants: 10
-    },
-    {
-      id: '3',
-      title: 'Atelier Bijouterie',
-      date: new Date('2024-06-20'),
-      time: '15h00-18h00',
-      artisan: 'Fidy Andrianaivoson',
-      type: 'artizaho' as const,
-      participants: 10,
-      maxParticipants: 15
-    }
-  ];
+  const [upcomingWorkshops, setUpcomingWorkshops] = useState<any[]>([]);
+  const [workshopsLoading, setWorkshopsLoading] = useState(false);
 
-  const recentArtisans = [
-    {
-      id: 1,
-      name: 'Naina Rasoarivelo',
-      specialty: 'Poterie',
-      location: 'Toliara',
-      joinDate: '2024-05-20',
-      status: 'pending'
-    },
-    {
-      id: 2,
-      name: 'Fidy Andrianaivoson',
-      specialty: 'Bijouterie',
-      location: 'Mahajanga',
-      joinDate: '2024-05-18',
-      status: 'approved'
-    }
-  ];
+  const [recentArtisans, setRecentArtisans] = useState<any[]>([]);
+  const [artisansLoading, setArtisansLoading] = useState(false);
 
-  const recentOrders = [
-    {
-      id: 1,
-      buyer: 'Marie Dubois',
-      artisan: 'Hery Rakoto',
-      amount: 45000,
-      date: '2024-05-25',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      buyer: 'Jean Martin',
-      artisan: 'Voahangy Razafy',
-      amount: 65000,
-      date: '2024-05-24',
-      status: 'processing'
-    }
-  ];
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const mapPaymentToStatus = (payment: PaymentTrackingOut): PaymentStatus => {
     const reference = payment.type === 'workshop'
@@ -211,10 +150,158 @@ const AdminPanel = () => {
     }
   };
 
+  // Chargement des stats globales
+  const loadAdminStats = async () => {
+    try {
+      setStatsLoading(true);
+      setStatsError(null);
+
+      const [overview, revenue, artisansData, quotesData, subscriptionsData] = await Promise.all([
+        apiService.getAdminPlatformOverview().catch(() => ({ total_orders: 0 })),
+        apiService.getAdminRevenueStats('month').catch(() => ({ total_product_revenue: 0, total_workshop_revenue: 0 })),
+        apiService.getAdminArtisanStats().catch(() => ({ total_artisans: 0 })),
+        apiService.getQuoteStats().catch(() => ({ pending_count: 0 })),
+        apiService.getSubscriptionsOverview().catch(() => ({ total_active: 0 }))
+      ]);
+
+      setAdminStats({
+        totalProductSales: revenue.total_product_revenue || 0,
+        totalWorkshopSales: revenue.total_workshop_revenue || 0,
+        totalArtisans: artisansData.total_artisans || 0,
+        totalOrders: overview.total_orders || 0,
+        pendingQuotes: quotesData.pending_count || 0,
+        activeSubscriptions: subscriptionsData.total_active || 0
+      });
+    } catch (error) {
+      console.error('Erreur chargement stats:', error);
+      setStatsError('Impossible de charger les statistiques');
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Chargement des ateliers à venir
+  const loadUpcomingWorkshops = async () => {
+    try {
+      setWorkshopsLoading(true);
+      const response = await apiService.getWorkshops({
+        skip: 0,
+        limit: 10,
+        status: 'published'
+      });
+
+      // Transformer et filtrer pour obtenir les 3 prochains ateliers
+      const now = new Date();
+      const items = response.items || [];
+      const workshops = items
+        .filter((ws: any) => ws.start_date && new Date(ws.start_date) > now)
+        .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+        .slice(0, 3)
+        .map((ws: any) => {
+          const startDate = new Date(ws.start_date);
+          const endDate = ws.end_date ? new Date(ws.end_date) : startDate;
+          
+          return {
+            id: ws.id,
+            title: ws.title,
+            date: startDate,
+            time: `${startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}-${endDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+            artisan: ws.artisan_name || 'N/A',
+            type: 'artizaho' as const,
+            participants: ws.current_bookings || 0,
+            maxParticipants: ws.max_participants || 0
+          };
+        });
+
+      setUpcomingWorkshops(workshops);
+    } catch (error) {
+      console.error('Erreur chargement ateliers:', error);
+      setUpcomingWorkshops([]);
+    } finally {
+      setWorkshopsLoading(false);
+    }
+  };
+
+  // Chargement des artisans
+  const loadArtisans = async () => {
+    try {
+      setArtisansLoading(true);
+      // Note: Pas d'endpoint /users pour lister les utilisateurs
+      // On utilise les données analytics pour l'instant
+      const artisansData = await apiService.getAdminArtisanStats();
+      
+      // Pour l'instant, on affiche un message indiquant le nombre total
+      // En attendant un vrai endpoint de listing
+      setRecentArtisans([
+        {
+          id: 'summary',
+          name: `${artisansData.total_artisans || 0} artisans inscrits`,
+          specialty: 'Utilisez l\'onglet Analytiques pour plus de détails',
+          location: 'Madagascar',
+          joinDate: new Date().toISOString().split('T')[0],
+          status: 'info',
+          email: '',
+          avatar: ''
+        }
+      ]);
+    } catch (error) {
+      console.error('Erreur chargement artisans:', error);
+      setRecentArtisans([]);
+    } finally {
+      setArtisansLoading(false);
+    }
+  };
+
+  // Chargement des commandes
+  const loadOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      const response = await apiService.getOrders({
+        page: 1,
+        limit: 10
+      });
+
+      const items = response.items || [];
+      const orders = items.map((order: any) => ({
+        id: order.id,
+        buyer: order.user_name || 'N/A',
+        artisan: 'N/A', // Les items contiennent l'artisan, pas la commande directement
+        amount: order.total_amount || 0,
+        date: order.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        status: order.status || 'pending',
+        orderNumber: order.order_number
+      }));
+
+      setRecentOrders(orders);
+    } catch (error) {
+      console.error('Erreur chargement commandes:', error);
+      setRecentOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  // Handlers pour les actions artisans
+  const handleViewArtisanProfile = (artisanId: string) => {
+    window.location.href = `/artisans/${artisanId}`;
+  };
+
+  const handleManageArtisanProducts = (artisanId: string) => {
+    // Future: navigate to admin products page filtered by artisan
+    toast({
+      title: 'Fonction à venir',
+      description: 'Gestion des produits artisan en cours de développement'
+    });
+  };
+
   useEffect(() => {
     if (user?.role === 'admin') {
       loadPayments();
       loadPayouts();
+      loadAdminStats();
+      loadUpcomingWorkshops();
+      loadArtisans();
+      loadOrders();
     }
   }, [user?.role]);
 
@@ -256,56 +343,69 @@ const AdminPanel = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(adminStats.totalProductSales, language)}
-                </div>
-                <p className="text-sm text-gray-600">Ventes Produits</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {formatCurrency(adminStats.totalWorkshopSales, language)}
-                </div>
-                <p className="text-sm text-gray-600">Ventes Ateliers</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {adminStats.totalArtisans}
-                </div>
-                <p className="text-sm text-gray-600">Artisans</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {adminStats.totalOrders}
-                </div>
-                <p className="text-sm text-gray-600">Commandes</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">
-                  {adminStats.pendingQuotes}
-                </div>
-                <p className="text-sm text-gray-600">Devis en attente</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {adminStats.activeSubscriptions}
-                </div>
-                <p className="text-sm text-gray-600">Abonnements</p>
-              </CardContent>
-            </Card>
-          </div>
+          {statsLoading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Chargement des statistiques...</p>
+            </div>
+          ) : statsError ? (
+            <div className="text-center py-8">
+              <p className="text-red-600">{statsError}</p>
+              <Button onClick={loadAdminStats} variant="outline" className="mt-4">
+                Réessayer
+              </Button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(adminStats.totalProductSales, language)}
+                  </div>
+                  <p className="text-sm text-gray-600">Ventes Produits</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(adminStats.totalWorkshopSales, language)}
+                  </div>
+                  <p className="text-sm text-gray-600">Ventes Ateliers</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {adminStats.totalArtisans}
+                  </div>
+                  <p className="text-sm text-gray-600">Artisans</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {adminStats.totalOrders}
+                  </div>
+                  <p className="text-sm text-gray-600">Commandes</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-red-600">
+                    {adminStats.pendingQuotes}
+                  </div>
+                  <p className="text-sm text-gray-600">Devis en attente</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {adminStats.activeSubscriptions}
+                  </div>
+                  <p className="text-sm text-gray-600">Abonnements</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6">
@@ -321,39 +421,23 @@ const AdminPanel = () => {
 
             <TabsContent value="overview">
               <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <Card>
+                {/* Section Activité récente commentée - en attente d'un endpoint API */}
+                {/* <Card>
                   <CardHeader>
                     <CardTitle>Activité récente</CardTitle>
                     <CardDescription>Les dernières actions sur la plateforme</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                        <span className="text-sm">Atelier Artizaho réservé</span>
-                        <Badge variant="secondary">Il y a 1h</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                        <span className="text-sm">Nouvel abonnement Premium</span>
-                        <Badge variant="secondary">Il y a 2h</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                        <span className="text-sm">Devis manuel demandé</span>
-                        <Badge variant="secondary">Il y a 3h</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                        <span className="text-sm">Inscription atelier validée</span>
-                        <Badge variant="secondary">Il y a 4h</Badge>
-                      </div>
-                    </div>
+                    <p className="text-gray-500 text-sm">Fonctionnalité en cours de développement</p>
                   </CardContent>
-                </Card>
+                </Card> */}
 
-                <Card>
+                <Card className="md:col-span-2">
                   <CardHeader>
                     <CardTitle>Actions rapides</CardTitle>
                     <CardDescription>Raccourcis vers les tâches courantes</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="grid md:grid-cols-2 gap-3">
                     <Button 
                       className="w-full justify-start"
                       onClick={() => setActiveTab('quotes')}
@@ -363,16 +447,16 @@ const AdminPanel = () => {
                     <Button 
                       className="w-full justify-start" 
                       variant="outline"
-                      onClick={() => setActiveTab('workshops')}
+                      onClick={() => setActiveTab('orders')}
                     >
-                      Gérer les ateliers Artizaho
+                      Suivre les commandes ({adminStats.totalOrders})
                     </Button>
                     <Button 
                       className="w-full justify-start" 
                       variant="outline"
-                      onClick={() => setActiveTab('orders')}
+                      onClick={() => setActiveTab('artisans')}
                     >
-                      Suivre les commandes
+                      Gérer les artisans ({adminStats.totalArtisans})
                     </Button>
                     <Button 
                       className="w-full justify-start" 
@@ -398,29 +482,47 @@ const AdminPanel = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentArtisans.map((artisan) => (
-                      <div key={artisan.id} className="flex justify-between items-center p-4 border rounded-lg">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{artisan.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {artisan.specialty} - {artisan.location}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Inscrit le {new Date(artisan.joinDate).toLocaleDateString('fr-FR')}
-                          </p>
+                  {artisansLoading ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">Chargement des artisans...</p>
+                    </div>
+                  ) : recentArtisans.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">Aucun artisan trouvé</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentArtisans.map((artisan) => (
+                        <div key={artisan.id} className="flex justify-between items-center p-4 border rounded-lg">
+                          <div>
+                            <h3 className="font-medium text-gray-900">{artisan.name}</h3>
+                            <p className="text-sm text-gray-600">
+                              {artisan.specialty} - {artisan.location}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Inscrit le {new Date(artisan.joinDate).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewArtisanProfile(artisan.id)}
+                            >
+                              Voir profil
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleManageArtisanProducts(artisan.id)}
+                            >
+                              Gérer produits
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            Voir profil
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            Gérer produits
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -442,33 +544,49 @@ const AdminPanel = () => {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
-                          {recentOrders.map((order) => (
-                            <div key={order.id} className="flex justify-between items-center p-4 border rounded-lg">
-                              <div>
-                                <h3 className="font-medium text-gray-900">Commande #{order.id}</h3>
-                                <p className="text-sm text-gray-600">
-                                  {order.buyer} → {order.artisan}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {new Date(order.date).toLocaleDateString('fr-FR')}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-medium text-orange-600 mb-1">
-                                  {formatCurrency(order.amount, language)}
+                        {ordersLoading ? (
+                          <div className="text-center py-8">
+                            <p className="text-gray-600">Chargement des commandes...</p>
+                          </div>
+                        ) : recentOrders.length === 0 ? (
+                          <div className="text-center py-8">
+                            <p className="text-gray-500">Aucune commande trouvée</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {recentOrders.map((order) => (
+                              <div key={order.id} className="flex justify-between items-center p-4 border rounded-lg">
+                                <div>
+                                  <h3 className="font-medium text-gray-900">
+                                    Commande #{order.orderNumber || order.id.toString().slice(0, 8)}
+                                  </h3>
+                                  <p className="text-sm text-gray-600">
+                                    {order.buyer} → {order.artisan}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(order.date).toLocaleDateString('fr-FR')}
+                                  </p>
                                 </div>
-                                <span className={`px-2 py-1 rounded-full text-xs ${
-                                  order.status === 'completed' 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : 'bg-orange-100 text-orange-700'
-                                }`}>
-                                  {order.status === 'completed' ? 'Terminé' : 'En cours'}
-                                </span>
+                                <div className="text-right">
+                                  <div className="font-medium text-orange-600 mb-1">
+                                    {formatCurrency(order.amount, language)}
+                                  </div>
+                                  <span className={`px-2 py-1 rounded-full text-xs ${
+                                    order.status === 'completed' 
+                                      ? 'bg-green-100 text-green-700' 
+                                      : order.status === 'processing'
+                                      ? 'bg-orange-100 text-orange-700'
+                                      : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    {order.status === 'completed' ? 'Terminé' : 
+                                     order.status === 'processing' ? 'En cours' : 
+                                     order.status}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </TabsContent>

@@ -220,6 +220,36 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Récupère la liste des utilisateurs avec filtres
+   * @param role - Filtre par rôle (artisan/client/admin)
+   * @param skip - Pagination
+   * @param limit - Pagination
+   */
+  // NOTE: Endpoint GET /users n'existe pas dans le backend
+  // Pour récupérer la liste des utilisateurs/artisans, utiliser:
+  // - getAdminArtisanStats() pour les statistiques artisans
+  // - getArtisan(id) pour un artisan spécifique
+  /*
+  async getUsers(params?: {
+    role?: string;
+    skip?: number;
+    limit?: number;
+    sort_by?: string;
+    order?: 'asc' | 'desc';
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.role) searchParams.append('role', params.role);
+    if (params?.skip !== undefined) searchParams.append('skip', params.skip.toString());
+    if (params?.limit !== undefined) searchParams.append('limit', params.limit.toString());
+    if (params?.sort_by) searchParams.append('sort_by', params.sort_by);
+    if (params?.order) searchParams.append('order', params.order);
+    
+    const response = await this.api.get(`/users?${searchParams.toString()}`);
+    return response.data;
+  }
+  */
+
   async logout() {
     try {
       await this.api.post('/auth/logout');
