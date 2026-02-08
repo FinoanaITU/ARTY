@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -260,7 +261,7 @@ const Products = () => {
                       <CardContent>
                         <div className="flex justify-between items-center mb-4">
                           <span className="text-xl font-bold text-orange-600">
-                            {product.price.toLocaleString('fr-FR')} Ar
+                            {formatCurrency(product.price, language)}
                           </span>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             product.stock > 0 

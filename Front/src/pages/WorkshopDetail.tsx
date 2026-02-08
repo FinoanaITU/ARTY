@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,7 +103,7 @@ const normalizeImageUrl = (url: string | undefined | null): string => {
 
 const WorkshopDetail = () => {
   const { id } = useParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [showBookingCalendar, setShowBookingCalendar] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [showUnavailabilityCalendar, setShowUnavailabilityCalendar] = useState(false);
@@ -330,7 +331,7 @@ const WorkshopDetail = () => {
               <div className="flex items-center gap-4 text-gray-600 mb-4">
                 <span>📍 {workshop.address || workshop.location}</span>
                 <span className="text-2xl font-bold text-brand-terracotta">
-                  {(workshop.base_price || workshop.price).toLocaleString()} Ar
+                  {formatCurrency(workshop.base_price || workshop.price, language)}
                 </span>
               </div>
               {workshop.tags && workshop.tags.length > 0 && (
@@ -349,7 +350,7 @@ const WorkshopDetail = () => {
                   <h3 className="font-semibold text-brand-brown mb-2">Option de privatisation disponible</h3>
                   <p className="text-sm text-brand-brown/80 mb-2">{workshop.privatizationOption.description}</p>
                   <div className="text-sm text-brand-brown">
-                    À partir de {workshop.privatizationOption.basePrice.toLocaleString()} Ar + {workshop.privatizationOption.pricePerParticipant.toLocaleString()} Ar/participant
+                    À partir de {formatCurrency(workshop.privatizationOption.basePrice, language)} + {formatCurrency(workshop.privatizationOption.pricePerParticipant, language)}/participant
                   </div>
                 </div>
               )}

@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { CalendarIcon, Users, Mail, Phone, MessageSquare, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +60,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
   onSubmit,
   onCancel
 }) => {
+  const { language } = useLanguage();
   const {
     register,
     handleSubmit,
@@ -327,10 +330,10 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
                     Atelier privé pour votre groupe ({privatizationOption.minParticipants}-{privatizationOption.maxParticipants} participants)
                   </p>
                   <div className="text-lg font-semibold text-purple-900">
-                    Prix total: {calculatePrivatePrice().toLocaleString()} Ar
+                    Prix total: {formatCurrency(calculatePrivatePrice(), language)}
                   </div>
                   <p className="text-xs text-purple-600">
-                    Prix de base: {privatizationOption.basePrice.toLocaleString()} Ar + {privatizationOption.pricePerParticipant.toLocaleString()} Ar/participant
+                    Prix de base: {formatCurrency(privatizationOption.basePrice, language)} + {formatCurrency(privatizationOption.pricePerParticipant, language)}/participant
                   </p>
                 </div>
               )}

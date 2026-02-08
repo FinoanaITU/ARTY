@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { useUser } from '@/contexts/UserContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
@@ -83,7 +84,7 @@ const testimonials = [
 ];
 
 const Index = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { isLoggedIn } = useUser();
 
   return (

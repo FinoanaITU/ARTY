@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +23,7 @@ import type { PaymentTrackingOut, RecordPaymentRequest, ArtisanPayoutOut, Paymen
 
 const AdminPanel = () => {
   const { user } = useUser();
+  const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
   const [payments, setPayments] = useState<PaymentStatus[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
@@ -256,7 +259,7 @@ const AdminPanel = () => {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {adminStats.totalProductSales.toLocaleString()} Ar
+                  {formatCurrency(adminStats.totalProductSales, language)}
                 </div>
                 <p className="text-sm text-gray-600">Ventes Produits</p>
               </CardContent>
@@ -264,7 +267,7 @@ const AdminPanel = () => {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {adminStats.totalWorkshopSales.toLocaleString()} Ar
+                  {formatCurrency(adminStats.totalWorkshopSales, language)}
                 </div>
                 <p className="text-sm text-gray-600">Ventes Ateliers</p>
               </CardContent>
@@ -452,7 +455,7 @@ const AdminPanel = () => {
                               </div>
                               <div className="text-right">
                                 <div className="font-medium text-orange-600 mb-1">
-                                  {order.amount.toLocaleString()} Ar
+                                  {formatCurrency(order.amount, language)}
                                 </div>
                                 <span className={`px-2 py-1 rounded-full text-xs ${
                                   order.status === 'completed' 

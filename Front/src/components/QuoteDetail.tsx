@@ -5,6 +5,8 @@
  */
 import { useState, useEffect } from 'react';
 import { Quote, QuoteUpdateIn } from '@/types/quote';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import apiService from '@/services/api';
 import { toast } from 'sonner';
 
@@ -31,6 +33,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) => {
+  const { language } = useLanguage();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -95,11 +98,7 @@ export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) =>
   };
 
   const formatPrice = (price?: number | null) => {
-    if (!price) return '-';
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(price);
+    return formatCurrency(price, language);
   };
 
   if (loading) {
@@ -247,7 +246,7 @@ export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) =>
               <div className="space-y-4 bg-blue-50 p-4 rounded border border-blue-200">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Prix final (€)
+                    Prix final (AR)
                   </label>
                   <input
                     type="number"
