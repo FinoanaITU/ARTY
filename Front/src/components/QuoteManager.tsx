@@ -18,7 +18,10 @@ export const QuoteManager = () => {
 
   const handleQuoteCreated = (quoteId: string) => {
     setRefreshKey(prev => prev + 1);
-    setActiveTab('list');
+    // Rester sur l'onglet de création pour voir le message de succès
+    setTimeout(() => {
+      setActiveTab('list');
+    }, 1500);
   };
 
   const handleQuoteUpdated = (quote: Quote) => {
@@ -28,10 +31,17 @@ export const QuoteManager = () => {
 
   return (
     <div className="space-y-6">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">📊 Gestion des Devis</h2>
+        <p className="text-gray-700">
+          Créez, listez et gérez tous vos demandes de devis en un seul endroit
+        </p>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="list">Lister les devis</TabsTrigger>
-          <TabsTrigger value="create">Créer un devis</TabsTrigger>
+          <TabsTrigger value="list">📋 Mes devis</TabsTrigger>
+          <TabsTrigger value="create">➕ Créer un devis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="mt-6">
@@ -39,7 +49,7 @@ export const QuoteManager = () => {
             <div className="space-y-4">
               <button
                 onClick={() => setSelectedQuote(null)}
-                className="text-blue-600 hover:text-blue-900 font-medium"
+                className="text-blue-600 hover:text-blue-900 font-medium flex items-center gap-2"
               >
                 ← Retour à la liste
               </button>
@@ -58,10 +68,22 @@ export const QuoteManager = () => {
         </TabsContent>
 
         <TabsContent value="create" className="mt-6">
-          <QuoteForm
-            onSuccess={handleQuoteCreated}
-            onCancel={() => setActiveTab('list')}
-          />
+          <Card className="border-l-4 border-l-blue-600">
+            <CardHeader className="bg-blue-50">
+              <CardTitle className="flex items-center gap-2">
+                ➕ Créer une nouvelle demande de devis
+              </CardTitle>
+              <CardDescription>
+                Remplissez tous les champs pour créer un devis. Les paramètres administrateur sont optionnels.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <QuoteForm
+                onSuccess={handleQuoteCreated}
+                onCancel={() => setActiveTab('list')}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

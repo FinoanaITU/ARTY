@@ -282,7 +282,7 @@ export const QuoteRequestManager: React.FC<QuoteRequestManagerProps> = ({
           
           <div className="space-y-4">
             <div>
-              <Label htmlFor="finalPrice">Prix final (Ar) *</Label>
+              <Label htmlFor="finalPrice">Prix final ({language === 'fr' ? '€' : 'Ar'}) *</Label>
               <Input
                 id="finalPrice"
                 type="number"

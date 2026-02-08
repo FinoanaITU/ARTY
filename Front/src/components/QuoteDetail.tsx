@@ -246,7 +246,7 @@ export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) =>
               <div className="space-y-4 bg-blue-50 p-4 rounded border border-blue-200">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Prix final (AR)
+                    Prix final ({language === 'fr' ? '€' : 'Ar'})
                   </label>
                   <input
                     type="number"
