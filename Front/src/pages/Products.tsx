@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import type { ProductListItem, CategoryOut } from '@/types/product';
 
 const Products = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
