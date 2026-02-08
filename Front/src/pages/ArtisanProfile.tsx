@@ -15,7 +15,9 @@ const ArtisanProfile = () => {
   const { addItem } = useCart();
   const [activeTab, setActiveTab] = useState('products');
   const [artisan, setArtisan] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,71 +42,43 @@ const ArtisanProfile = () => {
       }
     };
 
+    const fetchProducts = async () => {
+      if (!id) return;
+      
+      try {
+        setProductsLoading(true);
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+        const response = await fetch(`${apiUrl}/products?artisan_id=${id}&limit=50`);
+        
+        if (!response.ok) {
+          throw new Error('Erreur lors du chargement des produits');
+        }
+        
+        const data = await response.json();
+        setProducts(data.items || []);
+      } catch (err: any) {
+        console.error('Erreur lors du chargement des produits:', err);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
     fetchArtisan();
+    fetchProducts();
   }, [id]);
 
-  // Mock data pour les produits (à remplacer par un appel API)
-  const products = [
-    {
-      id: 1,
-      name: 'Masque traditionnel Vezo',
-      price: 45000,
-      image: '/placeholder.svg',
-      inStock: true,
-      description: 'Masque sculpté à la main selon les traditions Vezo'
-    },
-    {
-      id: 2,
-      name: 'Statuette Zébu',
-      price: 25000,
-      image: '/placeholder.svg',
-      inStock: true,
-      description: 'Magnifique statuette représentant un zébu sacré'
-    },
-    {
-      id: 3,
-      name: 'Bol en bois de palissandre',
-      price: 35000,
-      image: '/placeholder.svg',
-      inStock: false,
-      description: 'Bol artisanal en bois précieux de Madagascar'
-    },
-    {
-      id: 4,
-      name: 'Puzzle en bois',
-      price: 15000,
-      image: '/placeholder.svg',
-      inStock: true,
-      description: 'Puzzle éducatif en bois pour enfants'
-    }
-  ];
-
-  const reviews = [
-    {
-      id: 1,
-      user: 'Marie L.',
-      rating: 5,
-      date: '2024-05-20',
-      comment: 'Magnifique travail ! La qualité est exceptionnelle et le service client parfait.'
-    },
-    {
-      id: 2,
-      user: 'Jean P.',
-      rating: 5,
-      date: '2024-05-15',
-      comment: 'Très satisfait de mon achat. L\'artisan est très professionnel et talentueux.'
-    },
-    {
-      id: 3,
-      user: 'Sophie M.',
-      rating: 4,
-      date: '2024-05-10',
-      comment: 'Belle pièce, livraison rapide. Je recommande vivement !'
-    }
-  ];
+  // Helper pour normaliser les URLs d'images
+  const normalizeImageUrl = (url: string | undefined | null): string => {
+    if (!url) return 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
+    return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
+  };
 
   const handleAddToCart = (product: any) => {
     if (!artisan) return;
+    
+    const productImage = product.images && product.images.length > 0 ? product.images[0] : '/placeholder.svg';
     
     addItem({
       type: 'product',
@@ -113,7 +87,7 @@ const ArtisanProfile = () => {
       artisan: artisan.name,
       price: product.price,
       quantity: 1,
-      image: product.image
+      image: productImage
     });
     alert('Produit ajouté au panier !');
   };
@@ -143,13 +117,7 @@ const ArtisanProfile = () => {
     );
   }
 
-  // Helper pour normaliser les URLs d'images
-  const normalizeImageUrl = (url: string | undefined | null): string => {
-    if (!url) return 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
-    return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
@@ -214,56 +182,78 @@ const ArtisanProfile = () => {
             </TabsList>
 
             <TabsContent value="products">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-square bg-orange-100 relative">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                      {!product.inStock && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                          <span className="text-white font-medium">Rupture de stock</span>
+              {productsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+                </div>
+              ) : products.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                  <p className="text-gray-500">Aucun produit disponible pour le moment</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {products.map((product) => {
+                    const inStock = product.stock > 0;
+                    const productImage = product.images && product.images.length > 0 
+                      ? product.images[0] 
+                      : 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&h=400&fit=crop';
+                    
+                    return (
+                      <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                        <div className="aspect-square bg-orange-100 relative">
+                          <img
+                            src={productImage}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&h=400&fit=crop';
+                            }}
+                          />
+                          {!inStock && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                              <span className="text-white font-medium">Rupture de stock</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{product.name}</CardTitle>
-                      <CardDescription>{product.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-xl font-bold text-orange-600">
-                          {product.price.toLocaleString()} Ar
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          product.inStock 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          {product.inStock ? 'En stock' : 'Épuisé'}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link to={`/product/${product.id}`} className="flex-1">
-                          <Button variant="outline" className="w-full">
-                            Voir détails
-                          </Button>
-                        </Link>
-                        <Button 
-                          className="bg-orange-600 hover:bg-orange-700"
-                          disabled={!product.inStock}
-                          onClick={() => handleAddToCart(product)}
-                        >
-                          {product.inStock ? 'Panier' : 'Épuisé'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">{product.name}</CardTitle>
+                          <CardDescription className="line-clamp-2">
+                            {product.description || 'Produit artisanal de qualité'}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="text-xl font-bold text-orange-600">
+                              {product.price.toLocaleString()} Ar
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              inStock 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {inStock ? 'En stock' : 'Épuisé'}
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Link to={`/product/${product.id}`} className="flex-1">
+                              <Button variant="outline" className="w-full">
+                                Voir détails
+                              </Button>
+                            </Link>
+                            <Button 
+                              className="bg-orange-600 hover:bg-orange-700"
+                              disabled={!inStock}
+                              onClick={() => handleAddToCart(product)}
+                            >
+                              {inStock ? 'Panier' : 'Épuisé'}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="about">
@@ -316,45 +306,18 @@ const ArtisanProfile = () => {
             </TabsContent>
 
             <TabsContent value="reviews">
-              <div className="space-y-4">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="text-3xl font-bold text-orange-600">{artisan.rating}</div>
-                    <div>
-                      <div className="flex items-center gap-1 mb-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span key={star} className={star <= Math.floor(artisan.rating) ? 'text-yellow-400' : 'text-gray-300'}>
-                            ⭐
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-sm text-gray-600">{artisan.reviewsCount} avis</p>
-                    </div>
-                  </div>
+              <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Avis clients</h3>
+                  <p className="text-gray-500">
+                    Les avis seront bientôt disponibles. Revenez plus tard !
+                  </p>
                 </div>
-
-                {reviews.map((review) => (
-                  <Card key={review.id}>
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{review.user}</h4>
-                          <div className="flex items-center gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span key={star} className={star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}>
-                                ⭐
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {new Date(review.date).toLocaleDateString('fr-FR')}
-                        </span>
-                      </div>
-                      <p className="text-gray-600">{review.comment}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                <div className="text-gray-400">
+                  <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  </svg>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
