@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Calendar, Info } from 'lucide-react';
 import { PaymentPlan } from '@/types/cart';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface PaymentPlanSelectorProps {
   totalPrice: number;
@@ -17,6 +19,7 @@ const PaymentPlanSelector: React.FC<PaymentPlanSelectorProps> = ({
   onPaymentPlanChange
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<'full' | 'installment'>('full');
+  const { language } = useLanguage();
 
   const depositAmount = Math.round(totalPrice * 0.5);
   const remainingAmount = totalPrice - depositAmount;
@@ -65,7 +68,7 @@ const PaymentPlanSelector: React.FC<PaymentPlanSelectorProps> = ({
                   </div>
                 </div>
                 <div className="text-lg font-bold text-green-600">
-                  {totalPrice.toLocaleString()} Ar
+                  {formatCurrency(totalPrice, language)}
                 </div>
               </div>
             </Label>
@@ -85,11 +88,11 @@ const PaymentPlanSelector: React.FC<PaymentPlanSelectorProps> = ({
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">50% à la réservation:</span>
-                    <span className="font-medium">{depositAmount.toLocaleString()} Ar</span>
+                    <span className="font-medium">{formatCurrency(depositAmount, language)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">50% le jour J:</span>
-                    <span className="font-medium">{remainingAmount.toLocaleString()} Ar</span>
+                    <span className="font-medium">{formatCurrency(remainingAmount, language)}</span>
                   </div>
                 </div>
               </div>

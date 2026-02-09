@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { usePriceVariations } from '@/hooks/usePriceVariations';
 import { useCart } from '@/contexts/CartContext';
 import { useUser } from '@/contexts/UserContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { toast } from '@/hooks/use-toast';
 import { Users, CreditCard, Calendar, MapPin, Clock } from 'lucide-react';
 
@@ -45,6 +47,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
   const [participants, setParticipants] = useState(1);
   const { addItem } = useCart();
   const { user } = useUser();
+  const { language } = useLanguage();
   
   // Fonction pour déterminer le type d'utilisateur basé sur le profil
   const getUserType = () => {
@@ -263,7 +266,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
             <div className="bg-muted p-4 rounded-lg space-y-3">
               <div className="flex justify-between items-center">
                 <span>Prix unitaire</span>
-                <span>{workshop.price.toLocaleString()} Ar</span>
+                <span>{formatCurrency(workshop.price, language)}</span>
               </div>
               
               <div className="flex justify-between items-center">
@@ -274,7 +277,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
               <div className="flex justify-between items-center">
                 <span>Sous-total</span>
                 <span className={totalSavings > 0 ? 'line-through text-muted-foreground' : ''}>
-                  {totalOriginalPrice.toLocaleString()} Ar
+                  {formatCurrency(totalOriginalPrice, language)}
                 </span>
               </div>
 
@@ -282,14 +285,14 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
                 <>
                   <div className="flex justify-between items-center text-green-600">
                     <span>Remise ({priceVariation.discountPercentage}%)</span>
-                    <span>-{totalSavings.toLocaleString()} Ar</span>
+                    <span>-{formatCurrency(totalSavings, language)}</span>
                   </div>
                   
                   <Separator />
                   
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total final</span>
-                    <span className="text-brand-terracotta">{totalFinalPrice.toLocaleString()} Ar</span>
+                    <span className="text-brand-terracotta">{formatCurrency(totalFinalPrice, language)}</span>
                   </div>
                 </>
               )}
@@ -297,7 +300,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
               {totalSavings === 0 && (
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-brand-terracotta">{totalFinalPrice.toLocaleString()} Ar</span>
+                  <span className="text-brand-terracotta">{formatCurrency(totalFinalPrice, language)}</span>
                 </div>
               )}
             </div>
@@ -305,7 +308,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
             {totalSavings > 0 && (
               <div className="flex items-center gap-2 text-green-600">
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  Économie de {totalSavings.toLocaleString()} Ar
+                  Économie de {formatCurrency(totalSavings, language)}
                 </Badge>
               </div>
             )}

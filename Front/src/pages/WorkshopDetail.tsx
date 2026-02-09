@@ -12,6 +12,8 @@ import WorkshopRegistrationForm from '@/components/WorkshopRegistrationForm';
 import ArtisanUnavailabilityDisplay from '@/components/ArtisanUnavailabilityDisplay';
 import { useWorkshops } from '@/hooks/useWorkshops';
 import { UnavailabilityPeriod } from '@/types/artisan';
+import { useUser } from '@/contexts/UserContext';
+import { usePriceVariations } from '@/hooks/usePriceVariations';
 
 interface Unavailability {
   id: string;
@@ -104,6 +106,7 @@ const normalizeImageUrl = (url: string | undefined | null): string => {
 const WorkshopDetail = () => {
   const { id } = useParams();
   const { t, language } = useLanguage();
+  const { user } = useUser();
   const [showBookingCalendar, setShowBookingCalendar] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [showUnavailabilityCalendar, setShowUnavailabilityCalendar] = useState(false);
@@ -230,6 +233,17 @@ const WorkshopDetail = () => {
   // Use API workshop if available, otherwise use mock
   const workshop = normalizeWorkshopData(apiWorkshop, mockWorkshop);
 
+  // Calculer le prix avec réduction si applicable
+  const getUserType = () => {
+    if (!user) return 'tourist';
+    if (user.buyerType === 'entreprise') return 'business';
+    if (user.locationType === 'local') return 'local';
+    return 'tourist';
+  };
+
+  const workshopPrice = workshop.base_price || workshop.price || 0;
+  const { priceVariation } = usePriceVariations(workshopPrice, getUserType());
+
   // Récupération des indisponibilités si on utilise les données API
   useEffect(() => {
     if (apiWorkshop && apiWorkshop.id) {
@@ -330,9 +344,21 @@ const WorkshopDetail = () => {
               </div>
               <div className="flex items-center gap-4 text-gray-600 mb-4">
                 <span>📍 {workshop.address || workshop.location}</span>
-                <span className="text-2xl font-bold text-brand-terracotta">
-                  {formatCurrency(workshop.base_price || workshop.price, language)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-brand-terracotta">
+                    {formatCurrency(priceVariation.discountedPrice, language)}
+                  </span>
+                  {priceVariation.discountPercentage > 0 && (
+                    <>
+                      <span className="text-lg text-gray-500 line-through">
+                        {formatCurrency(priceVariation.originalPrice, language)}
+                      </span>
+                      <Badge className="bg-green-600 text-white">
+                        -{priceVariation.discountPercentage}%
+                      </Badge>
+                    </>
+                  )}
+                </div>
               </div>
               {workshop.tags && workshop.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-6">
@@ -436,6 +462,7 @@ const WorkshopDetail = () => {
                 workshopType={workshop.type}
                 duration={workshop.duration}
                 maxParticipants={workshop.maxParticipants}
+                workshopPrice={workshop.base_price || workshop.price}
                 artisanName={workshop.instructor}
                 privatizationOption={workshop.privatizationOption}
                 artisanUnavailability={artisanUnavailability}

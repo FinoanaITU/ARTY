@@ -11,6 +11,8 @@ import PriceVariationSelector from './PriceVariationSelector';
 import PaymentPlanSelector from './PaymentPlanSelector';
 import ProductRecommendations from './ProductRecommendations';
 import { useCart } from '@/contexts/CartContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { CustomBookingRequest as CustomBookingRequestType, PrivatizationOption } from '@/types/booking';
 import { PriceVariation, PaymentPlan } from '@/types/cart';
 import { UnavailabilityPeriod } from '@/types/artisan';
@@ -28,6 +30,7 @@ interface WorkshopBookingCalendarProps {
   workshopType: 'inscription' | 'reservation';
   duration: string;
   maxParticipants: number;
+  workshopPrice?: number;
   artisanName?: string;
   privatizationOption?: PrivatizationOption;
   artisanUnavailability?: UnavailabilityPeriod[];
@@ -40,6 +43,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   workshopType,
   duration,
   maxParticipants,
+  workshopPrice = 35000,
   artisanName = "Artisan",
   privatizationOption,
   artisanUnavailability = [],
@@ -52,6 +56,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   const [selectedPriceVariation, setSelectedPriceVariation] = useState<PriceVariation | null>(null);
   const [selectedPaymentPlan, setSelectedPaymentPlan] = useState<PaymentPlan | null>(null);
   const { addItem } = useCart();
+  const { language } = useLanguage();
 
   // Check if a date is unavailable due to artisan's schedule
   const isDateUnavailable = (date: Date) => {
@@ -299,7 +304,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     return day === 0 || day === 6;
   };
 
-  const basePrice = 35000; // Example workshop price
+  const basePrice = workshopPrice;
 
   if (showCustomRequest) {
     return (
@@ -592,7 +597,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
                 </p>
                 <p className="text-sm text-gray-500">Durée: {duration}</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {selectedPriceVariation?.discountedPrice.toLocaleString()} Ar
+                  {formatCurrency(selectedPriceVariation?.discountedPrice, language)}
                   {selectedPaymentPlan?.type === 'installment' && (
                     <span className="text-sm font-normal text-gray-600 block">
                       (50% maintenant, 50% le jour J)

@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tag } from 'lucide-react';
 import { usePriceVariations } from '@/hooks/usePriceVariations';
 import { useUser } from '@/contexts/UserContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface PriceVariationSelectorProps {
   basePrice: number;
@@ -20,6 +22,7 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
   showPromoCodeOnly = false
 }) => {
   const { user } = useUser();
+  const { language } = useLanguage();
   
   // Déterminer le type d'utilisateur automatiquement
   const getUserType = () => {
@@ -65,37 +68,23 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
             </label>
             <div className="flex gap-2">
               <Input
-                placeholder="Entrez votre code"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                disabled={!!appliedPromoCode}
+                placeholder="Disponible bientôt"
+                value=""
+                disabled={true}
+                className="bg-gray-100"
               />
-              {appliedPromoCode ? (
-                <Button
-                  variant="outline"
-                  onClick={removePromoCode}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Retirer
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleApplyPromoCode}
-                  disabled={!promoCode.trim()}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Appliquer
-                </Button>
-              )}
+              <Button
+                disabled={true}
+                className="bg-gray-400"
+              >
+                Appliquer
+              </Button>
             </div>
-            {appliedPromoCode && (
-              <div className="mt-2">
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  <Tag className="h-3 w-3 mr-1" />
-                  Code {appliedPromoCode.code} appliqué
-                </Badge>
-              </div>
-            )}
+            <div className="mt-2">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                Disponible bientôt
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -109,7 +98,7 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
       <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
         <div className="text-center">
           <div className="text-3xl font-bold text-orange-600">
-            {priceVariation.discountedPrice.toLocaleString('fr-FR')} Ar
+            {formatCurrency(priceVariation.discountedPrice, language)}
           </div>
         </div>
       </div>
@@ -123,37 +112,23 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
             </label>
             <div className="flex gap-2">
               <Input
-                placeholder="Entrez votre code"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                disabled={!!appliedPromoCode}
+                placeholder="Disponible bientôt"
+                value=""
+                disabled={true}
+                className="bg-gray-100"
               />
-              {appliedPromoCode ? (
-                <Button
-                  variant="outline"
-                  onClick={removePromoCode}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Retirer
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleApplyPromoCode}
-                  disabled={!promoCode.trim()}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Appliquer
-                </Button>
-              )}
+              <Button
+                disabled={true}
+                className="bg-gray-400"
+              >
+                Appliquer
+              </Button>
             </div>
-            {appliedPromoCode && (
-              <div className="mt-2">
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  <Tag className="h-3 w-3 mr-1" />
-                  Code {appliedPromoCode.code} appliqué
-                </Badge>
-              </div>
-            )}
+            <div className="mt-2">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                Disponible bientôt
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>

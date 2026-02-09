@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Star, ShoppingCart } from 'lucide-react';
 import { useProductRecommendations } from '@/hooks/useRecommendations';
 import { useCart } from '@/contexts/CartContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 interface ProductRecommendationsProps {
   currentProductId: number;
@@ -18,6 +20,7 @@ const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
 }) => {
   const { recommendations, loading } = useProductRecommendations(currentProductId, category);
   const { addItem } = useCart();
+  const { language } = useLanguage();
 
   const handleAddToCart = (product: any) => {
     addItem({
@@ -75,7 +78,7 @@ const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
                 <p className="text-xs text-gray-600 mb-2">{product.artisan}</p>
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-orange-600 text-sm">
-                    {product.price.toLocaleString()} Ar
+                    {formatCurrency(product.price, language)}
                   </span>
                   <div className="flex gap-1">
                     <Link to={`/product/${product.id}`}>
