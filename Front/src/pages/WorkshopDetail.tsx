@@ -6,7 +6,7 @@ import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2, PackageCheck, AlertCircle, Clock, Users as UsersIcon, Globe, Calendar as CalendarIcon2 } from 'lucide-react';
 import WorkshopBookingCalendar from '@/components/WorkshopBookingCalendar';
 import WorkshopRegistrationForm from '@/components/WorkshopRegistrationForm';
 import ArtisanUnavailabilityDisplay from '@/components/ArtisanUnavailabilityDisplay';
@@ -479,17 +479,22 @@ const WorkshopDetail = () => {
               {/* Description */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-brand-brown">Description</CardTitle>
+                  <CardTitle className="text-brand-brown text-xl">📋 Description</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 leading-relaxed">{workshop.description}</p>
+                  <p className="text-gray-700 leading-relaxed text-base">{workshop.description}</p>
                   
                   {workshop.type === 'reservation' && (
-                    <div className="mt-4 p-4 bg-brand-beige rounded-lg">
-                      <h4 className="font-medium text-brand-brown mb-2">Atelier sur réservation</h4>
-                      <p className="text-sm text-brand-brown/80">
-                        Cet atelier propose des créneaux flexibles. Vous pouvez choisir la date et l'heure qui vous conviennent le mieux parmi les disponibilités proposées.
-                      </p>
+                    <div className="mt-4 p-4 bg-brand-beige rounded-lg border border-brand-brown/20">
+                      <div className="flex items-start gap-3">
+                        <CalendarIcon2 className="h-5 w-5 text-brand-brown mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-brand-brown mb-1">Atelier sur réservation</h4>
+                          <p className="text-sm text-brand-brown/80">
+                            Cet atelier propose des créneaux flexibles. Choisissez la date et l'heure qui vous conviennent.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -498,20 +503,23 @@ const WorkshopDetail = () => {
               {/* What You'll Learn */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-brand-brown">Ce que vous apprendrez</CardTitle>
+                  <CardTitle className="text-brand-brown text-xl">🎯 Ce que vous apprendrez</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {(workshop.what_you_will_learn || workshop.whatYouWillLearn) && (workshop.what_you_will_learn?.length > 0 || workshop.whatYouWillLearn?.length > 0) ? (
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {(workshop.what_you_will_learn || workshop.whatYouWillLearn).map((item, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <span className="w-2 h-2 bg-brand-terracotta rounded-full mt-2 flex-shrink-0"></span>
-                          <span className="text-gray-600">{item}</span>
+                        <li key={index} className="flex items-start gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-700 text-base">{item}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-gray-600">Informations détaillées disponibles lors de l'inscription.</p>
+                    <div className="flex items-start gap-3 text-gray-600">
+                      <AlertCircle className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <p>Informations détaillées disponibles lors de l'inscription.</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -520,26 +528,77 @@ const WorkshopDetail = () => {
               {workshop.type === 'inscription' && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-brand-brown">Programme de l'atelier</CardTitle>
+                    <CardTitle className="text-brand-brown text-xl">🕐 Programme de l'atelier</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {workshop.schedule ? (
                       <div className="space-y-3">
                         {workshop.schedule.map((item, index) => (
-                          <div key={index} className="flex gap-4">
-                            <span className="font-medium text-brand-terracotta w-16 flex-shrink-0">
-                              {item.time}
-                            </span>
-                            <span className="text-gray-600">{item.activity}</span>
+                          <div key={index} className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-center w-16 h-10 bg-brand-terracotta/10 rounded flex-shrink-0">
+                              <span className="font-semibold text-brand-terracotta text-sm">
+                                {item.time}
+                              </span>
+                            </div>
+                            <span className="text-gray-700 text-base pt-2">{item.activity}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-600">Programme détaillé communiqué lors de l'inscription.</p>
+                      <div className="flex items-start gap-3 text-gray-600">
+                        <AlertCircle className="h-5 w-5 text-gray-400 mt-0.5" />
+                        <p>Programme détaillé communiqué lors de l'inscription.</p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
               )}
+
+              {/* Materials */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-brand-brown text-xl">🎒 Matériel</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Materials Included */}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <PackageCheck className="h-5 w-5 text-green-600" />
+                      Inclus dans l'atelier
+                    </h3>
+                    {(workshop.materials_included || workshop.materials) && (workshop.materials_included?.length > 0 || workshop.materials?.length > 0) ? (
+                      <ul className="space-y-2 ml-7">
+                        {(workshop.materials_included || workshop.materials).map((material, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-700">{material}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-600 text-sm ml-7">Tout le matériel nécessaire sera fourni.</p>
+                    )}
+                  </div>
+
+                  {/* Materials To Bring */}
+                  {workshop.materials_to_bring && workshop.materials_to_bring.length > 0 && (
+                    <div className="pt-4 border-t">
+                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-orange-600" />
+                        À apporter
+                      </h3>
+                      <ul className="space-y-2 ml-7">
+                        {workshop.materials_to_bring.map((material, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
+                            <span className="text-gray-700">{material}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
             {/* Sidebar */}
@@ -547,11 +606,11 @@ const WorkshopDetail = () => {
               {/* Instructor Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-brand-brown">Votre instructeur</CardTitle>
+                  <CardTitle className="text-brand-brown text-lg">👨‍🎨 Votre instructeur</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-brand-orange/20 rounded-full overflow-hidden">
+                    <div className="w-16 h-16 bg-brand-orange/20 rounded-full overflow-hidden flex-shrink-0">
                       <img
                         src={workshop.instructor_image || workshop.instructorImage}
                         alt={workshop.instructor_name || workshop.instructor}
@@ -559,111 +618,98 @@ const WorkshopDetail = () => {
                       />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{workshop.instructor_name || workshop.instructor}</h3>
+                      <h3 className="font-semibold text-gray-900">{workshop.instructor_name || workshop.instructor}</h3>
                       <p className="text-sm text-gray-600">Maître artisan</p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-gray-700 leading-relaxed mb-4">
                     {workshop.instructor_bio || "Artisan passionné avec plus de 15 ans d'expérience dans l'artisanat traditionnel malgache."}
                   </p>
                   {(apiWorkshop?.artisan_id || workshop.id) && (
                     <Link to={`/artisan/${apiWorkshop?.artisan_id || workshop.id}`}>
                       <Button variant="outline" size="sm" className="w-full border-brand-brown text-brand-brown hover:bg-brand-brown hover:text-white">
-                        Voir le profil
+                        Voir le profil complet
                       </Button>
                     </Link>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Materials Included */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-brand-brown">Matériel inclus</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(workshop.materials_included || workshop.materials) && (workshop.materials_included?.length > 0 || workshop.materials?.length > 0) ? (
-                    <ul className="space-y-2">
-                      {(workshop.materials_included || workshop.materials).map((material, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <span className="w-2 h-2 bg-brand-orange rounded-full"></span>
-                          <span className="text-gray-600">{material}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-600">Liste du matériel fourni communiquée lors de l'inscription.</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Materials To Bring */}
-              {workshop.materials_to_bring && workshop.materials_to_bring.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-brand-brown">Matériel à apporter</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {workshop.materials_to_bring.map((material, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <span className="w-2 h-2 bg-brand-terracotta rounded-full"></span>
-                          <span className="text-gray-600">{material}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Important Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-brand-brown">Informations importantes</CardTitle>
+                  <CardTitle className="text-brand-brown text-lg">ℹ️ Informations pratiques</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm text-gray-600">
-                  <div>
-                    <strong>Âge minimum :</strong> 12 ans
+                <CardContent className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <UsersIcon className="h-5 w-5 text-brand-brown mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">Âge minimum</p>
+                      <p className="text-sm text-gray-600">12 ans</p>
+                    </div>
                   </div>
-                  <div>
-                    <strong>Niveau requis :</strong> {workshop.skill_level || workshop.difficulty || 'Aucun'}
+
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-brand-brown mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">Niveau requis</p>
+                      <p className="text-sm text-gray-600">{workshop.skill_level || workshop.difficulty || 'Aucun prérequis'}</p>
+                    </div>
                   </div>
+
                   {workshop.prerequisites && (
-                    <div>
-                      <strong>Prérequis :</strong> {workshop.prerequisites}
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-brand-brown mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Prérequis</p>
+                        <p className="text-sm text-gray-600">{workshop.prerequisites}</p>
+                      </div>
                     </div>
                   )}
-                  <div>
-                    <strong>Langues :</strong> Français, Malgache
+
+                  <div className="flex items-start gap-3">
+                    <Globe className="h-5 w-5 text-brand-brown mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">Langues</p>
+                      <p className="text-sm text-gray-600">Français, Malgache</p>
+                    </div>
                   </div>
-                  <div>
-                    <strong>Type :</strong> 
-                    <Badge className={`ml-2 ${
-                      workshop.type === 'inscription' ? 'bg-brand-orange text-white' : 'bg-brand-brown text-white'
-                    }`}>
-                      {workshop.type === 'inscription' ? 'Inscription fixe' : 'Réservation flexible'}
-                    </Badge>
-                  </div>
-                  {workshop.privatizationOption && (
-                    <div>
-                      <strong>Privatisation :</strong> 
-                      <Badge className="ml-2 bg-brand-brown text-white">
-                        Disponible
+
+                  <div className="flex items-start gap-3">
+                    <CalendarIcon2 className="h-5 w-5 text-brand-brown mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">Type d'atelier</p>
+                      <Badge className={`mt-1 ${
+                        workshop.type === 'inscription' ? 'bg-brand-orange text-white' : 'bg-brand-brown text-white'
+                      }`}>
+                        {workshop.type === 'inscription' ? 'Inscription fixe' : 'Réservation flexible'}
                       </Badge>
                     </div>
-                  )}
-                  {workshop.cancellation_policy && (
-                    <div>
-                      <strong>Politique d'annulation :</strong> 
-                      {workshop.cancellation_policy}
+                  </div>
+
+                  {workshop.privatizationOption && (
+                    <div className="flex items-start gap-3">
+                      <UsersIcon className="h-5 w-5 text-brand-brown mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Privatisation</p>
+                        <Badge className="mt-1 bg-green-600 text-white">
+                          Disponible pour groupes
+                        </Badge>
+                      </div>
                     </div>
                   )}
-                  {!workshop.cancellation_policy && (
-                    <div>
-                      <strong>Politique d'annulation :</strong> 
-                      Annulation gratuite jusqu'à 24h avant l'atelier
+
+                  <div className="pt-4 border-t">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-brand-brown mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Politique d'annulation</p>
+                        <p className="text-sm text-gray-600">
+                          {workshop.cancellation_policy || "Annulation gratuite jusqu'à 24h avant l'atelier"}
+                        </p>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -671,30 +717,31 @@ const WorkshopDetail = () => {
               {apiWorkshop && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-brand-brown">Indisponibilités de l'artisan</CardTitle>
+                    <CardTitle className="text-brand-brown text-lg">📅 Indisponibilités</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {loadingUnavailabilities ? (
                       <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span className="ml-2">Chargement...</span>
+                        <Loader2 className="h-5 w-5 animate-spin text-brand-brown" />
+                        <span className="ml-2 text-sm text-gray-600">Chargement...</span>
                       </div>
                     ) : unavailabilities.length > 0 ? (
                       <div className="space-y-3">
                         {unavailabilities.map((unavailability) => (
                           <div key={unavailability.id} className="p-3 bg-red-50 rounded-lg border border-red-200">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-medium text-red-800">{unavailability.reason}</h4>
-                                <p className="text-sm text-red-600 mt-1">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <h4 className="font-medium text-red-800 text-sm">{unavailability.reason}</h4>
+                                <p className="text-xs text-red-600 mt-1">
                                   {unavailability.type === 'single_day' ? (
-                                    <>Indisponible le {new Date(unavailability.start_date).toLocaleDateString('fr-FR')}</>
+                                    <>Le {new Date(unavailability.start_date).toLocaleDateString('fr-FR')}</>
                                   ) : (
                                     <>Du {new Date(unavailability.start_date).toLocaleDateString('fr-FR')} au {new Date(unavailability.end_date!).toLocaleDateString('fr-FR')}</>
                                   )}
                                 </p>
                               </div>
-                              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                              <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs">
                                 {unavailability.status === 'approved' ? 'Confirmé' : 'En attente'}
                               </Badge>
                             </div>
@@ -702,7 +749,10 @@ const WorkshopDetail = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-600 text-sm">Aucune indisponibilité prévue.</p>
+                      <div className="flex items-center gap-2 text-gray-600 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <p>Aucune indisponibilité prévue</p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
