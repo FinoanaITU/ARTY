@@ -102,7 +102,6 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
     onUnavailabilityChange?.(updated);
   };
 
-  // Create date matrix for calendar display
   const getDatesInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();

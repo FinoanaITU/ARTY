@@ -101,7 +101,6 @@ const Signup = () => {
     
     setPhotos(prev => [...prev, ...files]);
     
-    // Create previews
     files.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {

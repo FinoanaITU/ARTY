@@ -6,7 +6,6 @@ from app.core.config import settings
 from app.api.v1.api import api_router
 from app.core.database import engine
 from app.models.base import BaseModel
-# Import user models to ensure they are registered
 from app.models.user import User, ArtisanProfile, ArtisanPhoto, UserSession, SocialAccount
 from fastapi.staticfiles import StaticFiles
 import os
@@ -14,14 +13,8 @@ import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     print("Starting up Artizaho Backend...")
-    # Create database tables
-    # Don't create tables here - use Alembic migrations instead
-    # This avoids loading all models and their relationships
-    # BaseModel.metadata.create_all(bind=engine)
     
-    # Seed initial data (categories, admin user)
     try:
         from scripts.seed_initial_data import seed_initial_data
         print("Seeding initial data...")

@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: arty-postgres
@@ -22,7 +19,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # Redis for caching and Celery
   redis:
     image: redis:7-alpine
     container_name: arty-redis
@@ -39,7 +35,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # Backend API (FastAPI)
   backend:
     build:
       context: ./Back
@@ -48,8 +43,6 @@ services:
     environment:
       - DATABASE_URL=postgresql://artizaho_user:artizaho_password@postgres:5432/artizaho_db
       - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/2
-      - CELERY_RESULT_BACKEND=redis://redis:6379/3
       - SECRET_KEY=your-super-secret-key-here-change-in-production
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
@@ -85,54 +78,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Celery Worker
-  celery-worker:
-    build:
-      context: ./Back
-      dockerfile: Dockerfile
-    container_name: arty-celery-worker
-    command: celery -A app.workers.celery_app worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://artizaho_user:artizaho_password@postgres:5432/artizaho_db
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/2
-      - CELERY_RESULT_BACKEND=redis://redis:6379/3
-      - SECRET_KEY=your-super-secret-key-here-change-in-production
-      - DEBUG=True
-      - ENVIRONMENT=development
-    volumes:
-      - ./Back:/app
-      - backend_uploads:/app/static/uploads
-      - backend_logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - arty-network
-    restart: unless-stopped
-
-  # Celery Flower (Monitoring)
-  celery-flower:
-    build:
-      context: ./Back
-      dockerfile: Dockerfile
-    container_name: arty-celery-flower
-    command: celery -A app.workers.celery_app flower --port=5555
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/2
-      - CELERY_RESULT_BACKEND=redis://redis:6379/3
-    ports:
-      - "5555:5555"
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - arty-network
-    restart: unless-stopped
-
-  # Frontend (React/TypeScript)
   frontend:
     build:
       context: ./Front
@@ -156,49 +101,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # Development Frontend (optional - for development with hot reload)
-  frontend-dev:
-    build:
-      context: ./Front
-      dockerfile: Dockerfile.dev
-    container_name: arty-frontend-dev
-    ports:
-      - "8080:8080"
-    environment:
-      - NODE_ENV=development
-      - VITE_API_URL=http://localhost:8000/api/v1
-      - VITE_WS_URL=ws://localhost:8000
-    volumes:
-      - ./Front:/app
-      - /app/node_modules
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - arty-network
-    restart: unless-stopped
-    profiles:
-      - dev
-
-  # Nginx Reverse Proxy (optional - for production)
-  nginx:
-    image: nginx:alpine
-    container_name: arty-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - arty-network
-    restart: unless-stopped
-    profiles:
-      - production
 
 volumes:
   postgres_data:

@@ -29,5 +29,4 @@ class UserCRUD:
         return db_obj
 
 
-# Create instance for import
-user_crud = UserCRUD() 
+user_crud = UserCRUD()
