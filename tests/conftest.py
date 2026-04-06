@@ -10,8 +10,8 @@ from typing import Generator
 import os
 import sys
 
-# Ajouter le répertoire parent au PYTHONPATH
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ajouter le répertoire Back au PYTHONPATH
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Back'))
 
 from app.main import app
 from app.core.database import get_db
