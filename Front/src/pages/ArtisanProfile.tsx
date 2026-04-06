@@ -195,7 +195,7 @@ const ArtisanProfile = () => {
                     const inStock = product.stock > 0;
                     const productImage = product.images && product.images.length > 0 
                       ? product.images[0] 
-                      : 'https:
+                      : 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&h=400&fit=crop';
                     
                     return (
                       <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">

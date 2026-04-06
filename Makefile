@@ -73,7 +73,7 @@ health:
 	@curl -f http://localhost:5555 || echo "Celery Flower health check failed"
 
 init:
-	@echo "Initializing ARTY project..."
+	@echo "Initializing ARTIZAHO project..."
 	@cp .env.example .env
 	@echo "Please edit .env file with your configuration"
 	@echo "Then run: make build && make up" 

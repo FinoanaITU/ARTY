@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tests d'Intégration Backend ARTY
+Tests d'Intégration Backend ARTIZAHO
 Dashboard Artisan - UAT Automatisés
 """
 
@@ -40,7 +40,7 @@ product_id = None
 unavailability_id = None
 
 print("🧪 " + "="*50)
-print("   Tests d'Intégration Backend ARTY")
+print("   Tests d'Intégration Backend ARTIZAHO")
 print("   Dashboard Artisan - UAT")
 print("="*50)
 

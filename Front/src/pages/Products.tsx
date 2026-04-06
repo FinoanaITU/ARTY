@@ -233,7 +233,7 @@ const Products = () => {
                             alt={product.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https:
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+non+disponible';
                             }}
                           />
                         ) : (

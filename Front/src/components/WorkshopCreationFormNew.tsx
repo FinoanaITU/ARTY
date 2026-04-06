@@ -381,9 +381,29 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                       id="photos"
                       type="file"
                       multiple
-                      accept="image
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('photos')?.click()}
+                      className="w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Choisir des photos ({photos.length}/5)
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formats acceptés: JPG, PNG, WebP. Taille max: 5MB par photo.
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-}
         <Card>
           <CardHeader>
             <CardTitle>Type et niveau</CardTitle>

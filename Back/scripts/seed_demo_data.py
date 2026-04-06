@@ -1,5 +1,5 @@
 """
-Script pour créer les données de démonstration de l'application ARTY
+Script pour créer les données de démonstration de l'application ARTIZAHO
 - Comptes utilisateurs (artisan, acheteurs)
 - Produits artisanaux variés
 - Ateliers avec sessions

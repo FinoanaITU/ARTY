@@ -19,26 +19,26 @@ print_header() {
 }
 
 print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
+    echo -e "${GREEN}$1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}❌ $1${NC}"
+    echo -e "${RED}$1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
+    echo -e "${YELLOW}$1${NC}"
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
+    echo -e "${BLUE}$1${NC}"
 }
 
 show_help() {
     cat << EOF
 Usage: ./start.sh [OPTIONS]
 
-Démarre le projet ARTY avec tous les services et données nécessaires.
+Démarre le projet ARTIZAHO avec tous les services et données nécessaires.
 
 OPTIONS:
     --clean         Nettoie les volumes Docker avant de démarrer
@@ -53,7 +53,7 @@ EXEMPLES:
 EOF
 }
 
-while [[ $
+while [[ $# -gt 0 ]]; do
     case $1 in
         --clean)
             CLEAN_MODE=true
@@ -205,10 +205,10 @@ else
     print_warning "Frontend n'est pas encore accessible (peut prendre quelques secondes)"
 fi
 
-print_header "🎉 Projet ARTY démarré avec succès !"
+print_header "Projet ARTIZAHO démarré avec succès !"
 
 echo ""
-echo -e "${GREEN}🌐 URLs d'accès :${NC}"
+echo -e "${GREEN} URLs d'accès :${NC}"
 echo -e "   ${BLUE}Frontend :${NC}        http://localhost:8080"
 echo -e "   ${BLUE}Backend API :${NC}     http://localhost:8000"
 echo -e "   ${BLUE}Documentation API :${NC} http://localhost:8000/docs"
@@ -233,7 +233,7 @@ echo -e "   - Password : entreprise123"
 echo ""
 
 if [ "$NO_SEED" = false ]; then
-    echo -e "${GREEN}📊 Données créées :${NC}"
+    echo -e "${GREEN} Données créées :${NC}"
     echo -e "   - 12 catégories avec sous-catégories"
     echo -e "   - 4 comptes utilisateurs"
     echo -e "   - ~6 produits artisanaux"
@@ -242,14 +242,14 @@ if [ "$NO_SEED" = false ]; then
     echo ""
 fi
 
-echo -e "${RED}⚠️  ATTENTION :${NC} Ces mots de passe sont pour le développement uniquement !"
+echo -e "${RED} ATTENTION :${NC} Ces mots de passe sont pour le développement uniquement !"
 echo ""
-echo -e "${BLUE}📝 Commandes utiles :${NC}"
+echo -e "${BLUE}Commandes utiles :${NC}"
 echo -e "   ${YELLOW}docker-compose logs -f${NC}          # Voir tous les logs"
 echo -e "   ${YELLOW}docker-compose logs -f backend${NC}  # Logs du backend"
 echo -e "   ${YELLOW}docker-compose logs -f frontend${NC} # Logs du frontend"
 echo -e "   ${YELLOW}docker-compose down${NC}             # Arrêter les services"
 echo -e "   ${YELLOW}docker-compose restart${NC}          # Redémarrer les services"
 echo ""
-print_header "Bon développement ! 🚀"
+print_header "Bon développement !"
 

@@ -549,7 +549,7 @@ export const ArtisanProfileEditor: React.FC<ArtisanProfileEditorProps> = ({
                 ...prev,
                 socialMedia: { ...prev.socialMedia, facebook: e.target.value }
               }))}
-              placeholder="https:
+              placeholder="https://facebook.com/votre-page"
             />
           </div>
           <div>
