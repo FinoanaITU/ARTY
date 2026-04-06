@@ -40,7 +40,7 @@ export const SubscriptionOverview: React.FC<SubscriptionOverviewProps> = ({ data
 
   return (
     <div className="space-y-6">
-      {/* KPIs principaux */}
+      {}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
@@ -107,7 +107,7 @@ export const SubscriptionOverview: React.FC<SubscriptionOverviewProps> = ({ data
         </Card>
       </div>
 
-      {/* Répartition par plan */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export const SubscriptionOverview: React.FC<SubscriptionOverviewProps> = ({ data
         </CardContent>
       </Card>
 
-      {/* Répartition par statut */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -174,7 +174,7 @@ export const SubscriptionOverview: React.FC<SubscriptionOverviewProps> = ({ data
         </CardContent>
       </Card>
 
-      {/* Timestamp */}
+      {}
       <div className="text-sm text-gray-500 text-right">
         Dernière mise à jour: {new Date(data.timestamp).toLocaleString('fr-FR')}
       </div>

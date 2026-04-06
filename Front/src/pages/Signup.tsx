@@ -26,12 +26,12 @@ const Signup = () => {
   const [artisanStep, setArtisanStep] = useState(1);
   const totalArtisanSteps = 5;
   
-  // Photos state
+  
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
-    // Basic info
+    
     name: '',
     email: '',
     password: '',
@@ -43,35 +43,35 @@ const Signup = () => {
     companyName: '',
     siret: '',
     
-    // Artisan specific fields
-    // Personal Information
+    
+    
     fullName: '',
     professionalEmail: '',
     artisanPhone: '',
     region: '',
     languages: [] as string[],
     
-    // Artisan Account  
+    
     artisanCompanyName: '',
     artisanPassword: '',
     artisanConfirmPassword: '',
     
-    // Artisan Information
+    
     mainSpecialty: '',
     otherSkills: [] as string[],
     yearsExperience: '',
     activityDescription: '',
     brandStory: '',
     
-    // Offerings
-    offerings: [] as string[], // 'products', 'workshops', 'both'
     
-    // Administrative Documents
+    offerings: [] as string[], 
+    
+    
     nif: '',
     stat: '',
     documentsNotAvailable: false,
     
-    // Legacy fields
+    
     artisanSpecialty: '',
     artisanDescription: '',
     experience: ''
@@ -81,7 +81,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // SEO Setup
+  
   useEffect(() => {
     document.title = 'Inscription - Artizaho | Rejoignez notre communauté d\'artisans malgaches';
     document.querySelector('meta[name="description"]')?.setAttribute('content', 
@@ -120,27 +120,12 @@ const Signup = () => {
   };
 
   const validateArtisanStep = (step: number): boolean => {
-    // Validation temporairement désactivée pour prévisualisation
+    
     return true;
     
-    // Validation originale (commentée)
-    /*
-    switch (step) {
-      case 1: // Photos - optional
-        return true;
-      case 2: // Additional Information - optional
-        return true;
-      case 3: // Artisan Account
-        return !!(formData.artisanCompanyName && formData.password && formData.confirmPassword && 
-                 formData.password === formData.confirmPassword && formData.password.length >= 6);
-      case 4: // Artisan Information
-        return !!(formData.mainSpecialty && formData.yearsExperience && formData.activityDescription);
-      case 5: // Offerings & Documents
-        return formData.offerings.length > 0;
-      default:
-        return false;
-    }
-     */
+    
+    
+
   };
 
   const nextStep = () => {
@@ -164,7 +149,7 @@ const Signup = () => {
         return;
       }
       
-      // Final validation for artisan
+      
       if (!validateArtisanStep(artisanStep)) {
         toast.error('Veuillez remplir tous les champs obligatoires');
         return;
@@ -183,9 +168,9 @@ const Signup = () => {
       setLoading(true);
 
       try {
-        // Convertir les photos preview en File objects si nécessaire
+        
         const photoFiles: File[] = [];
-        // Note: Les photos sont déjà dans le state `photos` en tant que File[]
+        
         
         const artisanData = {
           email: formData.email,
@@ -210,12 +195,12 @@ const Signup = () => {
 
         const response = await apiService.registerArtisan(artisanData, photos.length > 0 ? photos : undefined);
         
-        // Sauvegarder les tokens
+        
         if (response.access_token && response.refresh_token) {
           apiService.setTokens(response.access_token, response.refresh_token);
         }
 
-        // Sauvegarder l'utilisateur
+        
         if (response.user) {
           const formattedUser = {
             id: response.user.id,
@@ -229,7 +214,7 @@ const Signup = () => {
           };
           localStorage.setItem('user', JSON.stringify(formattedUser));
           
-          // Mettre à jour le contexte via login
+          
           await login(formData.email, formData.password);
         }
 
@@ -244,7 +229,7 @@ const Signup = () => {
       return;
     }
     
-    // Validation for buyers
+    
     if (formData.password !== formData.confirmPassword) {
       toast.error('Les mots de passe ne correspondent pas');
       return;
@@ -278,12 +263,12 @@ const Signup = () => {
 
       const response = await apiService.registerBuyer(buyerData);
       
-      // Sauvegarder les tokens
+      
       if (response.access_token && response.refresh_token) {
         apiService.setTokens(response.access_token, response.refresh_token);
       }
 
-      // Sauvegarder l'utilisateur
+      
       if (response.user) {
         const formattedUser = {
           id: response.user.id,
@@ -298,7 +283,7 @@ const Signup = () => {
         };
         localStorage.setItem('user', JSON.stringify(formattedUser));
         
-        // Mettre à jour le contexte via login
+        
         await login(formData.email, formData.password);
       }
 
@@ -580,7 +565,7 @@ const Signup = () => {
                     </div>
                   )}
 
-                  {/* Step 2: Additional Information */}
+                  {}
                   {artisanStep === 2 && (
                     <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
                       <div className="flex items-center gap-2 mb-4">
@@ -612,7 +597,7 @@ const Signup = () => {
                     </div>
                   )}
 
-                  {/* Step 3: Artisan Account */}
+                  {}
                   {artisanStep === 3 && (
                     <div className="space-y-4 p-4 bg-green-50 rounded-lg">
                       <div className="flex items-center gap-2 mb-4">

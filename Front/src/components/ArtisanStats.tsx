@@ -11,7 +11,7 @@ interface ArtisanStatsProps {
 }
 
 export const ArtisanStats: React.FC<ArtisanStatsProps> = ({ stats }) => {
-  // Add defensive checks to prevent crashes
+  
   const totalSales = stats?.totalSales ?? 0;
   const ordersThisMonth = stats?.ordersThisMonth ?? 0;
   const rating = stats?.rating ?? 0;

@@ -9,7 +9,6 @@ from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID
 from datetime import datetime
 
-
 class ArtisanUnavailability(BaseModel):
     """Modèle pour les indisponibilités d'artisan"""
     __tablename__ = "artisan_unavailability"
@@ -18,8 +17,8 @@ class ArtisanUnavailability(BaseModel):
     start_date = Column(Date, nullable=False, index=True)
     end_date = Column(Date, nullable=True)
     reason = Column(Text, nullable=True)
-    type = Column(String(20), default="single", nullable=False)  # 'single' or 'range'
-    status = Column(String(20), default="approved", nullable=False)  # 'pending', 'approved', 'rejected'
+    type = Column(String(20), default="single", nullable=False)
+    status = Column(String(20), default="approved", nullable=False)
     
-    # Relationships
+
     artisan = relationship("User", foreign_keys=[artisan_id])

@@ -20,7 +20,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // Load cart from localStorage on mount
+  
   useEffect(() => {
     const savedCart = localStorage.getItem('artizaho-cart');
     if (savedCart) {
@@ -32,7 +32,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Save cart to localStorage whenever items change
+  
   useEffect(() => {
     localStorage.setItem('artizaho-cart', JSON.stringify(items));
   }, [items]);

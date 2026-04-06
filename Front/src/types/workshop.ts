@@ -1,4 +1,4 @@
-// Enums matching backend
+
 export type WorkshopType = 'inscription' | 'reservation';
 export type WorkshopStatus = 'draft' | 'published' | 'archived' | 'rejected' | 'pending_approval';
 export type SkillLevel = 'Débutant' | 'Intermédiaire' | 'Avancé';
@@ -6,14 +6,12 @@ export type SessionStatus = 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'attended' | 'no_show';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
-// Artisan basic info
 export interface ArtisanBasic {
   id: string;
   name: string;
   avatar?: string;
 }
 
-// Workshop item for list
 export interface WorkshopListItem {
   id: string;
   title: string;
@@ -31,7 +29,6 @@ export interface WorkshopListItem {
   rating_count: number;
 }
 
-// Full workshop details
 export interface WorkshopOut {
   id: string;
   title: string;
@@ -80,7 +77,6 @@ export interface WorkshopOut {
   updated_at?: string;
 }
 
-// Workshop creation/update input
 export interface WorkshopCreate {
   title: string;
   description: string;
@@ -113,7 +109,6 @@ export interface WorkshopCreate {
 
 export interface WorkshopUpdate extends Partial<WorkshopCreate> {}
 
-// Workshop session
 export interface WorkshopSessionOut {
   id: string;
   workshop_id: string;
@@ -139,7 +134,6 @@ export interface WorkshopSessionCreate {
   session_notes?: string;
 }
 
-// Workshop booking
 export interface WorkshopBookingOut {
   id: string;
   booking_number: string;
@@ -164,7 +158,6 @@ export interface WorkshopBookingCreate {
   participant_names?: string[];
 }
 
-// Booking confirmation response
 export interface BookingConfirmation {
   booking_id: string;
   confirmation_code: string;
@@ -174,14 +167,12 @@ export interface BookingConfirmation {
   created_at: string;
 }
 
-// Availability response
 export interface AvailabilityResponse {
   workshop_id: string;
   available_dates: string[];
   booked_dates: string[];
 }
 
-// List response wrapper
 export interface WorkshopListResponse {
   items: WorkshopListItem[];
   total: number;
@@ -189,7 +180,6 @@ export interface WorkshopListResponse {
   pages: number;
 }
 
-// Legacy interface for backward compatibility
 export interface Workshop {
   id: string;
   title: string;
@@ -200,14 +190,14 @@ export interface Workshop {
     specialty: string;
   };
   date?: Date;
-  duration: number; // en heures
+  duration: number; 
   description: string;
   learningObjectives: string[];
   includedMaterials: string[];
   program: string[];
   importantInfo: string[];
-  basePrice: number; // prix pour les locaux
-  foreignPrice?: number; // prix pour les étrangers
+  basePrice: number; 
+  foreignPrice?: number; 
   privatizationEnabled: boolean;
   privatizationOptions?: {
     minParticipants: number;

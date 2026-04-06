@@ -23,7 +23,6 @@ from app.services.cart_service import CartService
 
 router = APIRouter()
 
-
 @router.get("/", response_model=CartOut)
 async def get_current_cart(
     db: Session = Depends(get_db),
@@ -39,10 +38,10 @@ async def get_current_cart(
     """
     user_id = current_user.id if current_user else None
     
-    # Récupérer ou créer le panier
+
     cart = await CartService.get_or_create_cart(db, user_id=user_id, session_id=session_id)
     
-    # Récupérer les items avec leurs relations
+
     items = db.query(CartItem).filter(CartItem.cart_id == cart.id).all()
     
     return CartOut(
@@ -71,7 +70,6 @@ async def get_current_cart(
         ) for item in items]
     )
 
-
 @router.post(
     "/items",
     response_model=CartItemAddedResponse,
@@ -99,13 +97,13 @@ async def add_item_to_cart(
     """
     user_id = current_user.id if current_user else None
     
-    # Récupérer ou créer le panier
+
     cart = await CartService.get_or_create_cart(db, user_id=user_id, session_id=session_id)
     
-    # Ajouter l'item
+
     cart_item = await CartService.add_item(db, cart.id, item_data)
     
-    # Récupérer le panier mis à jour
+
     db.refresh(cart)
     
     return CartItemAddedResponse(
@@ -137,7 +135,6 @@ async def add_item_to_cart(
             updated_at=cart_item.updated_at
         )
     )
-
 
 @router.put("/items/{item_id}", response_model=CartItemOut)
 async def update_cart_item(
@@ -172,7 +169,6 @@ async def update_cart_item(
         updated_at=cart_item.updated_at
     )
 
-
 @router.delete("/items/{item_id}")
 async def remove_cart_item(
     item_id: UUID,
@@ -189,7 +185,6 @@ async def remove_cart_item(
         "item_id": str(item_id)
     }
 
-
 @router.delete("/", response_model=CartClearedResponse)
 async def clear_cart(
     db: Session = Depends(get_db),
@@ -201,7 +196,7 @@ async def clear_cart(
     """
     user_id = current_user.id if current_user else None
     
-    # Récupérer le panier
+
     cart = await CartService.get_cart(db, user_id=user_id, session_id=session_id)
     if not cart:
         raise HTTPException(
@@ -209,14 +204,13 @@ async def clear_cart(
             detail="Panier non trouvé"
         )
     
-    # Vider le panier
+
     items_removed = await CartService.clear_cart(db, cart.id)
     
     return CartClearedResponse(
         message="Panier vidé avec succès",
         items_removed=items_removed
     )
-
 
 @router.post("/coupon", response_model=CartOut)
 async def apply_coupon(
@@ -235,7 +229,7 @@ async def apply_coupon(
     """
     user_id = current_user.id if current_user else None
     
-    # Récupérer le panier
+
     cart = await CartService.get_cart(db, user_id=user_id, session_id=session_id)
     if not cart:
         raise HTTPException(
@@ -243,10 +237,10 @@ async def apply_coupon(
             detail="Panier non trouvé"
         )
     
-    # Appliquer le coupon
+
     updated_cart = await CartService.apply_coupon(db, cart.id, coupon_request.coupon_code)
     
-    # Récupérer les items
+
     items = db.query(CartItem).filter(CartItem.cart_id == updated_cart.id).all()
     
     return CartOut(
@@ -275,7 +269,6 @@ async def apply_coupon(
         ) for item in items]
     )
 
-
 @router.post("/merge")
 async def merge_carts_on_login(
     session_id: str = Header(..., alias="X-Session-ID"),
@@ -288,7 +281,7 @@ async def merge_carts_on_login(
     """
     merged_cart = await CartService.merge_carts(db, current_user.id, session_id)
     
-    # Récupérer les items
+
     items = db.query(CartItem).filter(CartItem.cart_id == merged_cart.id).all()
     
     return CartOut(

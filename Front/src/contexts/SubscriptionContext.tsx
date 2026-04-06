@@ -15,7 +15,6 @@ interface SubscriptionContextType {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-// Plans d'abonnement disponibles
 const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'explorateur',
@@ -55,13 +54,13 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
   const { user } = useUser();
 
-  // Simuler le chargement de l'abonnement depuis une base de données
+  
   useEffect(() => {
     if (user) {
       setIsLoadingSubscription(true);
-      // Simuler un délai de chargement
+      
       setTimeout(() => {
-        // Exemple d'abonnement actif pour la démo
+        
         const mockSubscription: WorkshopSubscription = {
           id: 'sub_123',
           planId: 'explorateur',
@@ -70,7 +69,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
           creditsUsed: 0,
           creditsRemaining: 3,
           startDate: new Date(),
-          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 jours
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 
           isActive: true,
           userId: user.id
         };
@@ -102,7 +101,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     try {
-      // Créer un nouvel usage de crédit
+      
       const newUsage: WorkshopCreditUsage = {
         id: `usage_${Date.now()}`,
         subscriptionId: subscription.id,
@@ -113,14 +112,14 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         creditsUsed
       };
 
-      // Mettre à jour l'abonnement
+      
       const updatedSubscription = {
         ...subscription,
         creditsUsed: subscription.creditsUsed + creditsUsed,
         creditsRemaining: subscription.creditsRemaining - creditsUsed
       };
 
-      // Simuler la sauvegarde en base de données
+      
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setSubscription(updatedSubscription);
@@ -138,7 +137,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!plan || !user) return false;
 
     try {
-      // Calculer la date de fin basée sur la durée
+      
       const durationInDays = plan.duration.includes('mois') 
         ? parseInt(plan.duration) * 30 
         : parseInt(plan.duration);
@@ -156,7 +155,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         userId: user.id
       };
 
-      // Simuler la sauvegarde
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       setSubscription(newSubscription);

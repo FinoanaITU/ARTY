@@ -29,7 +29,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
 }) => {
   const { user } = useUser();
 
-  // Simple image gallery with thumbnails for product cards
+  
   const ImageGallery: React.FC<{ images: string[]; name?: string }> = ({ images, name }) => {
     const [index, setIndex] = useState<number>(0);
 
@@ -117,7 +117,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     min_bulk_quantity: 0
   });
 
-  // Charger les catégories
+  
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -130,11 +130,11 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     loadCategories();
   }, []);
 
-  // Load all products when this manager mounts (e.g. when user clicks Products tab)
+  
   const loadProducts = async (p: number = page, l: number = limit) => {
     try {
       setLoading(true);
-      // If we have a logged-in artisan, fetch their products (includes drafts)
+      
       const params: any = { page: p, limit: l };
       if (user && (user.role === 'artisan' || user.role === 'admin')) params.artisan_id = user.id;
       const response = await apiService.getProducts(params);
@@ -150,14 +150,14 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
   };
 
   useEffect(() => {
-    // initial load of products for this view
+    
     loadProducts(1, limit);
-    // also keep initial prop in sync if provided
+    
     setAllProducts(products || []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
-  // Obtenir les sous-catégories de la catégorie sélectionnée
+  
   const getSubcategories = () => {
     const category = categories.find(cat => cat.name === selectedCategory);
     return category?.subcategories || [];
@@ -203,13 +203,13 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       return;
     }
 
-    // Normalize numeric fields that may be temporarily empty while typing
+    
     const parsedPrice = (formData as any).price === '' ? 0 : Number((formData as any).price);
     const parsedStock = (formData as any).stock === '' ? 0 : Number((formData as any).stock);
     const parsedProductionTime = (formData as any).productionTime === '' ? 1 : Number((formData as any).productionTime);
     const parsedMinBulk = (formData as any).min_bulk_quantity === '' ? 0 : Number((formData as any).min_bulk_quantity);
 
-    // Parse dimensions (allow empty while typing -> coerce to numbers here)
+    
     const parsedDimensions = {
       length: Number((formData.dimensions as any).length) || 0,
       width: Number((formData.dimensions as any).width) || 0,
@@ -241,12 +241,12 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       } else {
         await onCreateProduct(productData, uploadedFiles.length > 0 ? uploadedFiles : undefined);
       }
-      // refresh product list to show latest
+      
       await loadProducts();
       resetForm();
       setIsCreateModalOpen(false);
     } catch (error) {
-      // L'erreur est déjà gérée dans ArtisanDashboard
+      
     }
   };
 
@@ -254,9 +254,9 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     setEditingProduct(product);
     setSelectedCategory(product.category);
     setSelectedSubcategory(product.subcategory || '');
-    // Normalize any returned image URLs to absolute URLs for the dev server
+    
     const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
-    // Build existing images with ids when available (image_items) so we can delete specific images
+    
     const normalizedImages: string[] = [];
     const existing: Array<{ id?: string; url: string }> = [];
     if ((product as any).image_items && Array.isArray((product as any).image_items)) {
@@ -289,7 +289,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
       bulk_order_enabled: product.bulk_order_enabled || false,
       min_bulk_quantity: product.min_bulk_quantity || 0
     });
-    setImagePreviews([]); // clear previews for new uploads
+    setImagePreviews([]); 
     setExistingImages(existing);
     setIsCreateModalOpen(true);
   };
@@ -306,7 +306,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
     }
     setUploadedFiles(prev => [...prev, ...files]);
     
-    // Créer des prévisualisations
+    
     files.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -428,7 +428,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                   <Label htmlFor="category">Catégorie *</Label>
                   <Select value={selectedCategory} onValueChange={(value) => {
                     setSelectedCategory(value);
-                    setSelectedSubcategory(''); // Reset subcategory when category changes
+                    setSelectedSubcategory(''); 
                     setFormData(prev => ({ ...prev, category: value, subcategory: '' }));
                   }}>
                     <SelectTrigger>
@@ -562,7 +562,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                                 className="mb-2"
                               />
 
-                              {/* Existing images (stored on server) */}
+                              {}
                               {existingImages.length > 0 && (
                                 <div className="grid grid-cols-3 gap-2 mt-2">
                                   {existingImages.map((img, index) => (
@@ -579,7 +579,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                                           size="sm"
                                           className="absolute top-1 right-1 h-6 w-6 p-0"
                                           onClick={() => {
-                                            // Mark for deletion and remove from UI until submit
+                                            
                                             if (img.id) {
                                               setDeletedImageIds(prev => [...prev, String(img.id)]);
                                             }
@@ -594,7 +594,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                                 </div>
                               )}
 
-                              {/* Previews for newly uploaded files */}
+                              {}
                               {imagePreviews.length > 0 && (
                                 <div className="grid grid-cols-3 gap-2 mt-2">
                                   {imagePreviews.map((preview, index) => (
@@ -610,7 +610,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
                                         size="sm"
                                         className="absolute top-1 right-1 h-6 w-6 p-0"
                                         onClick={() => {
-                                          // remove uploaded file at index
+                                          
                                           setUploadedFiles(prev => prev.filter((_, i) => i !== index));
                                           setImagePreviews(prev => prev.filter((_, i) => i !== index));
                                         }}
@@ -871,7 +871,7 @@ export const ArtisanProductManager: React.FC<ArtisanProductManagerProps> = ({
           })}
         </div>
 
-        {/* Pagination controls */}
+        {}
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => { if (page > 1) loadProducts(page - 1, limit); }} disabled={page <= 1 || loading}>

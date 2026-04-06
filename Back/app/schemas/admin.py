@@ -4,7 +4,6 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from enum import Enum
 
-
 class ValidationType(str, Enum):
     """Type de validation"""
     PROFILE = "profile"
@@ -12,27 +11,21 @@ class ValidationType(str, Enum):
     WORKSHOP = "workshop"
     ALL = "all"
 
-
 class ValidationStatus(str, Enum):
     """Statut de validation"""
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
 
-
 class ValidationAction(str, Enum):
     """Actions de validation"""
     APPROVE = "approve"
     REJECT = "reject"
 
-
-# ===== Validation Request/Response Schemas =====
-
 class ValidationRequest(BaseModel):
     """Requête de validation (approve/reject)"""
     action: ValidationAction
     notes: Optional[str] = Field(None, description="Notes de l'administrateur")
-
 
 class ValidationHistoryOut(BaseModel):
     """Historique de validation"""
@@ -49,7 +42,6 @@ class ValidationHistoryOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class PendingValidationItem(BaseModel):
     """Item en attente de validation"""
     id: UUID
@@ -63,19 +55,17 @@ class PendingValidationItem(BaseModel):
     status: str
     created_at: datetime
     
-    # Détails spécifiques selon le type
+
     details: Optional[Dict[str, Any]] = None
     
     class Config:
         from_attributes = True
-
 
 class PendingValidationsResponse(BaseModel):
     """Response liste des validations en attente"""
     total: int
     items: List[PendingValidationItem]
     count_by_type: Dict[str, int]
-
 
 class ValidationStatsOut(BaseModel):
     """Statistiques de validation"""
@@ -90,9 +80,6 @@ class ValidationStatsOut(BaseModel):
     
     class Config:
         from_attributes = True
-
-
-# ===== Artisan Profile Validation Schemas =====
 
 class ArtisanProfileValidationOut(BaseModel):
     """Détails profil artisan pour validation"""
@@ -111,16 +98,13 @@ class ArtisanProfileValidationOut(BaseModel):
     admin_notes: Optional[str]
     created_at: datetime
     
-    # Approval fields
+
     approved_by: Optional[UUID]
     approved_at: Optional[datetime]
     approval_notes: Optional[str]
     
     class Config:
         from_attributes = True
-
-
-# ===== Product Validation Schemas =====
 
 class ProductValidationOut(BaseModel):
     """Détails produit pour validation"""
@@ -136,16 +120,13 @@ class ProductValidationOut(BaseModel):
     images: Optional[List[str]] = []
     created_at: datetime
     
-    # Approval fields
+
     approved_by: Optional[UUID]
     approved_at: Optional[datetime]
     approval_notes: Optional[str]
     
     class Config:
         from_attributes = True
-
-
-# ===== Workshop Validation Schemas =====
 
 class WorkshopValidationOut(BaseModel):
     """Détails atelier pour validation"""
@@ -163,7 +144,7 @@ class WorkshopValidationOut(BaseModel):
     featured_image_url: Optional[str]
     created_at: datetime
     
-    # Approval fields
+
     approved_by: Optional[UUID]
     approved_at: Optional[datetime]
     approval_notes: Optional[str]
@@ -171,15 +152,11 @@ class WorkshopValidationOut(BaseModel):
     class Config:
         from_attributes = True
 
-
-# ===== Analytics Schemas =====
-
 class UsersByRole(BaseModel):
     """Users grouped by role"""
     buyers: int
     artisans: int
     admins: int
-
 
 class EntityStats(BaseModel):
     """Generic entity statistics"""
@@ -187,13 +164,11 @@ class EntityStats(BaseModel):
     pending: int
     total: int
 
-
 class PublishedPendingStats(BaseModel):
     """Statistics for published vs pending entities"""
     published: int
     pending: int
     total: int
-
 
 class PlatformOverviewOut(BaseModel):
     """Vue d'ensemble de la plateforme"""
@@ -209,14 +184,12 @@ class PlatformOverviewOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class DailyRevenueBreakdown(BaseModel):
     """Daily revenue breakdown"""
     date: str
     revenue: float
     orders_revenue: float
     workshops_revenue: float
-
 
 class RevenueStatsOut(BaseModel):
     """Statistiques de revenus"""
@@ -234,18 +207,15 @@ class RevenueStatsOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class SpecialtyStats(BaseModel):
     """Artisan specialty statistics"""
     specialty: str
     count: int
 
-
 class RegionStats(BaseModel):
     """Region statistics"""
     region: str
     count: int
-
 
 class TopPerformer(BaseModel):
     """Top performing artisan"""
@@ -253,7 +223,6 @@ class TopPerformer(BaseModel):
     artisan_name: str
     total_revenue: float
     email: str
-
 
 class ArtisanStatsOut(BaseModel):
     """Statistiques artisans"""
@@ -268,7 +237,6 @@ class ArtisanStatsOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class ConversionStatsOut(BaseModel):
     """Taux de conversion"""
     product_view_to_sale_rate: float
@@ -282,7 +250,6 @@ class ConversionStatsOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class UserBehaviorStatsOut(BaseModel):
     """Statistiques comportement utilisateurs"""
     avg_order_value: float
@@ -295,16 +262,12 @@ class UserBehaviorStatsOut(BaseModel):
     class Config:
         from_attributes = True
 
-
-# ===== Payment Tracking Schemas =====
-
 class PaymentStatus(str, Enum):
     """Statut de paiement"""
     UNPAID = "unpaid"
     PARTIAL = "partial"
     PAID = "paid"
     PENDING_COLLECTION = "pending_collection"
-
 
 class PaymentMethod(str, Enum):
     """Méthode de paiement"""
@@ -313,18 +276,15 @@ class PaymentMethod(str, Enum):
     ORANGE_MONEY = "orange_money"
     BANK_TRANSFER = "bank_transfer"
 
-
 class PaymentType(str, Enum):
     """Type de paiement"""
     PRODUCT = "product"
     WORKSHOP = "workshop"
 
-
 class ArtisanType(str, Enum):
     """Type d'artisan"""
     ARTIZAHO = "artizaho"
     UBER = "uber"
-
 
 class PaymentOut(BaseModel):
     """Détails d'un paiement"""
@@ -342,7 +302,7 @@ class PaymentOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     
-    # Informations relationnelles (optionnelles)
+
     user_name: Optional[str] = None
     artisan_name: Optional[str] = None
     order_number: Optional[str] = None
@@ -350,7 +310,6 @@ class PaymentOut(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class PaymentHistoryOut(BaseModel):
     """Historique d'un paiement"""
@@ -364,12 +323,11 @@ class PaymentHistoryOut(BaseModel):
     recorded_by: Optional[UUID]
     created_at: datetime
     
-    # Informations relationnelles (optionnelles)
+
     recorder_name: Optional[str] = None
     
     class Config:
         from_attributes = True
-
 
 class RecordPaymentRequest(BaseModel):
     """Requête d'enregistrement de paiement"""
@@ -377,7 +335,6 @@ class RecordPaymentRequest(BaseModel):
     payment_method: PaymentMethod
     transaction_ref: Optional[str] = Field(None, max_length=100, description="Référence de transaction")
     notes: Optional[str] = Field(None, description="Notes sur le paiement")
-
 
 class PaymentListResponse(BaseModel):
     """Liste de paiements"""
@@ -387,13 +344,11 @@ class PaymentListResponse(BaseModel):
     total_paid: float
     total_outstanding: float
 
-
 class ArtisanPayoutStatus(str, Enum):
     """Statut de paiement artisan"""
     PENDING = "pending"
     PROCESSING = "processing"
     PAID = "paid"
-
 
 class ArtisanPayoutOut(BaseModel):
     """Détails d'un payout artisan"""
@@ -413,13 +368,12 @@ class ArtisanPayoutOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     
-    # Informations relationnelles
+
     artisan_name: Optional[str] = None
     artisan_email: Optional[str] = None
     
     class Config:
         from_attributes = True
-
 
 class GeneratePayoutRequest(BaseModel):
     """Requête de génération de payout"""
@@ -427,13 +381,11 @@ class GeneratePayoutRequest(BaseModel):
     period_start: datetime
     period_end: datetime
 
-
 class MarkPayoutPaidRequest(BaseModel):
     """Requête de marquage payout comme payé"""
     payment_method: PaymentMethod
     payment_ref: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
-
 
 class PayoutListResponse(BaseModel):
     """Liste de payouts"""
@@ -441,7 +393,6 @@ class PayoutListResponse(BaseModel):
     items: List[ArtisanPayoutOut]
     total_net_payout: float
     total_commission: float
-
 
 class CommissionCalculation(BaseModel):
     """Calcul de commission"""
@@ -451,9 +402,6 @@ class CommissionCalculation(BaseModel):
     net_to_artisan: float
     artisan_type: str
 
-
-# ===== Quote Manager Schemas =====
-
 class QuoteStatus(str, Enum):
     """Statut d'une demande de devis"""
     PENDING = "pending"
@@ -462,19 +410,16 @@ class QuoteStatus(str, Enum):
     REJECTED = "rejected"
     COMPLETED = "completed"
 
-
 class QuoteType(str, Enum):
     """Type de devis"""
     WORKSHOP = "workshop"
     PRODUCT = "product"
     CUSTOM = "custom"
 
-
 class ClientType(str, Enum):
     """Type de client"""
     PARTICULIER = "particulier"
     ENTREPRISE = "entreprise"
-
 
 class QuoteRequestIn(BaseModel):
     """Requête de création de devis"""
@@ -494,7 +439,6 @@ class QuoteRequestIn(BaseModel):
         if "@" not in v:
             raise ValueError("Email invalide")
         return v.lower()
-
 
 class QuoteOut(BaseModel):
     """Réponse devis"""
@@ -524,18 +468,15 @@ class QuoteOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class QuoteUpdateIn(BaseModel):
     """Requête de mise à jour de devis (admin)"""
     final_price: Optional[float] = Field(None, ge=0)
     admin_notes: Optional[str] = None
     artisan_id: Optional[UUID] = None
 
-
 class QuoteApprovalIn(BaseModel):
     """Requête d'approbation de devis (client)"""
     approved: bool
-
 
 class QuoteListResponse(BaseModel):
     """Liste de devis"""
@@ -544,14 +485,10 @@ class QuoteListResponse(BaseModel):
     pending_count: int
     quoted_count: int
 
-
 class QuoteStatusUpdate(BaseModel):
     """Mise à jour de statut de devis"""
     status: QuoteStatus
     notes: Optional[str] = None
-
-
-# ===== Subscription Schemas =====
 
 class SubscriptionPlanType(str, Enum):
     """Available subscription plans"""
@@ -559,7 +496,6 @@ class SubscriptionPlanType(str, Enum):
     PLUS = "plus"
     PRO = "pro"
     ENTERPRISE = "enterprise"
-
 
 class SubscriptionStatusType(str, Enum):
     """Subscription status"""
@@ -569,7 +505,6 @@ class SubscriptionStatusType(str, Enum):
     EXPIRED = "expired"
     PENDING = "pending"
 
-
 class SubscriptionOut(BaseModel):
     """Subscription response"""
     id: UUID
@@ -578,8 +513,8 @@ class SubscriptionOut(BaseModel):
     status: str
     monthly_price: float
     billing_cycle: str
-    start_date: str  # Date
-    end_date: str    # Date
+    start_date: str
+    end_date: str
     renewal_date: Optional[str]
     available_credits: float
     used_credits: float
@@ -596,14 +531,12 @@ class SubscriptionOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class SubscriptionListResponse(BaseModel):
     """List of subscriptions"""
     total: int
     skip: int
     limit: int
     subscriptions: List[SubscriptionOut]
-
 
 class SubscriptionOverviewResponse(BaseModel):
     """Subscription overview/statistics"""
@@ -615,23 +548,19 @@ class SubscriptionOverviewResponse(BaseModel):
     renewal_rate_percent: float
     timestamp: str
 
-
 class SubscriptionCancelRequest(BaseModel):
     """Request to cancel subscription"""
     reason: Optional[str] = Field(None, description="Cancellation reason")
-
 
 class SubscriptionExtendRequest(BaseModel):
     """Request to extend subscription"""
     days: int = Field(default=30, ge=1, le=365, description="Days to extend")
     notes: Optional[str] = Field(None, description="Admin notes on extension")
 
-
 class SubscriptionAddCreditsRequest(BaseModel):
     """Request to add bonus credits"""
     amount: float = Field(..., gt=0, description="Amount of credits to add")
     reason: Optional[str] = Field(None, description="Reason for adding credits")
-
 
 class SubscriptionHistoryOut(BaseModel):
     """Subscription history/audit trail entry"""
@@ -647,14 +576,12 @@ class SubscriptionHistoryOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class SubscriptionHistoryResponse(BaseModel):
     """List of subscription history"""
     total: int
     skip: int
     limit: int
     history: List[SubscriptionHistoryOut]
-
 
 class SubscriptionStatsResponse(BaseModel):
     """Subscription statistics"""

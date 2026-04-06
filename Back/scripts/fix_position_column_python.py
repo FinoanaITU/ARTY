@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Script Python pour ajouter la colonne position à artisan_photos
 Ce script peut être exécuté depuis l'hôte ou depuis le conteneur backend
@@ -9,11 +9,9 @@ import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
-# Ajouter le chemin du projet au PYTHONPATH
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.config import settings
-
 
 def add_position_column():
     """Ajoute la colonne position à la table artisan_photos si elle n'existe pas"""
@@ -22,11 +20,11 @@ def add_position_column():
     print(f"📊 Connexion à la base de données: {settings.DATABASE_URL.split('@')[1] if '@' in settings.DATABASE_URL else 'N/A'}")
     
     try:
-        # Créer une connexion à la base de données
+
         engine = create_engine(settings.DATABASE_URL)
         
         with engine.connect() as conn:
-            # Vérifier si la colonne existe
+
             check_query = text("""
                 SELECT column_name 
                 FROM information_schema.columns 
@@ -42,7 +40,7 @@ def add_position_column():
             else:
                 print("📝 Ajout de la colonne 'position'...")
                 
-                # Ajouter la colonne
+
                 alter_query = text("""
                     ALTER TABLE artisan_photos 
                     ADD COLUMN position INTEGER NOT NULL DEFAULT 0
@@ -53,7 +51,7 @@ def add_position_column():
                 
                 print("✅ Colonne 'position' ajoutée avec succès !")
             
-            # Vérifier la colonne
+
             verify_query = text("""
                 SELECT column_name, data_type, is_nullable, column_default
                 FROM information_schema.columns
@@ -91,7 +89,6 @@ def add_position_column():
         import traceback
         traceback.print_exc()
         return False
-
 
 if __name__ == "__main__":
     success = add_position_column()

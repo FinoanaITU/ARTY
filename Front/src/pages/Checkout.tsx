@@ -41,13 +41,13 @@ const Checkout = () => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // TODO: Implement actual payment processing with API
+    
     setTimeout(() => {
       setIsProcessing(false);
       setOrderPlaced(true);
       clearCart();
       
-      // Redirect to confirmation after 3 seconds
+      
       setTimeout(() => {
         navigate('/dashboard');
       }, 3000);
@@ -111,10 +111,10 @@ const Checkout = () => {
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Checkout Form */}
+          {}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Contact Information */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -170,7 +170,7 @@ const Checkout = () => {
                 </CardContent>
               </Card>
 
-              {/* Delivery Address */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -213,7 +213,7 @@ const Checkout = () => {
                 </CardContent>
               </Card>
 
-              {/* Payment Method */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -250,14 +250,14 @@ const Checkout = () => {
             </form>
           </div>
 
-          {/* Order Summary */}
+          {}
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
                 <CardTitle>Résumé de la commande</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Items list */}
+                {}
                 <div className="space-y-3">
                   {items.map((item) => {
                     const itemPrice = item.priceVariation?.discountedPrice || item.price;
@@ -275,7 +275,7 @@ const Checkout = () => {
 
                 <Separator />
 
-                {/* Price breakdown */}
+                {}
                 <div className="space-y-2">
                   <div className="flex justify-between text-gray-600">
                     <span>Sous-total</span>

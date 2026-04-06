@@ -106,7 +106,7 @@ export const ArtisanProfileEditor: React.FC<ArtisanProfileEditorProps> = ({
         ...formData.businessInfo,
         currentSalesChannels: formData.businessInfo.currentSalesChannels.filter(channel => channel.trim() !== '')
       },
-      userId: 'current-user-id', // This would come from context
+      userId: 'current-user-id', 
       memberSince: profile?.memberSince || new Date(),
       status: 'pending_approval' as const
     };
@@ -549,7 +549,7 @@ export const ArtisanProfileEditor: React.FC<ArtisanProfileEditorProps> = ({
                 ...prev,
                 socialMedia: { ...prev.socialMedia, facebook: e.target.value }
               }))}
-              placeholder="https://facebook.com/votre-page"
+              placeholder="https:
             />
           </div>
           <div>

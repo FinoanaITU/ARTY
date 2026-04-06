@@ -1,19 +1,14 @@
 #!/bin/bash
 
-# Script pour exécuter les tests unitaires d'authentification
-
 set -e
 
 echo "🧪 Exécution des tests unitaires d'authentification"
 echo ""
 
-# Aller dans le répertoire Back
 cd "$(dirname "$0")"
 
-# Déterminer le chemin de pytest
 PYTEST_CMD=""
 
-# Vérifier si pytest est disponible
 if command -v pytest &> /dev/null 2>&1 && pytest --version &> /dev/null 2>&1; then
     PYTEST_CMD="pytest"
 elif python3 -m pytest --version &> /dev/null 2>&1; then
@@ -24,7 +19,6 @@ elif [ -d "../.venv" ] && ../.venv/bin/python3 -m pytest --version &> /dev/null 
     PYTEST_CMD="../.venv/bin/python3 -m pytest"
 fi
 
-# Si pytest n'est pas trouvé
 if [ -z "$PYTEST_CMD" ]; then
     echo "❌ pytest n'est pas installé"
     echo ""
@@ -45,12 +39,10 @@ if [ -z "$PYTEST_CMD" ]; then
     exit 1
 fi
 
-# Exécuter les tests
 echo "📋 Exécution des tests..."
 echo "🔧 Utilisation de: $PYTEST_CMD"
 echo ""
 
-# Tests avec couverture
 $PYTEST_CMD tests/test_auth*.py \
     -v \
     --tb=short \

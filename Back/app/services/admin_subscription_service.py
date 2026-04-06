@@ -8,11 +8,9 @@ from app.models.subscription import Subscription, SubscriptionHistory, Subscript
 from app.models.user import User
 from fastapi import HTTPException
 
-
 class AdminSubscriptionService:
     """Service for managing subscriptions from admin perspective"""
 
-    # Subscription plans configuration
     PLANS_CONFIG = {
         "basic": {
             "name": "Basic",
@@ -58,9 +56,9 @@ class AdminSubscriptionService:
             "monthly_price": Decimal("499.99"),
             "annual_price": Decimal("4999.99"),
             "features": {
-                "max_products": -1,  # Unlimited
-                "max_workshops": -1,  # Unlimited
-                "max_photos_per_product": -1,  # Unlimited
+                "max_products": -1,
+                "max_workshops": -1,
+                "max_photos_per_product": -1,
                 "analytics": True,
                 "priority_support": True
             },
@@ -80,12 +78,12 @@ class AdminSubscriptionService:
         Returns:
             dict: Overview with counts by plan, status, and revenue stats
         """
-        # Count active subscriptions
+
         total_active = db.query(func.count(Subscription.id)).filter(
             Subscription.status == 'active'
         ).scalar() or 0
         
-        # Count by plan
+
         by_plan = db.query(
             Subscription.plan,
             func.count(Subscription.id).label('count')
@@ -95,12 +93,12 @@ class AdminSubscriptionService:
         for plan, count in by_plan:
             plan_counts[plan] = count
         
-        # Revenue stats
+
         monthly_revenue = db.query(
             func.sum(Subscription.monthly_price)
         ).filter(Subscription.status == 'active').scalar() or 0
         
-        # Count by status
+
         by_status = db.query(
             Subscription.status,
             func.count(Subscription.id).label('count')
@@ -110,7 +108,7 @@ class AdminSubscriptionService:
         for status, count in by_status:
             status_counts[status] = count
         
-        # Calculate churn (cancelled in last 30 days)
+
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         churned_count = db.query(func.count(Subscription.id)).filter(
             and_(
@@ -119,7 +117,7 @@ class AdminSubscriptionService:
             )
         ).scalar() or 0
         
-        # Calculate renewal rate
+
         renewed_count = db.query(func.count(Subscription.id)).filter(
             Subscription.times_renewed > 0
         ).scalar() or 0
@@ -236,14 +234,14 @@ class AdminSubscriptionService:
         if subscription.status == 'cancelled':
             raise HTTPException(status_code=400, detail="Subscription already cancelled")
         
-        # Store old values for history
+
         old_values = {
             "status": subscription.status,
             "auto_renew": subscription.auto_renew,
             "end_date": subscription.end_date.isoformat()
         }
         
-        # Update subscription
+
         subscription.status = 'cancelled'
         subscription.cancelled_at = datetime.utcnow()
         subscription.cancelled_by = UUID(admin_id)
@@ -253,7 +251,7 @@ class AdminSubscriptionService:
         db.add(subscription)
         db.flush()
         
-        # Log in history
+
         history = SubscriptionHistory(
             subscription_id=subscription.id,
             action_type='cancelled',
@@ -305,22 +303,22 @@ class AdminSubscriptionService:
                 detail="Can only extend active or paused subscriptions"
             )
         
-        # Store old values
+
         old_end_date = subscription.end_date
         old_values = {"end_date": old_end_date.isoformat()}
         
-        # Extend end date
+
         new_end_date = subscription.end_date + timedelta(days=days)
         subscription.end_date = new_end_date
         
-        # Update admin notes
+
         if notes:
             subscription.admin_notes = (subscription.admin_notes or "") + f"\n[{datetime.utcnow().isoformat()}] Extended by {days} days: {notes}"
         
         db.add(subscription)
         db.flush()
         
-        # Log in history
+
         history = SubscriptionHistory(
             subscription_id=subscription.id,
             action_type='extended',
@@ -366,21 +364,21 @@ class AdminSubscriptionService:
         if not subscription:
             raise HTTPException(status_code=404, detail="Subscription not found")
         
-        # Store old value
+
         old_credits = subscription.available_credits
         
-        # Add credits
+
         subscription.available_credits += amount
         subscription.bonus_credits_added += amount
         
-        # Update admin notes
+
         if reason:
             subscription.admin_notes = (subscription.admin_notes or "") + f"\n[{datetime.utcnow().isoformat()}] Added {amount} bonus credits: {reason}"
         
         db.add(subscription)
         db.flush()
         
-        # Log in history
+
         history = SubscriptionHistory(
             subscription_id=subscription.id,
             action_type='credits_added',
@@ -414,7 +412,7 @@ class AdminSubscriptionService:
         Returns:
             dict: History records
         """
-        # Verify subscription exists
+
         subscription = db.query(Subscription).filter(
             Subscription.id == UUID(subscription_id)
         ).first()
@@ -422,7 +420,7 @@ class AdminSubscriptionService:
         if not subscription:
             raise HTTPException(status_code=404, detail="Subscription not found")
         
-        # Get history
+
         query = db.query(SubscriptionHistory).filter(
             SubscriptionHistory.subscription_id == UUID(subscription_id)
         )
@@ -452,18 +450,17 @@ class AdminSubscriptionService:
         """
         total_all = db.query(func.count(Subscription.id)).scalar() or 0
         
-        # Revenue calculations
+
         total_revenue = db.query(
             func.sum(Subscription.total_spent)
         ).filter(Subscription.status.in_(['active', 'cancelled', 'expired'])).scalar() or Decimal("0")
         
-        # Average subscription value
+
         avg_value = db.query(
             func.avg(Subscription.monthly_price)
         ).filter(Subscription.status == 'active').scalar() or Decimal("0")
         
-        # Average lifetime - PostgreSQL compatible
-        # In PostgreSQL, date - date returns integer directly (days)
+
         lifetime_subs = db.query(
             func.avg(
                 cast(Subscription.end_date - Subscription.start_date, Integer)

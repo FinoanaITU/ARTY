@@ -8,19 +8,16 @@ from datetime import datetime
 from uuid import UUID
 from enum import Enum
 
-
 class ReviewableType(str, Enum):
     """Type d'entité à reviewer"""
     PRODUCT = "product"
     WORKSHOP = "workshop"
-
 
 class ReviewStatus(str, Enum):
     """Statut de modération"""
     PUBLISHED = "published"
     PENDING = "pending"
     REJECTED = "rejected"
-
 
 class ReviewCreate(BaseModel):
     """Schéma pour créer un avis"""
@@ -51,7 +48,6 @@ class ReviewCreate(BaseModel):
             )
         return v
 
-
 class ReviewUpdate(BaseModel):
     """Schéma pour modifier un avis"""
     rating: Optional[int] = Field(None, ge=1, le=5)
@@ -60,7 +56,6 @@ class ReviewUpdate(BaseModel):
     criteria_ratings: Optional[dict] = None
     images: Optional[list[str]] = None
     videos: Optional[list[str]] = None
-
 
 class ReviewOut(BaseModel):
     """Schéma de sortie pour un avis"""
@@ -88,12 +83,10 @@ class ReviewOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class ReviewWithProductInfo(ReviewOut):
     """Avis avec info produit (pour liste artisan)"""
     product_name: Optional[str] = None
     product_image: Optional[str] = None
-
 
 class PaginatedReviewsResponse(BaseModel):
     """Réponse paginée pour liste d'avis"""
@@ -105,7 +98,6 @@ class PaginatedReviewsResponse(BaseModel):
     average_rating: Optional[float] = None
     rating_distribution: Optional[dict[int, int]] = None
 
-
 class ReviewStatsOut(BaseModel):
     """Statistiques d'avis pour un produit/workshop"""
     total_reviews: int
@@ -115,11 +107,9 @@ class ReviewStatsOut(BaseModel):
     with_images: int
     with_videos: int
 
-
 class ReviewHelpfulVoteCreate(BaseModel):
     """Voter pour un avis utile"""
     is_helpful: bool
-
 
 class ReviewFlagCreate(BaseModel):
     """Signaler un avis"""
@@ -127,7 +117,6 @@ class ReviewFlagCreate(BaseModel):
         ..., description="Reason: spam, inappropriate, fake"
     )
     description: Optional[str] = None
-
 
 class ReviewModerationUpdate(BaseModel):
     """Modération d'un avis (admin)"""

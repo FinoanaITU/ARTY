@@ -118,7 +118,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
     onUpdateStatus(paymentId, newStatus);
   };
 
-  // Statistiques des paiements
+  
   const paymentStats = {
     total: payments.length,
     unpaid: payments.filter(p => p.paymentStatus === 'unpaid').length,
@@ -139,7 +139,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Statistiques */}
+      {}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
@@ -175,7 +175,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
         </Card>
       </div>
 
-      {/* Liste des paiements */}
+      {}
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">Tous ({paymentStats.total})</TabsTrigger>
@@ -261,7 +261,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
         </TabsContent>
       </Tabs>
 
-      {/* Dialog pour gérer les paiements */}
+      {}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -273,7 +273,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
 
           {selectedPayment && (
             <div className="space-y-6">
-              {/* Résumé du paiement */}
+              {}
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
@@ -291,7 +291,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
                 </div>
               </div>
 
-              {/* Historique des paiements */}
+              {}
               {selectedPayment.paymentHistory.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-2">Historique des paiements</h4>
@@ -311,7 +311,7 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
                 </div>
               )}
 
-              {/* Ajouter un paiement */}
+              {}
               {selectedPayment.remainingAmount > 0 && (
                 <div className="space-y-4 border-t pt-4">
                   <h4 className="font-medium">Ajouter un paiement</h4>
@@ -370,7 +370,6 @@ export const PaymentTracker: React.FC<PaymentTrackerProps> = ({
   );
 };
 
-// Composant PaymentCard séparé pour la lisibilité
 const PaymentCard: React.FC<{
   payment: PaymentStatus;
   onUpdateStatus: (id: string, status: PaymentTrackingStatus) => void;

@@ -1,31 +1,16 @@
 #!/bin/bash
 
-# ============================================================================
-# Script de démarrage du projet ARTY
-# ============================================================================
-# Ce script initialise complètement le projet avec :
-# - Démarrage des services Docker
-# - Migrations de la base de données
-# - Création des données initiales et de démonstration
-# ============================================================================
+set -e
 
-set -e  # Arrêter en cas d'erreur
-
-# Couleurs pour l'affichage
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Variables
 CLEAN_MODE=false
 NO_SEED=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# ============================================================================
-# Fonctions utilitaires
-# ============================================================================
 
 print_header() {
     echo -e "${BLUE}============================================================${NC}"
@@ -49,10 +34,6 @@ print_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
-# ============================================================================
-# Fonction d'aide
-# ============================================================================
-
 show_help() {
     cat << EOF
 Usage: ./start.sh [OPTIONS]
@@ -65,18 +46,14 @@ OPTIONS:
     -h, --help      Affiche cette aide
 
 EXEMPLES:
-    ./start.sh                  # Démarrage normal
-    ./start.sh --clean          # Nettoie et redémarre
-    ./start.sh --no-seed        # Sans données de démo
+    ./start.sh
+    ./start.sh --clean
+    ./start.sh --no-seed
 
 EOF
 }
 
-# ============================================================================
-# Analyse des arguments
-# ============================================================================
-
-while [[ $# -gt 0 ]]; do
+while [[ $
     case $1 in
         --clean)
             CLEAN_MODE=true
@@ -98,43 +75,31 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ============================================================================
-# Vérifications préalables
-# ============================================================================
-
 print_header "Vérifications préalables"
 
-# Vérifier Docker
 if ! command -v docker &> /dev/null; then
     print_error "Docker n'est pas installé"
     exit 1
 fi
 print_success "Docker est installé"
 
-# Vérifier docker-compose
 if ! command -v docker-compose &> /dev/null; then
     print_error "docker-compose n'est pas installé"
     exit 1
 fi
 print_success "docker-compose est installé"
 
-# Vérifier que Docker est en cours d'exécution
 if ! docker info &> /dev/null; then
     print_error "Docker n'est pas en cours d'exécution"
     exit 1
 fi
 print_success "Docker est en cours d'exécution"
 
-# Vérifier l'existence du fichier docker-compose.yml
 if [ ! -f "$SCRIPT_DIR/docker-compose.yml" ]; then
     print_error "Fichier docker-compose.yml non trouvé"
     exit 1
 fi
 print_success "Fichier docker-compose.yml trouvé"
-
-# ============================================================================
-# Nettoyage optionnel
-# ============================================================================
 
 if [ "$CLEAN_MODE" = true ]; then
     print_header "Nettoyage des volumes Docker"
@@ -149,23 +114,14 @@ if [ "$CLEAN_MODE" = true ]; then
     fi
 fi
 
-# ============================================================================
-# Démarrage des services Docker
-# ============================================================================
-
 print_header "Démarrage des services Docker"
 
 docker-compose up -d
 
 print_success "Services Docker démarrés"
 
-# ============================================================================
-# Attente que les services soient prêts
-# ============================================================================
-
 print_header "Attente que les services soient prêts"
 
-# Fonction pour attendre qu'un service soit healthy
 wait_for_service() {
     local service=$1
     local max_attempts=60
@@ -191,18 +147,11 @@ wait_for_service() {
     return 1
 }
 
-# Attendre PostgreSQL
 wait_for_service "postgres"
 
-# Attendre Redis
 wait_for_service "redis"
 
-# Attendre le backend
 wait_for_service "backend"
-
-# ============================================================================
-# Exécution des migrations
-# ============================================================================
 
 print_header "Exécution des migrations de base de données"
 
@@ -216,10 +165,6 @@ else
     exit 1
 fi
 
-# ============================================================================
-# Seed des données initiales
-# ============================================================================
-
 print_header "Création des données initiales"
 
 docker-compose exec -T backend python scripts/seed_initial_data.py
@@ -230,10 +175,6 @@ else
     print_warning "Erreur lors de la création des données initiales"
     print_info "Les données existent peut-être déjà"
 fi
-
-# ============================================================================
-# Seed des données de démonstration
-# ============================================================================
 
 if [ "$NO_SEED" = false ]; then
     print_header "Création des données de démonstration"
@@ -250,29 +191,19 @@ else
     print_info "Création des données de démo ignorée (--no-seed)"
 fi
 
-# ============================================================================
-# Vérification de la santé des services
-# ============================================================================
-
 print_header "Vérification de la santé des services"
 
-# Vérifier le backend
 if curl -f http://localhost:8000/health &> /dev/null; then
     print_success "Backend est accessible"
 else
     print_warning "Backend n'est pas accessible"
 fi
 
-# Vérifier le frontend
 if curl -f http://localhost:8080 &> /dev/null; then
     print_success "Frontend est accessible"
 else
     print_warning "Frontend n'est pas encore accessible (peut prendre quelques secondes)"
 fi
-
-# ============================================================================
-# Affichage des informations finales
-# ============================================================================
 
 print_header "🎉 Projet ARTY démarré avec succès !"
 
@@ -322,4 +253,3 @@ echo -e "   ${YELLOW}docker-compose restart${NC}          # Redémarrer les serv
 echo ""
 print_header "Bon développement ! 🚀"
 
-# Made with Bob

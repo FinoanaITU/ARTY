@@ -118,12 +118,12 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialData?.date);
   
-  // Submit handler that integrates with API
+  
   const handleFormSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
     try {
-      // Transform form data to API schema
+      
       const workshopData = {
         title: formData.name,
         description: formData.description,
@@ -145,7 +145,7 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
         refund_policy: formData.importantInfo.cancellationPolicy,
       };
       
-      // Call API
+      
       const result = await createWorkshop(workshopData);
       
       if (result) {
@@ -165,7 +165,7 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   };
 
   const handlePhotoUpload = () => {
-    // Simulation d'upload de photo
+    
     const newPhoto = `photo-${Date.now()}.jpg`;
     setFormData(prev => ({
       ...prev,
@@ -220,7 +220,7 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   };
 
   const handleSubmit = () => {
-    // Validation de base
+    
     if (!formData.name || !formData.category || !formData.description) {
       toast({
         title: "Erreur",
@@ -240,7 +240,7 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
       return;
     }
 
-    // Nettoyer les données
+    
     const cleanedData = {
       ...formData,
       date: selectedDate,
@@ -303,7 +303,7 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
             </CardContent>
           </Card>
 
-          {/* Informations de base */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Informations générales</CardTitle>
@@ -413,7 +413,7 @@ export const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
             </CardContent>
           </Card>
 
-          {/* Localisation */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Localisation</CardTitle>

@@ -42,14 +42,14 @@ const ArtisanUnavailabilityDisplay: React.FC<ArtisanUnavailabilityDisplayProps> 
     return unavailabilityPeriods
       .filter(period => isAfter(period.startDate, today) || isEqual(period.startDate, today))
       .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
-      .slice(0, 5); // Afficher les 5 prochaines périodes
+      .slice(0, 5); 
   };
 
   const upcomingPeriods = getUpcomingUnavailability();
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-brand-brown">

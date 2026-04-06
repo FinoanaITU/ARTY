@@ -33,7 +33,7 @@ const PaymentPlanSelector: React.FC<PaymentPlanSelectorProps> = ({
       depositAmount,
       remainingAmount,
       depositDueDate: new Date(),
-      remainingDueDate: new Date(Date.now() + 24 * 60 * 60 * 1000) // Next day for workshops
+      remainingDueDate: new Date(Date.now() + 24 * 60 * 60 * 1000) 
     }
   };
 
@@ -56,7 +56,7 @@ const PaymentPlanSelector: React.FC<PaymentPlanSelectorProps> = ({
           onValueChange={handlePlanChange}
           className="space-y-4"
         >
-          {/* Full Payment */}
+          {}
           <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-gray-50">
             <RadioGroupItem value="full" id="full" />
             <Label htmlFor="full" className="flex-1 cursor-pointer">
@@ -74,7 +74,7 @@ const PaymentPlanSelector: React.FC<PaymentPlanSelectorProps> = ({
             </Label>
           </div>
 
-          {/* Installment Payment */}
+          {}
           <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-gray-50">
             <RadioGroupItem value="installment" id="installment" />
             <Label htmlFor="installment" className="flex-1 cursor-pointer">

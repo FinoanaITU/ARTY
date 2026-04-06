@@ -37,11 +37,8 @@ from app.core.exceptions import (
     ConflictError,
 )
 
-
 class WorkshopService:
     """Service métier pour la gestion des ateliers"""
-
-    # ============ WORKSHOP CRUD ============
 
     @staticmethod
     def create_workshop(
@@ -51,51 +48,44 @@ class WorkshopService:
         publish: bool = False,
     ) -> Workshop:
         """Créer un nouvel atelier"""
-        # Vérifier que l'artisan existe
+
         artisan = db.query(User).filter(User.id == artisan_id).first()
         if not artisan:
             raise ResourceNotFound("Artisan not found")
 
-        # Générer slug
         slug = WorkshopService._generate_slug(workshop_create.title)
 
-        # Déterminer le statut initial
         initial_status = "published" if publish else "draft"
 
-        # Créer l'atelier
         workshop = Workshop(
             title=workshop_create.title,
             slug=slug,
             description=workshop_create.description,
             short_description=workshop_create.short_description,
-            artisan_id=artisan_id,  # Rattaché à l'artisan connecté
-            category=workshop_create.category,  # Ajouté
-            # category_id sera géré plus tard si nécessaire
+            artisan_id=artisan_id,
+            category=workshop_create.category,
+
             workshop_type=workshop_create.workshop_type.value if hasattr(workshop_create.workshop_type, 'value') else workshop_create.workshop_type,
             skill_level=workshop_create.skill_level.value if hasattr(workshop_create.skill_level, 'value') else workshop_create.skill_level,
             base_price=workshop_create.base_price,
-            foreign_price=workshop_create.foreign_price,  # Ajouté
+            foreign_price=workshop_create.foreign_price,
             max_participants=workshop_create.max_participants,
             min_participants=workshop_create.min_participants or 1,
             duration_minutes=workshop_create.duration_minutes,
-            location=workshop_create.location,  # Ajouté - location pour filtering
-            address=workshop_create.address,  # Adresse détaillée
+            location=workshop_create.location,
+            address=workshop_create.address,
             room_details=workshop_create.room_details,
             materials_included=workshop_create.materials_included,
             materials_to_bring=workshop_create.materials_to_bring,
             prerequisites=workshop_create.prerequisites,
             what_you_will_learn=workshop_create.what_you_will_learn,
-            # program=workshop_create.program,  # Column doesn't exist
-            # privatization_enabled=workshop_create.privatization_enabled,  # Column doesn't exist
+
             featured_image_url=workshop_create.featured_image_url,
             gallery_images=workshop_create.gallery_images,
             video_preview_url=workshop_create.video_preview_url,
             tags=workshop_create.tags,
             status=initial_status,
         )
-
-        # Les options de privatisation ne sont pas encore implémentées dans le modèle
-        # Elles seront ajoutées dans une future migration
 
         db.add(workshop)
         db.commit()
@@ -122,21 +112,17 @@ class WorkshopService:
         """Mettre à jour un atelier"""
         workshop = WorkshopService.get_workshop(db, workshop_id)
 
-        # Vérifier la permission
         if workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to update this workshop")
 
-        # Vérifier le statut (ne peut éditer que les brouillons et publiés)
         if workshop.status not in ["draft", "published"]:
             raise ValidationError("Cannot edit workshop in this status")
 
-        # Mettre à jour les champs
         update_data = workshop_update.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             if hasattr(workshop, key):
                 setattr(workshop, key, value)
 
-        # Gérer les options de privatisation
         if "privatization_options" in update_data and update_data["privatization_options"]:
             opts = update_data["privatization_options"]
             workshop.privatization_min_participants = opts.min_participants
@@ -158,18 +144,14 @@ class WorkshopService:
         """Supprimer un atelier (brouillons seulement)"""
         workshop = WorkshopService.get_workshop(db, workshop_id)
 
-        # Vérifier la permission
         if workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to delete this workshop")
 
-        # Vérifier le statut
         if workshop.status != "draft":
             raise ValidationError("Can only delete draft workshops")
 
         db.delete(workshop)
         db.commit()
-
-    # ============ LISTING & FILTERING ============
 
     @staticmethod
     def list_workshops(
@@ -188,7 +170,6 @@ class WorkshopService:
         """Lister les ateliers avec filtrage"""
         query = db.query(Workshop)
 
-        # Appliquer les filtres
         if category:
             query = query.filter(Workshop.category == category)
         if skill_level:
@@ -200,16 +181,14 @@ class WorkshopService:
         if status:
             query = query.filter(Workshop.status == status)
         else:
-            # Par défaut, afficher seulement les publiés
+
             query = query.filter(Workshop.status == "published")
 
-        # Filtrage prix
         if min_price is not None:
             query = query.filter(Workshop.base_price >= min_price)
         if max_price is not None:
             query = query.filter(Workshop.base_price <= max_price)
 
-        # Recherche textuelle
         if search:
             search_term = f"%{search}%"
             query = query.filter(
@@ -220,15 +199,11 @@ class WorkshopService:
                 )
             )
 
-        # Compter le total
         total = query.count()
 
-        # Paginer
         workshops = query.offset(skip).limit(limit).all()
 
         return workshops, total
-
-    # ============ STATUS MANAGEMENT ============
 
     @staticmethod
     def publish_workshop(
@@ -290,8 +265,6 @@ class WorkshopService:
         db.refresh(workshop)
         return workshop
 
-    # ============ SESSIONS MANAGEMENT ============
-
     @staticmethod
     def create_session(
         db: Session,
@@ -302,15 +275,12 @@ class WorkshopService:
         """Créer une session d'atelier"""
         workshop = WorkshopService.get_workshop(db, workshop_id)
 
-        # Vérifier la permission
         if workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to create sessions for this workshop")
 
-        # Validation
         if session_create.end_datetime <= session_create.start_datetime:
             raise ValidationError("End datetime must be after start datetime")
 
-        # Vérifier qu'il n'y a pas de chevauchement
         overlap = db.query(WorkshopSession).filter(
             and_(
                 WorkshopSession.workshop_id == workshop_id,
@@ -322,7 +292,6 @@ class WorkshopService:
         if overlap:
             raise ConflictError("Session overlaps with existing sessions")
 
-        # Créer la session
         session = WorkshopSession(
             workshop_id=workshop_id,
             start_datetime=session_create.start_datetime,
@@ -376,12 +345,10 @@ class WorkshopService:
         """Supprimer une session (sans réservations)"""
         session = WorkshopService.get_session(db, session_id)
 
-        # Vérifier la permission
         workshop = WorkshopService.get_workshop(db, session.workshop_id)
         if workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to delete this session")
 
-        # Vérifier qu'il n'y a pas de réservations
         bookings = db.query(WorkshopBooking).filter(
             WorkshopBooking.session_id == session_id
         ).count()
@@ -392,14 +359,11 @@ class WorkshopService:
         db.delete(session)
         db.commit()
 
-    # ============ AVAILABILITY ============
-
     @staticmethod
     def get_available_spots(db: Session, session_id: UUID) -> int:
         """Obtenir le nombre de places disponibles"""
         session = WorkshopService.get_session(db, session_id)
 
-        # Compter les réservations confirmées
         booked = db.query(WorkshopBooking).filter(
             and_(
                 WorkshopBooking.session_id == session_id,
@@ -407,7 +371,6 @@ class WorkshopService:
             )
         ).count()
 
-        # Compter les participants
         from sqlalchemy import func
         total_participants = db.query(func.sum(WorkshopBooking.participants_count)).filter(
             and_(
@@ -427,8 +390,6 @@ class WorkshopService:
         available = WorkshopService.get_available_spots(db, session_id)
         return available >= participants_count
 
-    # ============ BOOKINGS ============
-
     @staticmethod
     def create_booking(
         db: Session,
@@ -439,24 +400,18 @@ class WorkshopService:
         """Créer une réservation"""
         session = WorkshopService.get_session(db, booking_create.session_id)
 
-        # Vérifier que la session appartient au bon atelier
         if session.workshop_id != workshop_id:
             raise ValidationError("Session does not belong to this workshop")
 
-        # Vérifier la disponibilité
         if not WorkshopService.is_session_available(db, booking_create.session_id, booking_create.participants_count):
             raise ConflictError("Not enough available spots in this session")
 
-        # Récupérer l'atelier pour le prix
         workshop = WorkshopService.get_workshop(db, workshop_id)
 
-        # Calculer le prix total
         total_price = session.session_price * booking_create.participants_count
 
-        # Générer le numéro de réservation
         booking_number = WorkshopService._generate_booking_number(db, workshop_id)
 
-        # Créer la réservation
         booking = WorkshopBooking(
             workshop_id=workshop_id,
             session_id=booking_create.session_id,
@@ -494,7 +449,6 @@ class WorkshopService:
         """Annuler une réservation"""
         booking = WorkshopService.get_booking(db, booking_id)
 
-        # Vérifier la permission (propriétaire ou admin)
         if user_id and booking.user_id != user_id:
             raise PermissionDenied("You don't have permission to cancel this booking")
 
@@ -517,7 +471,6 @@ class WorkshopService:
         booking = WorkshopService.get_booking(db, booking_id)
         workshop = WorkshopService.get_workshop(db, booking.workshop_id)
 
-        # Vérifier la permission
         if artisan_id and workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to confirm this booking")
 
@@ -554,7 +507,6 @@ class WorkshopService:
         """Lister les réservations d'un atelier"""
         workshop = WorkshopService.get_workshop(db, workshop_id)
 
-        # Vérifier la permission
         if workshop.artisan_id != artisan_id:
             raise PermissionDenied("You don't have permission to view these bookings")
 
@@ -562,8 +514,6 @@ class WorkshopService:
         total = query.count()
         bookings = query.offset(skip).limit(limit).order_by(WorkshopBooking.created_at.desc()).all()
         return bookings, total
-
-    # ============ HELPERS ============
 
     @staticmethod
     def _generate_slug(title: str) -> str:
@@ -600,7 +550,6 @@ class WorkshopService:
         """Obtenir les statistiques d'un atelier"""
         workshop = WorkshopService.get_workshop(db, workshop_id)
 
-        # Compter les réservations
         total_bookings = db.query(WorkshopBooking).filter(
             WorkshopBooking.workshop_id == workshop_id
         ).count()
@@ -612,7 +561,6 @@ class WorkshopService:
             )
         ).count()
 
-        # Calculer le revenue
         from sqlalchemy import func
         revenue = db.query(func.sum(WorkshopBooking.total_price)).filter(
             and_(
@@ -623,7 +571,6 @@ class WorkshopService:
 
         revenue = revenue or Decimal(0)
 
-        # Compter les sessions
         total_sessions = db.query(WorkshopSession).filter(
             WorkshopSession.workshop_id == workshop_id
         ).count()

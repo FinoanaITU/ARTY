@@ -6,7 +6,6 @@ Script pour créer les données initiales de l'application
 import sys
 import os
 
-# Ajouter le répertoire parent au path pour les imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import sqlalchemy as sa
@@ -20,14 +19,12 @@ import uuid
 import re
 from typing import List, Dict, Optional
 
-
 def generate_slug(name: str) -> str:
     """Génère un slug à partir du nom"""
     slug = name.lower()
     slug = re.sub(r'[^a-z0-9]+', '-', slug)
     slug = re.sub(r'^-+|-+$', '', slug)
     return slug
-
 
 def create_categories(db: Session) -> Dict[str, Category]:
     """
@@ -178,12 +175,12 @@ def create_categories(db: Session) -> Dict[str, Category]:
     created_categories = {}
     
     for idx, category_data in enumerate(categories_data):
-        # Vérifier si la catégorie existe déjà (catégorie principale = pas de parent)
+
         from sqlalchemy import and_
         existing_category = db.query(Category).filter(
             and_(
                 Category.name == category_data["name"],
-                Category.parent_id.is_(None)  # Catégorie principale
+                Category.parent_id.is_(None)
             )
         ).first()
         
@@ -192,14 +189,14 @@ def create_categories(db: Session) -> Dict[str, Category]:
             created_categories[category_data["name"]] = existing_category
             category = existing_category
         else:
-            # Créer la catégorie principale (parent_id = None)
+
             category = Category(
                 id=uuid.uuid4(),
                 name=category_data["name"],
                 slug=generate_slug(category_data["name"]),
                 description=category_data.get("description"),
                 icon=category_data.get("icon"),
-                parent_id=None,  # Catégorie principale
+                parent_id=None,
                 is_active=True,
                 level=0,
                 path=generate_slug(category_data["name"]),
@@ -210,10 +207,9 @@ def create_categories(db: Session) -> Dict[str, Category]:
             print(f"✓ Catégorie '{category_data['name']}' créée")
             created_categories[category_data["name"]] = category
         
-        # Créer les sous-catégories
+
         for sub_idx, subcategory_name in enumerate(category_data.get("subcategories", [])):
-            # Vérifier si la sous-catégorie existe déjà
-            # Pour SQLite, on doit comparer avec str() si nécessaire
+
             from app.utils.id_utils import get_db_type, id_to_string
             db_type = get_db_type(db)
             
@@ -236,15 +232,15 @@ def create_categories(db: Session) -> Dict[str, Category]:
             if existing_subcategory:
                 print(f"  ✓ Sous-catégorie '{subcategory_name}' existe déjà")
             else:
-                # Générer un slug unique en incluant le parent si nécessaire
+
                 base_slug = generate_slug(subcategory_name)
-                # Vérifier si le slug existe déjà (même avec un parent différent)
+
                 slug_exists = db.query(Category).filter(Category.slug == base_slug).first()
                 
                 if slug_exists:
-                    # Si le slug existe déjà, créer un slug unique avec le parent
+
                     unique_slug = f"{category.slug}-{base_slug}"
-                    # Vérifier à nouveau l'unicité
+
                     counter = 1
                     while db.query(Category).filter(Category.slug == unique_slug).first():
                         unique_slug = f"{category.slug}-{base_slug}-{counter}"
@@ -259,7 +255,7 @@ def create_categories(db: Session) -> Dict[str, Category]:
                     id=uuid.uuid4(),
                     name=subcategory_name,
                     slug=final_slug,
-                    parent_id=category.id,  # GUID gère la conversion
+                    parent_id=category.id,
                     is_active=True,
                     level=1,
                     path=final_path,
@@ -271,14 +267,12 @@ def create_categories(db: Session) -> Dict[str, Category]:
     db.commit()
     return created_categories
 
-
 def create_admin_user(db: Session) -> Optional[User]:
     """Crée un utilisateur admin par défaut si il n'existe pas"""
     admin_email = "admin@artizaho.com"
-    admin_password = "admin123"  # À changer en production
+    admin_password = "admin123"
     
-    # Vérifier si l'admin existe déjà
-    # Check if admin already exists using raw SQL to avoid enum issues
+
     result = db.execute(sa.text("SELECT email FROM users WHERE email = :email"), {"email": admin_email})
     existing_admin = result.first()
     
@@ -286,10 +280,10 @@ def create_admin_user(db: Session) -> Optional[User]:
         print(f"✓ Utilisateur admin '{admin_email}' existe déjà")
         return db.query(User).filter(User.email == admin_email).first()
     
-    # Créer le hash du mot de passe
+
     password_hash = get_password_hash(admin_password)
     
-    # Create admin user with raw SQL to avoid enum conversion issues
+
     admin_id = str(uuid.uuid4())
     db.execute(sa.text("""
         INSERT INTO users (id, email, password_hash, name, country, role, is_active, is_email_verified)
@@ -309,9 +303,8 @@ def create_admin_user(db: Session) -> Optional[User]:
     print(f"✓ Utilisateur admin créé: {admin_email} / {admin_password}")
     print(f"  ⚠️  ATTENTION: Changez le mot de passe en production!")
     
-    # Return the created user
-    return db.query(User).filter(User.email == admin_email).first()
 
+    return db.query(User).filter(User.email == admin_email).first()
 
 def seed_initial_data():
     """Fonction principale pour créer les données initiales"""
@@ -321,12 +314,12 @@ def seed_initial_data():
     
     db = SessionLocal()
     try:
-        # Créer les catégories
+
         print("\n📁 Création des catégories...")
         categories = create_categories(db)
         print(f"\n✓ {len(categories)} catégories principales créées/vérifiées")
         
-        # Créer l'utilisateur admin
+
         print("\n👤 Création de l'utilisateur admin...")
         admin_user = create_admin_user(db)
         
@@ -339,15 +332,13 @@ def seed_initial_data():
         print(f"\n❌ Erreur lors de l'initialisation: {e}")
         import traceback
         traceback.print_exc()
-        # Ne pas lever l'exception si les tables n'existent pas encore
-        # (peut arriver si appelé avant les migrations)
+
         if "does not exist" in str(e) or "no such table" in str(e).lower():
             print("ℹ️  Tables not found yet. This is normal if migrations haven't run yet.")
             return
         raise
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     seed_initial_data()

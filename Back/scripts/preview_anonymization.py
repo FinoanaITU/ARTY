@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Preview script - Shows what data will be changed without modifying the database.
 This helps users verify the anonymization before applying it.
@@ -12,14 +12,11 @@ from faker import Faker
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Suppress SQLAlchemy warnings about relationships
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Import core database first
 from app.core.database import SessionLocal
 
-# Import all models to ensure relationships are properly configured
 try:
     from app.models.user import User, ArtisanProfile
     from app.models.workshop import Workshop
@@ -29,7 +26,6 @@ except Exception as e:
     User = None
     ArtisanProfile = None
     Workshop = None
-
 
 MADAGASCAR_CITIES = [
     "Antananarivo", "Antsirabe", "Fianarantsoa", "Toliara", "Mahajanga",
@@ -45,12 +41,10 @@ PHONE_PREFIXES = ["033", "034", "032", "038", "030", "031", "037", "039"]
 
 fake = Faker('fr_FR')
 
-
 def generate_fake_phone():
     prefix = random.choice(PHONE_PREFIXES)
     number = "".join(str(random.randint(0, 9)) for _ in range(7))
     return f"+261{prefix}{number}"
-
 
 def generate_fake_address():
     street_number = random.randint(1, 500)
@@ -61,7 +55,6 @@ def generate_fake_address():
     city = random.choice(MADAGASCAR_CITIES)
     postal_code = "".join(str(random.randint(0, 9)) for _ in range(3)) + "00"
     return f"{street_number} {random.choice(street_names)}, {postal_code} {city}"
-
 
 def preview_users():
     """Show users that will be anonymized"""
@@ -102,7 +95,6 @@ def preview_users():
     finally:
         db.close()
 
-
 def preview_artisan_profiles():
     """Show artisan profiles that will be anonymized"""
     db = SessionLocal()
@@ -142,7 +134,6 @@ def preview_artisan_profiles():
     finally:
         db.close()
 
-
 def preview_workshops():
     """Show workshops that will be anonymized"""
     db = SessionLocal()
@@ -176,7 +167,6 @@ def preview_workshops():
     finally:
         db.close()
 
-
 def main():
     print("\n" + "="*100)
     print("ANONYMIZATION PREVIEW - WHAT WILL BE CHANGED")
@@ -208,7 +198,6 @@ def main():
         import traceback
         traceback.print_exc()
         return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())

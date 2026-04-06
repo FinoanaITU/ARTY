@@ -58,7 +58,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
       [name]: name === 'quantity' ? parseInt(value) : value,
     }));
     setError(null);
-    // Effacer l'erreur du champ spécifique
+    
     setFieldErrors((prev) => {
       const newErrors = { ...prev };
       delete newErrors[name];
@@ -73,7 +73,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
     setFieldErrors({});
 
     try {
-      // Validation améliorée
+      
       if (!formData.title.trim()) {
         const titleError = 'Le titre du devis est requis';
         setFieldErrors({ title: titleError });
@@ -124,7 +124,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
         return;
       }
 
-      // Créer le devis de base
+      
       const quoteDataWithoutAdmin: QuoteRequestIn = {
         quote_type: formData.quote_type,
         title: formData.title,
@@ -140,7 +140,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
       const response = await apiService.createQuoteRequest(quoteDataWithoutAdmin);
       
       if (response.id) {
-        // Si des paramètres admin sont fournis, les ajouter
+        
         if (formData.final_price || formData.admin_notes) {
           try {
             await apiService.updateQuote(response.id, {
@@ -149,13 +149,13 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
             });
           } catch (updateErr) {
             console.error('Erreur lors de la mise à jour des paramètres admin:', updateErr);
-            // Pas de toast d'erreur, le devis a été créé correctement
+            
           }
         }
 
         toast.success('Devis créé avec succès ! 🎉');
         onSuccess?.(response.id);
-        // Reset form
+        
         setFormData({
           quote_type: 'custom',
           title: '',
@@ -174,7 +174,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
       let fieldErrorsMap: { [key: string]: string } = {};
 
       if (err instanceof Error) {
-        // Vérifier si c'est une erreur de validation Pydantic
+        
         if (err.message.includes('String should have at least')) {
           if (err.message.includes('title')) {
             const errorMsg = 'Le titre du devis doit contenir au moins 3 caractères';
@@ -220,7 +220,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Type de devis */}
+        {}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -255,7 +255,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
           </div>
         </div>
 
-        {/* Titre */}
+        {}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Titre du devis * <span className="text-gray-500 text-xs">(min. 3 caractères)</span>
@@ -283,7 +283,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
           </p>
         </div>
 
-        {/* Description */}
+        {}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Description *
@@ -298,7 +298,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
           />
         </div>
 
-        {/* Client info */}
+        {}
         <div className="border-t pt-6">
           <h3 className="text-lg font-semibold mb-4">Informations du client</h3>
 
@@ -455,7 +455,7 @@ export const QuoteForm = ({ onSuccess, onCancel }: QuoteFormProps) => {
           </div>
         </div>
 
-        {/* Buttons */}
+        {}
         <div className="flex gap-4 border-t pt-6">
           {onCancel && (
             <button

@@ -64,7 +64,7 @@ export const AdminSubscriptionManager: React.FC = () => {
   };
 
   const handleSubscriptionUpdated = () => {
-    loadData(); // Recharger les données
+    loadData(); 
     setSelectedSubscription(null);
     setActiveTab('list');
   };

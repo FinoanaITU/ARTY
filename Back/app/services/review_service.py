@@ -24,7 +24,6 @@ from app.schemas.review import (
     ReviewHelpfulVoteCreate,
 )
 
-
 class ReviewService:
     """Service pour gérer les avis de produits et ateliers"""
 
@@ -42,7 +41,7 @@ class ReviewService:
             (is_verified, order_id)
         """
         if reviewable_type == "product":
-            # Chercher une commande avec ce produit
+
             query = (
                 select(Order.id)
                 .join(OrderItem)
@@ -63,8 +62,7 @@ class ReviewService:
             
             return (found_order_id is not None, found_order_id)
         
-        # Pour workshop, vérifier booking
-        # TODO: Implement workshop booking verification
+
         return (False, None)
 
     async def _check_duplicate_review(
@@ -101,7 +99,6 @@ class ReviewService:
         )
         avg_rating = result.scalar_one_or_none() or 0.0
 
-        # Mettre à jour le produit
         product_result = await self.db.execute(
             select(Product).where(Product.id == product_id)
         )
@@ -141,7 +138,7 @@ class ReviewService:
         Raises:
             HTTPException 400: Duplicate review ou achat non vérifié
         """
-        # Vérifier duplicate
+
         has_duplicate = await self._check_duplicate_review(
             user_id, data.reviewable_id, data.reviewable_type.value
         )
@@ -154,7 +151,6 @@ class ReviewService:
                 ),
             )
 
-        # Vérifier achat (verified purchase)
         is_verified, verified_order_id = await self._verify_purchase(
             user_id,
             data.reviewable_id,
@@ -162,14 +158,12 @@ class ReviewService:
             data.order_id,
         )
 
-        # Si order_id fourni mais pas vérifié, erreur
         if data.order_id and not is_verified:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Order not found or not completed",
             )
 
-        # Créer la review
         review = Review(
             reviewer_id=user_id,
             reviewable_type=data.reviewable_type.value,
@@ -190,11 +184,9 @@ class ReviewService:
         await self.db.commit()
         await self.db.refresh(review)
 
-        # Recalculer average_rating du produit/workshop
         if data.reviewable_type.value == "product":
             await self._update_product_average_rating(data.reviewable_id)
 
-        # Récupérer l'utilisateur pour enrichir
         user_result = await self.db.execute(
             select(User).where(User.id == user_id)
         )
@@ -256,7 +248,7 @@ class ReviewService:
         Returns:
             Liste paginée d'avis avec stats
         """
-        # Query de base
+
         query = (
             select(Review, User)
             .join(User, Review.reviewer_id == User.id)
@@ -269,24 +261,20 @@ class ReviewService:
             )
         )
 
-        # Filtres optionnels
         if rating_filter:
             query = query.where(Review.rating == rating_filter)
 
         if verified_only:
             query = query.where(Review.is_verified_purchase == True)
 
-        # Tri par date décroissante (plus récents en premier)
         query = query.order_by(Review.created_at.desc())
 
-        # Compter le total
         count_query = select(func.count()).select_from(
             query.subquery()
         )
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0
 
-        # Pagination
         offset = (page - 1) * page_size
         query = query.offset(offset).limit(page_size)
 
@@ -298,7 +286,6 @@ class ReviewService:
             for review, user in rows
         ]
 
-        # Calculer stats (average rating et distribution)
         stats = await self.get_review_stats(
             reviewable_id, reviewable_type
         )
@@ -334,7 +321,6 @@ class ReviewService:
             Review.status == "published",
         )
 
-        # Total reviews et average rating
         stats_result = await self.db.execute(
             select(
                 func.count(Review.id).label("total"),
@@ -360,7 +346,6 @@ class ReviewService:
         )
         stats_row = stats_result.one()
 
-        # Distribution par note (1-5 étoiles)
         distribution_result = await self.db.execute(
             select(
                 Review.rating, func.count(Review.id).label("count")
@@ -418,7 +403,6 @@ class ReviewService:
                 detail="You can only edit your own reviews",
             )
 
-        # Appliquer les modifications
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(review, field, value)
@@ -428,7 +412,6 @@ class ReviewService:
         await self.db.commit()
         await self.db.refresh(review)
 
-        # Recalculer average_rating si rating changé
         if data.rating is not None and review.reviewable_type == "product":
             await self._update_product_average_rating(
                 review.reviewable_id
@@ -478,7 +461,6 @@ class ReviewService:
         await self.db.delete(review)
         await self.db.commit()
 
-        # Recalculer average_rating
         if reviewable_type == "product":
             await self._update_product_average_rating(reviewable_id)
 
@@ -497,7 +479,7 @@ class ReviewService:
         Returns:
             Message de confirmation
         """
-        # Vérifier que la review existe
+
         review_result = await self.db.execute(
             select(Review).where(Review.id == review_id)
         )
@@ -509,7 +491,6 @@ class ReviewService:
                 detail="Review not found",
             )
 
-        # Vérifier si déjà voté
         vote_result = await self.db.execute(
             select(ReviewHelpfulVote).where(
                 and_(
@@ -521,17 +502,16 @@ class ReviewService:
         existing_vote = vote_result.scalar_one_or_none()
 
         if existing_vote:
-            # Mettre à jour le vote existant
+
             old_is_helpful = existing_vote.is_helpful
             existing_vote.is_helpful = data.is_helpful
 
-            # Ajuster helpful_count
             if old_is_helpful and not data.is_helpful:
                 review.helpful_count = max(0, review.helpful_count - 1)
             elif not old_is_helpful and data.is_helpful:
                 review.helpful_count += 1
         else:
-            # Créer un nouveau vote
+
             vote = ReviewHelpfulVote(
                 review_id=review_id,
                 user_id=user_id,
@@ -539,7 +519,6 @@ class ReviewService:
             )
             self.db.add(vote)
 
-            # Incrémenter helpful_count si is_helpful
             if data.is_helpful:
                 review.helpful_count += 1
 

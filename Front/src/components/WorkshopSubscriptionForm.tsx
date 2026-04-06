@@ -66,7 +66,7 @@ const WorkshopSubscriptionForm = ({ workshop, onCancel }: WorkshopSubscriptionFo
     setParticipants(watchedParticipants || 1);
   }, [watchedParticipants]);
 
-  const creditsRequired = participants; // 1 crédit par participant
+  const creditsRequired = participants; 
 
   const onSubmit = async (data: SubscriptionRegistrationFormData) => {
     if (!hasActiveSubscription) {
@@ -102,7 +102,7 @@ const WorkshopSubscriptionForm = ({ workshop, onCancel }: WorkshopSubscriptionFo
           title: "Inscription confirmée",
           description: `Vous êtes inscrit(e) à ${workshop.title}. ${creditsRequired} crédit(s) utilisé(s).`
         });
-        onCancel(); // Fermer le formulaire
+        onCancel(); 
       } else {
         throw new Error("Échec de l'utilisation des crédits");
       }
@@ -166,7 +166,7 @@ const WorkshopSubscriptionForm = ({ workshop, onCancel }: WorkshopSubscriptionFo
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Statut de l'abonnement */}
+        {}
         <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
@@ -196,7 +196,7 @@ const WorkshopSubscriptionForm = ({ workshop, onCancel }: WorkshopSubscriptionFo
         </Card>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Informations personnelles */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-brand-brown">Informations personnelles</h3>
             
@@ -279,7 +279,7 @@ const WorkshopSubscriptionForm = ({ workshop, onCancel }: WorkshopSubscriptionFo
 
           <Separator />
 
-          {/* Récapitulatif des crédits */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-brand-brown">Utilisation des crédits</h3>
             

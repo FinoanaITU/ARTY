@@ -25,7 +25,6 @@ from app.schemas.analytics import (
     MonthlyRevenue
 )
 
-
 class ArtisanStatsService:
     """Service pour gérer les statistiques artisan"""
     
@@ -69,13 +68,13 @@ class ArtisanStatsService:
         """
         stats = await ArtisanStatsService.get_or_create_stats(db, artisan_id)
         
-        # Total produits
+
         stats.total_products = db.query(Product).filter(
             Product.artisan_id == artisan_id,
             Product.status == "published"
         ).count()
         
-        # Total ventes et revenu
+
         sales_data = db.query(
             func.count(OrderItem.id).label("count"),
             func.sum(OrderItem.artisan_payout).label("revenue")
@@ -86,12 +85,12 @@ class ArtisanStatsService:
         stats.total_sales = sales_data.count or 0
         stats.total_revenue = sales_data.revenue or Decimal("0.00")
         
-        # Total ateliers
+
         stats.total_workshops = db.query(Workshop).filter(
             Workshop.artisan_id == artisan_id
         ).count()
         
-        # Avis et notation
+
         reviews_data = db.query(
             func.count(Review.id).label("count"),
             func.avg(Review.rating).label("avg_rating")
@@ -123,12 +122,12 @@ class ArtisanStatsService:
         """
         Récupère les statistiques pour le dashboard artisan.
         """
-        # Dates de référence
+
         today = date.today()
         start_of_week = today - timedelta(days=today.weekday())
         start_of_month = today.replace(day=1)
         
-        # Stats générales
+
         total_products = db.query(Product).filter(
             Product.artisan_id == artisan_id
         ).count()
@@ -144,7 +143,7 @@ class ArtisanStatsService:
             Workshop.artisan_id == artisan_id
         ).count()
         
-        # Stats de ventes (total)
+
         total_sales_data = db.query(
             func.count(OrderItem.id).label("count"),
             func.sum(OrderItem.artisan_payout).label("revenue")
@@ -155,7 +154,7 @@ class ArtisanStatsService:
         total_sales = total_sales_data.count or 0
         total_revenue = total_sales_data.revenue or Decimal("0.00")
         
-        # Commandes en attente et en production
+
         pending_orders = db.query(Order.id).join(OrderItem, Order.id == OrderItem.order_id).filter(
             and_(
                 OrderItem.artisan_id == artisan_id,
@@ -170,7 +169,7 @@ class ArtisanStatsService:
             )
         ).distinct().count()
         
-        # Stats mensuelles
+
         monthly_sales_data = db.query(
             func.count(OrderItem.id).label("count"),
             func.sum(OrderItem.artisan_payout).label("revenue")
@@ -184,7 +183,7 @@ class ArtisanStatsService:
         monthly_sales = monthly_sales_data.count or 0
         monthly_revenue = monthly_sales_data.revenue or Decimal("0.00")
         
-        # Stats hebdomadaires
+
         weekly_sales_data = db.query(
             func.count(OrderItem.id).label("count"),
             func.sum(OrderItem.artisan_payout).label("revenue")
@@ -198,7 +197,7 @@ class ArtisanStatsService:
         weekly_sales = weekly_sales_data.count or 0
         weekly_revenue = weekly_sales_data.revenue or Decimal("0.00")
         
-        # Avis et notation
+
         reviews_data = db.query(
             func.count(Review.id).label("count"),
             func.avg(Review.rating).label("avg_rating")
@@ -215,8 +214,7 @@ class ArtisanStatsService:
             if reviews_data.avg_rating else Decimal("0.00")
         )
         
-        # Tendances (comparaison avec mois précédent)
-        # TODO: implémenter logique comparative
+
         sales_trend = "neutral"
         revenue_trend = "neutral"
         
@@ -247,7 +245,7 @@ class ArtisanStatsService:
         """
         Récupère les commandes récentes de l'artisan.
         """
-        # Récupérer les order_ids où l'artisan a des items
+
         order_ids = db.query(OrderItem.order_id).filter(
             OrderItem.artisan_id == artisan_id
         ).distinct().subquery()
@@ -258,11 +256,11 @@ class ArtisanStatsService:
         
         recent = []
         for order in orders:
-            # Récupérer le nom de l'acheteur
+
             buyer = db.query(User).filter(User.id == order.user_id).first()
             buyer_name = buyer.name if buyer else "Client"
             
-            # Compter les items de cet artisan
+
             items_count = db.query(OrderItem).filter(
                 and_(
                     OrderItem.order_id == order.id,
@@ -312,7 +310,7 @@ class ArtisanStatsService:
                 title=item.title,
                 sales_count=item.sales_count,
                 revenue=item.revenue or Decimal("0.00"),
-                image_url=None  # TODO: récupérer image principale
+                image_url=None
             ))
         
         return result
@@ -362,8 +360,7 @@ class ArtisanStatsService:
         """
         Récupère les revenus mensuels (X derniers mois).
         """
-        # TODO: Implémenter logique pour extraire mois
-        # Pour l'instant, retourner liste vide
+
         return []
     
     @staticmethod

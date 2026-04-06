@@ -2,16 +2,13 @@
 
 echo "🚀 Starting Artizaho Backend..."
 
-# Fonction pour attendre que PostgreSQL soit prêt
 wait_for_postgres() {
     echo "⏳ Waiting for PostgreSQL to be ready..."
     local max_attempts=30
     local attempt=0
     
     while [ $attempt -lt $max_attempts ]; do
-        # Utiliser le script Python pour vérifier la connexion
-        # Essayer d'abord le script dans docker-entrypoint.d (qui n'est pas écrasé par le volume)
-        # Sinon, utiliser le script dans /app/scripts (qui vient du volume monté)
+
         if [ -f /docker-entrypoint.d/check_db_connection.py ]; then
             CHECK_SCRIPT="/docker-entrypoint.d/check_db_connection.py"
         elif [ -f /app/scripts/check_db_connection.py ]; then
@@ -37,23 +34,17 @@ wait_for_postgres() {
     return 1
 }
 
-# Le depends_on dans docker-compose avec condition: service_healthy garantit que PostgreSQL est prêt
-# Mais on fait une vérification supplémentaire pour être sûr
 wait_for_postgres || echo "⚠️  Continuing with migrations anyway..."
 
-# Exécuter les migrations Alembic
 echo "📦 Running database migrations..."
 cd /app
 
-# Essayer d'abord les migrations Alembic
 echo "Running Alembic migrations..."
 alembic upgrade head 2>&1 || echo "⚠️  Alembic migrations failed or completed with issues"
 
-# Vérifier si les tables ont été créées, sinon les créer avec SQLAlchemy
 echo "Ensuring database tables exist..."
 python3 scripts/ensure_db_tables.py
 
-# Exécuter le seed data (catégories, admin user)
 echo "🌱 Seeding initial data (categories, admin user)..."
 cd /app
 python3 scripts/seed_initial_data.py
@@ -67,7 +58,6 @@ else
     echo "💡 Continuing to start the application..."
 fi
 
-# Démarrer l'application
 echo "🎉 Starting FastAPI application..."
 exec "$@"
 

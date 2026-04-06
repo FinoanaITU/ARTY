@@ -27,7 +27,7 @@ const SimilarProducts = ({ currentProductId, category }: SimilarProductsProps) =
         setSimilarProducts(response.items || []);
       } catch (error) {
         console.error('Error loading similar products:', error);
-        // En cas d'erreur, on ne affiche pas de produits similaires
+        
         setSimilarProducts([]);
       } finally {
         setLoading(false);

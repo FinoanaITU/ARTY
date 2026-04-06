@@ -4,7 +4,7 @@ export const calculateBusinessDays = (startDate: Date, endDate: Date): number =>
   
   while (current <= endDate) {
     const dayOfWeek = current.getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday (0) or Saturday (6)
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { 
       count++;
     }
     current.setDate(current.getDate() + 1);

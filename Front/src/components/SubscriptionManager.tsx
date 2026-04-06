@@ -137,7 +137,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         <p className="text-gray-600">Gérez les abonnements des utilisateurs</p>
       </div>
 
-      {/* Stats Cards */}
+      {}
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
@@ -257,7 +257,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         </CardContent>
       </Card>
 
-      {/* View Subscription Modal */}
+      {}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -328,7 +328,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Subscription Modal */}
+      {}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>

@@ -44,7 +44,6 @@ const artisans = {
   }
 };
 
-// Données pour les ateliers sur réservation (catalogue filtrable)
 const reservationWorkshops = [
   {
     id: 1,
@@ -116,7 +115,6 @@ const reservationWorkshops = [
   }
 ];
 
-// Données pour les ateliers sur inscription
 const eventWorkshops = [
   {
     id: 3,
@@ -156,7 +154,6 @@ const eventWorkshops = [
   }
 ];
 
-// Données pour les formules d'abonnement
 const subscriptionPlans = [
   {
     id: 'explorateur',
@@ -190,7 +187,6 @@ const subscriptionPlans = [
   }
 ];
 
-// Données pour les ateliers enfants Artikidz
 const artikidzWorkshops = [
   {
     id: 1,
@@ -296,22 +292,22 @@ const Workshops = () => {
     error: inscriptionError
   } = useInscriptionWorkshops();
   
-  // Helper pour normaliser les URLs d'images (comme dans ArtisanProductManager)
+  
   const normalizeImageUrl = (url: string | undefined | null): string => {
     if (!url) return '';
-    // Si l'URL commence par http:// or https://, la laisser telle quelle
+    
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    // Construire l'URL complète avec la base du backend
+    
     const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
     return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
   };
   
-  // Load workshops from API on component mount
+  
   useEffect(() => {
     loadWorkshops({ limit: 50, page: 1 });
   }, [loadWorkshops]);
   
-  // États pour les filtres
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Tous');
   const [selectedDifficulty, setSelectedDifficulty] = useState('Tous');
@@ -320,7 +316,7 @@ const Workshops = () => {
   const [selectedDuration, setSelectedDuration] = useState('Tous');
   const [selectedGroupSize, setSelectedGroupSize] = useState('Tous');
 
-  // Fonction pour filtrer les ateliers (mémorisée)
+  
   const filterWorkshops = useCallback((workshops: any[]) => {
     return workshops.filter(workshop => {
       const matchesSearch = searchTerm === '' || 
@@ -381,7 +377,7 @@ const Workshops = () => {
     setShowSubscriptionForm(true);
   }, []);
 
-  // Use API workshops if available, fallback to mock data
+  
   const workshopsToUse = useMemo(() => 
     apiWorkshops.length > 0 ? apiWorkshops : reservationWorkshops,
     [apiWorkshops, reservationWorkshops]
@@ -511,7 +507,7 @@ const Workshops = () => {
         </div>
       )}
       
-      {/* Fallback: Show mock data component */}
+      {}
       {!workshopsLoading && apiWorkshops.length === 0 && (
         <>
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-700 text-sm">
@@ -984,7 +980,7 @@ const Workshops = () => {
             </p>
           </div>
 
-          {/* Tabs Navigation */}
+          {}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4 mb-8">
               <TabsTrigger value="reservation" className="flex items-center gap-2">
@@ -1022,7 +1018,7 @@ const Workshops = () => {
             </TabsContent>
           </Tabs>
 
-          {/* Modal d'inscription avec abonnement */}
+          {}
           <Dialog open={showSubscriptionForm} onOpenChange={setShowSubscriptionForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               {selectedWorkshop && (
@@ -1037,7 +1033,7 @@ const Workshops = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Modal d'inscription pour l'achat d'abonnement */}
+          {}
           <Dialog open={showSubscriptionRegistrationForm} onOpenChange={setShowSubscriptionRegistrationForm}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               {selectedPlan && (

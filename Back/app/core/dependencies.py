@@ -12,7 +12,6 @@ from app.models.user import User
 
 security = HTTPBearer()
 
-
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
@@ -27,7 +26,7 @@ def get_current_user(
     )
     
     try:
-        # Verify the token
+
         payload = verify_token(credentials.credentials)
         if payload is None:
             raise credentials_exception
@@ -39,13 +38,12 @@ def get_current_user(
     except Exception:
         raise credentials_exception
     
-    # Get user from database
+
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise credentials_exception
     
     return user
-
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """
@@ -54,7 +52,6 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
-
 
 def get_current_artisan(current_user: User = Depends(get_current_user)) -> User:
     """
@@ -66,7 +63,6 @@ def get_current_artisan(current_user: User = Depends(get_current_user)) -> User:
             detail="Not enough permissions"
         )
     return current_user
-
 
 def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
     """

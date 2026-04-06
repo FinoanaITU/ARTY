@@ -201,7 +201,7 @@ export const QuoteRequestManager: React.FC<QuoteRequestManagerProps> = ({
         </CardContent>
       </Card>
 
-      {/* View Request Modal */}
+      {}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

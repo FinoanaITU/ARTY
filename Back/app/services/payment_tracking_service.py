@@ -28,13 +28,12 @@ from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 
-
 class PaymentTrackingService:
     """Service pour gérer le tracking des paiements et payouts artisans"""
     
-    # Commission rates
-    COMMISSION_ARTIZAHO = Decimal("15.00")  # 15%
-    COMMISSION_UBER = Decimal("20.00")  # 20%
+
+    COMMISSION_ARTIZAHO = Decimal("15.00")
+    COMMISSION_UBER = Decimal("20.00")
     
     @staticmethod
     async def get_all_payments(
@@ -59,25 +58,25 @@ class PaymentTrackingService:
         """
         query = db.query(PaymentTracking)
         
-        # Apply filters
+
         if payment_status:
             query = query.filter(PaymentTracking.payment_status == payment_status)
         if artisan_type:
             query = query.filter(PaymentTracking.artisan_type == artisan_type)
         
-        # Get total count
+
         total = query.count()
         
-        # Get paginated results
+
         payments = query.order_by(desc(PaymentTracking.created_at)).offset(skip).limit(limit).all()
         
-        # Build response with enriched data
+
         items = []
         total_amount = Decimal(0)
         total_paid = Decimal(0)
         
         for payment in payments:
-            # Fetch related data
+
             user = db.query(User).filter(User.id == payment.user_id).first()
             artisan = db.query(User).filter(User.id == payment.artisan_id).first()
             
@@ -144,7 +143,7 @@ class PaymentTrackingService:
         if not payment:
             return None
         
-        # Fetch related data
+
         user = db.query(User).filter(User.id == payment.user_id).first()
         artisan = db.query(User).filter(User.id == payment.artisan_id).first()
         
@@ -211,7 +210,7 @@ class PaymentTrackingService:
                 detail="Payment not found"
             )
         
-        # Validate amount
+
         remaining = payment.amount_total - payment.amount_paid
         if request.amount > float(remaining):
             raise HTTPException(
@@ -219,7 +218,7 @@ class PaymentTrackingService:
                 detail=f"Amount exceeds remaining balance. Remaining: {remaining}"
             )
         
-        # Create payment history entry
+
         payment_hist = PaymentTrackingHistory(
             payment_id=payment.id,
             amount=Decimal(str(request.amount)),
@@ -230,12 +229,12 @@ class PaymentTrackingService:
         )
         db.add(payment_hist)
         
-        # Update payment
+
         payment.amount_paid += Decimal(str(request.amount))
         if not payment.payment_method:
             payment.payment_method = request.payment_method.value
         
-        # Update status
+
         if payment.amount_paid >= payment.amount_total:
             payment.payment_status = PaymentStatus.PAID.value
         elif payment.amount_paid > 0:
@@ -272,7 +271,7 @@ class PaymentTrackingService:
         elif artisan_type.lower() == "uber":
             commission_rate = PaymentTrackingService.COMMISSION_UBER
         else:
-            # Default to artizaho
+
             commission_rate = PaymentTrackingService.COMMISSION_ARTIZAHO
         
         commission_amount = (sale_amount_decimal * commission_rate / Decimal(100)).quantize(Decimal("0.01"))
@@ -304,7 +303,7 @@ class PaymentTrackingService:
         Raises:
             HTTPException si artisan non trouvé ou données invalides
         """
-        # Verify artisan exists
+
         artisan = db.query(User).filter(User.id == request.artisan_id).first()
         if not artisan:
             raise HTTPException(
@@ -312,15 +311,13 @@ class PaymentTrackingService:
                 detail="Artisan not found"
             )
         
-        # Get artisan type (from profile if available)
-        artisan_type = "artizaho"  # Default
+
+        artisan_type = "artizaho"
         if artisan.artisan_profile:
-            # Assuming artisan_type is stored in profile or user model
-            # For now, default to artizaho
+
             artisan_type = "artizaho"
         
-        # Calculate total sales for period
-        # Get all PAID payments for this artisan in the period
+
         payments = db.query(PaymentTracking).filter(
             and_(
                 PaymentTracking.artisan_id == request.artisan_id,
@@ -338,13 +335,13 @@ class PaymentTrackingService:
                 detail="No sales found for this period"
             )
         
-        # Calculate commission
+
         commission_calc = PaymentTrackingService.calculate_artisan_commission(
             artisan_type=artisan_type,
             sale_amount=float(total_sales)
         )
         
-        # Create payout
+
         payout = ArtisanPayout(
             artisan_id=request.artisan_id,
             period_start=request.period_start.date() if isinstance(request.period_start, datetime) else request.period_start,
@@ -480,7 +477,7 @@ class PaymentTrackingService:
                 detail="Payout already marked as paid"
             )
         
-        # Update payout
+
         payout.status = ArtisanPayoutStatus.PAID.value
         payout.payment_method = request.payment_method.value
         payout.payment_ref = request.payment_ref

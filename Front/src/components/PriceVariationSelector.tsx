@@ -24,7 +24,7 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
   const { user } = useUser();
   const { language } = useLanguage();
   
-  // Déterminer le type d'utilisateur automatiquement
+  
   const getUserType = () => {
     if (!user) return 'tourist';
     if (user.buyerType === 'entreprise') return 'business';
@@ -52,7 +52,7 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
     }
   };
 
-  // Si showPromoCodeOnly est true, on affiche seulement la section code promo
+  
   if (showPromoCodeOnly) {
     return (
       <Card className="border-orange-200">
@@ -91,10 +91,10 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
     );
   }
 
-  // Affichage normal avec prix simplifié et code promo
+  
   return (
     <div className="space-y-4">
-      {/* Affichage du prix final simplifié */}
+      {}
       <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
         <div className="text-center">
           <div className="text-3xl font-bold text-orange-600">
@@ -103,7 +103,7 @@ const PriceVariationSelector: React.FC<PriceVariationSelectorProps> = ({
         </div>
       </div>
 
-      {/* Code promo */}
+      {}
       <Card className="border-orange-200">
         <CardContent className="pt-4">
           <div>

@@ -87,7 +87,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
   };
 
   const onFormSubmit = (data: CustomBookingFormData) => {
-    // Since the schema validates that preferredDate is required, we can safely assert it exists
+    
     const request: CustomBookingRequestType = {
       workshopId,
       preferredDate: data.preferredDate,
@@ -108,10 +108,10 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Check if date is in the past
+    
     if (date < today) return false;
     
-    // Check if date is in unavailability periods
+    
     return !unavailabilityPeriods.some(period => {
       if (period.type === 'single') {
         return date.toDateString() === period.startDate.toDateString();
@@ -141,7 +141,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Calendrier d'indisponibilité de l'artisan */}
+      {}
       <ArtisanUnavailabilityDisplay
         artisanName={artisanName}
         unavailabilityPeriods={unavailabilityPeriods}
@@ -160,11 +160,11 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
         </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-          {/* Date et heure Selection */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-800">Dates et heures souhaitées</h3>
             
-            {/* Date et heure préférées */}
+            {}
             <div className="grid md:grid-cols-2 gap-4 p-4 bg-white rounded-lg border">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
@@ -221,7 +221,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
               </div>
             </div>
 
-            {/* Date et heure alternatives */}
+            {}
             <div className="grid md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
@@ -276,7 +276,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
             </div>
           </div>
 
-          {/* Participants */}
+          {}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
               Nombre de participants *
@@ -291,7 +291,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
                 onFocus={() => {
                   if (participants === 1) {
                     setValue('participants', '' as any);
-                    // participants is from watch(); no local state to set here
+                    
                   }
                 }}
                 onBlur={() => {
@@ -311,7 +311,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
             )}
           </div>
 
-          {/* Privatization Option */}
+          {}
           {privatizationOption && (
             <div className="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
               <div className="flex items-center space-x-2">
@@ -340,7 +340,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
             </div>
           )}
 
-          {/* Contact Information */}
+          {}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
@@ -374,7 +374,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
             </div>
           </div>
 
-          {/* Special Requirements */}
+          {}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
               Exigences particulières (optionnel)
@@ -386,7 +386,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
             />
           </div>
 
-          {/* Message */}
+          {}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
               Message (optionnel)
@@ -401,7 +401,7 @@ const CustomBookingRequest: React.FC<CustomBookingRequestProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {}
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"

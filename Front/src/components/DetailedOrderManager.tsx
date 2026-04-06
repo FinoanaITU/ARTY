@@ -71,7 +71,7 @@ export const DetailedOrderManager: React.FC<DetailedOrderManagerProps> = ({ orde
           </CardHeader>
           
           <CardContent className="space-y-6">
-            {/* Informations client */}
+            {}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
@@ -114,7 +114,7 @@ export const DetailedOrderManager: React.FC<DetailedOrderManagerProps> = ({ orde
 
             <Separator />
 
-            {/* Articles commandés */}
+            {}
             <div>
               <h4 className="font-medium text-gray-900 mb-3">Articles commandés</h4>
               <div className="space-y-3">
@@ -142,7 +142,7 @@ export const DetailedOrderManager: React.FC<DetailedOrderManagerProps> = ({ orde
               </div>
             </div>
 
-            {/* Requêtes spéciales */}
+            {}
             {order.specialRequests && (
               <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div className="flex items-start gap-2">
@@ -157,7 +157,7 @@ export const DetailedOrderManager: React.FC<DetailedOrderManagerProps> = ({ orde
 
             <Separator />
 
-            {/* Informations de livraison et total */}
+            {}
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Clock className="h-4 w-4" />
@@ -175,7 +175,7 @@ export const DetailedOrderManager: React.FC<DetailedOrderManagerProps> = ({ orde
               </div>
             </div>
 
-            {/* Actions */}
+            {}
             <div className="flex gap-2 pt-2">
               <Button size="sm" variant="outline">
                 Contacter le client

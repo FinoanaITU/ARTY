@@ -20,7 +20,6 @@ from app.schemas.unavailability import (
     UnavailabilityListResponse,
 )
 
-
 class UnavailabilityService:
     """Service pour gérer les indisponibilités des artisans"""
 
@@ -60,7 +59,7 @@ class UnavailabilityService:
                 ArtisanUnavailability.artisan_id == artisan_id,
                 ArtisanUnavailability.status != "rejected",
                 or_(
-                    # Cas 1: start_date dans une période existante
+
                     and_(
                         ArtisanUnavailability.start_date <= start_date,
                         or_(
@@ -68,7 +67,7 @@ class UnavailabilityService:
                             ArtisanUnavailability.end_date.is_(None),
                         ),
                     ),
-                    # Cas 2: end_date dans une période existante
+
                     and_(
                         ArtisanUnavailability.start_date <= end,
                         or_(
@@ -76,7 +75,7 @@ class UnavailabilityService:
                             ArtisanUnavailability.end_date.is_(None),
                         ),
                     ),
-                    # Cas 3: période englobante
+
                     and_(
                         ArtisanUnavailability.start_date >= start_date,
                         or_(
@@ -112,14 +111,13 @@ class UnavailabilityService:
             HTTPException 404: Artisan introuvable
             HTTPException 400: Dates invalides ou conflit détecté
         """
-        # Vérifier que l'artisan existe
+
         if not await self._check_artisan_exists(artisan_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Artisan not found",
             )
 
-        # Valider les dates
         if data.type == "range" and not data.end_date:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -132,7 +130,6 @@ class UnavailabilityService:
                 detail="end_date must be after start_date",
             )
 
-        # Vérifier les conflits de dates
         has_conflict = await self._check_date_conflict(
             artisan_id, data.start_date, data.end_date
         )
@@ -142,7 +139,6 @@ class UnavailabilityService:
                 detail="Date conflict with existing unavailability",
             )
 
-        # Créer l'indisponibilité
         unavailability = ArtisanUnavailability(
             artisan_id=artisan_id,
             start_date=data.start_date,
@@ -213,12 +209,11 @@ class UnavailabilityService:
         Returns:
             Liste paginée d'indisponibilités
         """
-        # Construire la query de base
+
         query = select(ArtisanUnavailability).where(
             ArtisanUnavailability.artisan_id == artisan_id
         )
 
-        # Filtres optionnels
         if status_filter:
             query = query.where(
                 ArtisanUnavailability.status == status_filter
@@ -235,15 +230,12 @@ class UnavailabilityService:
                 )
             )
 
-        # Tri par date de début décroissante
         query = query.order_by(ArtisanUnavailability.start_date.desc())
 
-        # Compter le total
         count_query = select(func.count()).select_from(query.subquery())
         total_result = self.db.execute(count_query)
         total = total_result.scalar() or 0
 
-        # Pagination
         offset = (page - 1) * page_size
         query = query.offset(offset).limit(page_size)
 
@@ -284,7 +276,7 @@ class UnavailabilityService:
             HTTPException 404: Indisponibilité introuvable
             HTTPException 400: Dates invalides ou conflit
         """
-        # Récupérer l'indisponibilité existante
+
         result = self.db.execute(
             select(ArtisanUnavailability).where(
                 and_(
@@ -301,12 +293,10 @@ class UnavailabilityService:
                 detail="Unavailability not found",
             )
 
-        # Préparer les nouvelles dates
         new_start = data.start_date or unavailability.start_date
         new_end = data.end_date or unavailability.end_date
         new_type = data.type.value if data.type else unavailability.type
 
-        # Valider les dates
         if new_type == "range" and not new_end:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -319,7 +309,6 @@ class UnavailabilityService:
                 detail="end_date must be after start_date",
             )
 
-        # Vérifier conflit (en excluant l'indisponibilité actuelle)
         if data.start_date or data.end_date:
             has_conflict = await self._check_date_conflict(
                 artisan_id, new_start, new_end, exclude_id=unavailability_id
@@ -330,7 +319,6 @@ class UnavailabilityService:
                     detail="Date conflict with existing unavailability",
                 )
 
-        # Appliquer les modifications
         if data.start_date:
             unavailability.start_date = data.start_date
         if data.end_date is not None:

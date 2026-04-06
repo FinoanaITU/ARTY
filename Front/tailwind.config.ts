@@ -20,7 +20,7 @@ export default {
 		},
 		extend: {
 			colors: {
-				// Nouvelle charte graphique
+				
 				'brand': {
 					'beige': '#ede0d8',
 					'brown': '#917155',

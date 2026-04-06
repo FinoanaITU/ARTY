@@ -67,7 +67,7 @@ export const WorkshopCard: React.FC<WorkshopCardProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Informations principales */}
+        {}
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center text-gray-600">
             <Users className="w-4 h-4 mr-2" />
@@ -86,7 +86,7 @@ export const WorkshopCard: React.FC<WorkshopCardProps> = ({
           </div>
         </div>
 
-        {/* Badges pour catégorie et niveau */}
+        {}
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline" className="text-xs">
             {workshop.category}
@@ -99,7 +99,7 @@ export const WorkshopCard: React.FC<WorkshopCardProps> = ({
           </Badge>
         </div>
 
-        {/* Statistiques si admin ou atelier publié */}
+        {}
         {(isAdmin || workshop.status === 'published') && (
           <div className="flex justify-between text-xs text-gray-500 pt-2 border-t">
             <span>{workshop.total_bookings || 0} réservation(s)</span>
@@ -107,7 +107,7 @@ export const WorkshopCard: React.FC<WorkshopCardProps> = ({
           </div>
         )}
 
-        {/* Actions */}
+        {}
         <div className="flex justify-end space-x-2 pt-2">
           {onView && (
             <Button variant="outline" size="sm" onClick={() => onView(workshop)}>

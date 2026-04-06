@@ -8,7 +8,6 @@ from app.models.user import User
 from app.schemas.admin import QuoteRequestIn, QuoteUpdateIn
 from fastapi import HTTPException
 
-
 class QuoteService:
     """Service for managing quotes"""
 
@@ -32,12 +31,11 @@ class QuoteService:
         Raises:
             HTTPException: If validation fails
         """
-        # Verify user exists
+
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # Create new quote
         quote = Quote(
             user_id=user_id,
             quote_type=quote_data.quote_type,
@@ -182,7 +180,7 @@ class QuoteService:
         """
         quote = await QuoteService.get_quote_by_id(db, quote_id)
         
-        # Only allow updating pending or quoted quotes
+
         if quote.status not in ["pending", "quoted"]:
             raise HTTPException(
                 status_code=400,
@@ -198,7 +196,7 @@ class QuoteService:
             quote.admin_notes = update_data.admin_notes
         
         if update_data.artisan_id is not None:
-            # Verify artisan exists
+
             artisan = db.query(User).filter(
                 User.id == update_data.artisan_id
             ).first()
@@ -270,7 +268,7 @@ class QuoteService:
         """
         quote = await QuoteService.get_quote_by_id(db, quote_id)
         
-        # Can reject pending or quoted quotes
+
         if quote.status not in ["pending", "quoted"]:
             raise HTTPException(
                 status_code=400,
@@ -319,7 +317,7 @@ class QuoteService:
                 detail="Quote must have a final price to convert to order"
             )
         
-        # Mark quote as completed
+
         quote.status = "completed"
         quote.completed_at = datetime.utcnow()
         quote.updated_at = datetime.utcnow()
@@ -327,7 +325,7 @@ class QuoteService:
         db.commit()
         db.refresh(quote)
         
-        # Return data for order creation
+
         return {
             "quote_id": str(quote.id),
             "user_id": str(quote.user_id),
@@ -369,7 +367,6 @@ class QuoteService:
             Quote.status == "completed"
         ).count()
 
-        # Average response time (from request to quote)
         avg_response_time = db.query(
             func.avg(
                 func.extract(
@@ -379,7 +376,6 @@ class QuoteService:
             )
         ).filter(Quote.quoted_at.isnot(None)).scalar()
 
-        # Total value of quotes
         total_value = db.query(func.sum(Quote.final_price)).filter(
             Quote.final_price.isnot(None)
         ).scalar() or 0

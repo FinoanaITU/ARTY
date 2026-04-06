@@ -99,7 +99,7 @@ const Artisans = () => {
       
       <div className="px-4 py-6">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
+          {}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {t('artisans')}
@@ -109,7 +109,7 @@ const Artisans = () => {
             </p>
           </div>
 
-          {/* Search and Filters */}
+          {}
           <div className="mb-8 space-y-4">
             <Input
               type="text"
@@ -136,14 +136,14 @@ const Artisans = () => {
             </div>
           </div>
 
-          {/* Results Count */}
+          {}
           <div className="mb-6">
             <p className="text-gray-600 text-center">
               {filteredArtisans.length} artisan{filteredArtisans.length > 1 ? 's' : ''} trouvé{filteredArtisans.length > 1 ? 's' : ''}
             </p>
           </div>
 
-          {/* Artisans Grid */}
+          {}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredArtisans.map((artisan) => (
               <Card key={artisan.id} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -179,7 +179,7 @@ const Artisans = () => {
             ))}
           </div>
 
-          {/* No Results */}
+          {}
           {filteredArtisans.length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🔍</div>

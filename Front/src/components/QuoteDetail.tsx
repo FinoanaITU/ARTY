@@ -119,7 +119,7 @@ export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) =>
 
   return (
     <div className="bg-white rounded-lg shadow max-w-4xl mx-auto p-6">
-      {/* Header */}
+      {}
       <div className="flex items-start justify-between mb-6 pb-6 border-b">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{quote.title}</h1>
@@ -142,7 +142,7 @@ export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) =>
       </div>
 
       <div className="grid grid-cols-2 gap-8">
-        {/* Left: Quote Info */}
+        {}
         <div>
           <h2 className="text-lg font-semibold mb-4 text-gray-900">
             Informations du devis
@@ -192,9 +192,9 @@ export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) =>
           </div>
         </div>
 
-        {/* Right: Client Info & Admin Section */}
+        {}
         <div className="space-y-6">
-          {/* Client Info */}
+          {}
           <div>
             <h2 className="text-lg font-semibold mb-4 text-gray-900">
               Informations du client
@@ -236,7 +236,7 @@ export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) =>
             </div>
           </div>
 
-          {/* Admin Section */}
+          {}
           <div className="border-t pt-6">
             <h2 className="text-lg font-semibold mb-4 text-gray-900">
               Gestion admin
@@ -327,7 +327,7 @@ export const QuoteDetail = ({ quoteId, onClose, onUpdate }: QuoteDetailProps) =>
         </div>
       </div>
 
-      {/* Actions */}
+      {}
       <div className="mt-8 pt-6 border-t space-y-3">
         <div className="flex gap-4">
           {quote.status === 'approved' && (

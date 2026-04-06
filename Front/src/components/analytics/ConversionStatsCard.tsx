@@ -27,7 +27,7 @@ export const ConversionStatsCard: React.FC<ConversionStatsCardProps> = ({ data }
 
   return (
     <div className="space-y-6">
-      {/* Taux de conversion global */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Performance de Conversion</CardTitle>
@@ -35,7 +35,7 @@ export const ConversionStatsCard: React.FC<ConversionStatsCardProps> = ({ data }
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Produits */}
+            {}
             <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-blue-900">Produits</p>
@@ -50,7 +50,7 @@ export const ConversionStatsCard: React.FC<ConversionStatsCardProps> = ({ data }
               </Badge>
             </div>
 
-            {/* Ateliers */}
+            {}
             <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-purple-900">Ateliers</p>
@@ -65,7 +65,7 @@ export const ConversionStatsCard: React.FC<ConversionStatsCardProps> = ({ data }
               </Badge>
             </div>
 
-            {/* Visiteurs */}
+            {}
             <div className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-orange-900">Visiteurs</p>
@@ -83,7 +83,7 @@ export const ConversionStatsCard: React.FC<ConversionStatsCardProps> = ({ data }
         </CardContent>
       </Card>
 
-      {/* Métriques détaillées */}
+      {}
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -156,7 +156,7 @@ export const ConversionStatsCard: React.FC<ConversionStatsCardProps> = ({ data }
         </Card>
       </div>
 
-      {/* Insights et recommandations */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Insights & Recommandations</CardTitle>

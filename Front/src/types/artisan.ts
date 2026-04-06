@@ -15,7 +15,7 @@ export interface ArtisanProduct {
   };
   stock: number;
   customizable: boolean;
-  productionTime: number; // en jours
+  productionTime: number; 
   status: 'draft' | 'pending_approval' | 'published' | 'rejected';
   artisanId: string;
   createdAt: Date;
@@ -36,10 +36,10 @@ export interface ArtisanProfile {
   };
   memberSince: Date;
   experience: string;
-  artisanType: 'artizaho' | 'uber'; // Artizaho: petit artisan marque blanche, débutant ateliers | Uber: marque établie, fait déjà des ateliers
+  artisanType: 'artizaho' | 'uber'; 
   businessInfo: {
     hasExistingBrand: boolean;
-    currentSalesChannels: string[]; // ex: Facebook, Instagram, boutique physique
+    currentSalesChannels: string[]; 
     workshopExperience: 'none' | 'beginner' | 'experienced';
     businessDescription: string;
   };

@@ -32,7 +32,7 @@ export interface ProductOut {
   production_time_days: number;
   bulk_order_enabled: boolean;
   min_bulk_quantity?: number;
-  status: string; // draft, pending_approval, published, rejected
+  status: string; 
   rating?: number;
   review_count: number;
   created_at: string;

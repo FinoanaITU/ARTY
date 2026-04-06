@@ -1,22 +1,16 @@
 #!/bin/bash
 
-# Script pour ajouter la colonne position à artisan_photos dans Docker PostgreSQL
-# Ce script utilise docker exec pour exécuter la commande SQL dans le conteneur
-
-# Couleurs pour les messages
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Configuration Docker
 CONTAINER_NAME="arty-postgres"
 DB_NAME="artizaho_db"
 DB_USER="artizaho_user"
 
 echo -e "${YELLOW}🔧 Correction de la colonne position dans artisan_photos...${NC}"
 
-# Vérifier si le conteneur est en cours d'exécution
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo -e "${RED}❌ Erreur: Le conteneur ${CONTAINER_NAME} n'est pas en cours d'exécution${NC}"
     echo -e "${YELLOW}💡 Astuce: Démarrez le conteneur avec: docker-compose up -d postgres${NC}"
@@ -25,7 +19,6 @@ fi
 
 echo -e "${GREEN}✅ Conteneur ${CONTAINER_NAME} trouvé${NC}"
 
-# Exécuter la commande SQL pour ajouter la colonne
 echo -e "${YELLOW}📝 Exécution de la commande SQL...${NC}"
 
 docker exec -i ${CONTAINER_NAME} psql -U ${DB_USER} -d ${DB_NAME} <<EOF

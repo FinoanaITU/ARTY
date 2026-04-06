@@ -10,7 +10,7 @@ interface PlatformOverviewCardProps {
 export const PlatformOverviewCard: React.FC<PlatformOverviewCardProps> = ({ data }) => {
   return (
     <div className="grid md:grid-cols-2 gap-6">
-      {/* Utilisateurs */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Utilisateurs</CardTitle>
@@ -42,7 +42,7 @@ export const PlatformOverviewCard: React.FC<PlatformOverviewCardProps> = ({ data
         </CardContent>
       </Card>
 
-      {/* Artisans */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Artisans</CardTitle>
@@ -70,7 +70,7 @@ export const PlatformOverviewCard: React.FC<PlatformOverviewCardProps> = ({ data
         </CardContent>
       </Card>
 
-      {/* Produits */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Produits</CardTitle>
@@ -98,7 +98,7 @@ export const PlatformOverviewCard: React.FC<PlatformOverviewCardProps> = ({ data
         </CardContent>
       </Card>
 
-      {/* Ateliers */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Ateliers</CardTitle>
@@ -126,7 +126,7 @@ export const PlatformOverviewCard: React.FC<PlatformOverviewCardProps> = ({ data
         </CardContent>
       </Card>
 
-      {/* Activité */}
+      {}
       <Card className="md:col-span-2">
         <CardHeader>
           <CardTitle>Activité de la plateforme</CardTitle>

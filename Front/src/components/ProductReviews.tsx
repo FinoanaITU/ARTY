@@ -17,7 +17,7 @@ interface ProductReviewsProps {
 }
 
 const ProductReviews = ({ productId }: ProductReviewsProps) => {
-  // Mock reviews data - in a real app, this would come from an API
+  
   const reviews: Review[] = [
     {
       id: 1,

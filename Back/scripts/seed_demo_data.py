@@ -10,7 +10,6 @@ import os
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-# Ajouter le répertoire parent au path pour les imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy.orm import Session
@@ -23,7 +22,6 @@ from app.core.security import get_password_hash
 import uuid
 import re
 
-
 def generate_slug(name: str) -> str:
     """Génère un slug à partir du nom"""
     slug = name.lower()
@@ -31,18 +29,17 @@ def generate_slug(name: str) -> str:
     slug = re.sub(r'^-+|-+$', '', slug)
     return slug
 
-
 def create_artisan_user(db: Session) -> User:
     """Crée un utilisateur artisan avec profil complet"""
     email = "artisan@artizaho.com"
     
-    # Vérifier si l'artisan existe déjà
+
     existing = db.query(User).filter(User.email == email).first()
     if existing:
         print(f"✓ Artisan '{email}' existe déjà")
         return existing
     
-    # Créer l'utilisateur artisan
+
     artisan = User(
         id=uuid.uuid4(),
         email=email,
@@ -59,7 +56,7 @@ def create_artisan_user(db: Session) -> User:
     db.add(artisan)
     db.flush()
     
-    # Créer le profil artisan
+
     profile = ArtisanProfile(
         id=uuid.uuid4(),
         user_id=artisan.id,
@@ -75,7 +72,7 @@ def create_artisan_user(db: Session) -> User:
     db.add(profile)
     db.flush()
     
-    # Ajouter des photos au profil
+
     photos_data = [
         {
             "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
@@ -108,12 +105,11 @@ def create_artisan_user(db: Session) -> User:
     print(f"✓ Artisan créé: {email} / artisan123")
     return artisan
 
-
 def create_buyer_users(db: Session) -> tuple:
     """Crée des utilisateurs acheteurs (particulier et entreprise)"""
     buyers = []
     
-    # Acheteur particulier
+
     email_particulier = "acheteur@artizaho.com"
     existing = db.query(User).filter(User.email == email_particulier).first()
     if not existing:
@@ -139,7 +135,7 @@ def create_buyer_users(db: Session) -> tuple:
         buyers.append(existing)
         print(f"✓ Acheteur particulier '{email_particulier}' existe déjà")
     
-    # Acheteur entreprise
+
     email_entreprise = "entreprise@artizaho.com"
     existing = db.query(User).filter(User.email == email_entreprise).first()
     if not existing:
@@ -170,11 +166,10 @@ def create_buyer_users(db: Session) -> tuple:
     db.commit()
     return tuple(buyers)
 
-
 def get_products_data():
     """Retourne les données des produits à créer"""
     return [
-        # Sculpture et Bois (3 produits)
+
         {
             "title": "Masque traditionnel Zafimaniry",
             "category": "Sculpture et Bois",
@@ -214,7 +209,7 @@ def get_products_data():
             "techniques": ["Tournage"],
             "origin_region": "Fianarantsoa"
         },
-        # Textile et Tissage (3 produits)
+
         {
             "title": "Lamba traditionnel en soie sauvage",
             "category": "Textile et Tissage",
@@ -256,12 +251,10 @@ def get_products_data():
         }
     ]
 
-
-
 def create_products(db: Session, artisan: User) -> list:
     """Crée des produits artisanaux variés"""
     
-    # Récupérer les catégories
+
     categories = {
         cat.name: cat 
         for cat in db.query(Category).filter(
@@ -273,13 +266,13 @@ def create_products(db: Session, artisan: User) -> list:
     created_products = []
     
     for idx, product_data in enumerate(products_data):
-        # Récupérer la catégorie
+
         category = categories.get(product_data["category"])
         if not category:
             print(f"⚠️  Catégorie '{product_data['category']}' non trouvée")
             continue
         
-        # Vérifier si le produit existe déjà
+
         slug = generate_slug(product_data["title"])
         existing = db.query(Product).filter(Product.slug == slug).first()
         if existing:
@@ -287,7 +280,7 @@ def create_products(db: Session, artisan: User) -> list:
             created_products.append(existing)
             continue
         
-        # Créer le produit
+
         product = Product(
             id=uuid.uuid4(),
             title=product_data["title"],
@@ -312,7 +305,7 @@ def create_products(db: Session, artisan: User) -> list:
         db.add(product)
         db.flush()
         
-        # Ajouter l'image principale
+
         image = ProductImage(
             id=uuid.uuid4(),
             product_id=product.id,
@@ -329,7 +322,6 @@ def create_products(db: Session, artisan: User) -> list:
     
     db.commit()
     return created_products
-
 
 def get_workshops_data():
     """Retourne les données des ateliers à créer"""
@@ -379,11 +371,10 @@ def get_workshops_data():
         }
     ]
 
-
 def create_workshops(db: Session, artisan: User) -> list:
     """Crée des ateliers avec sessions programmées"""
     
-    # Récupérer les catégories
+
     categories = {
         cat.name: cat 
         for cat in db.query(Category).filter(
@@ -396,10 +387,10 @@ def create_workshops(db: Session, artisan: User) -> list:
     base_date = datetime.utcnow() + timedelta(days=7)
     
     for idx, workshop_data in enumerate(workshops_data):
-        # Récupérer la catégorie
+
         category = categories.get(workshop_data["category"])
         
-        # Vérifier si l'atelier existe déjà
+
         slug = generate_slug(workshop_data["title"])
         existing = db.query(Workshop).filter(Workshop.slug == slug).first()
         if existing:
@@ -407,7 +398,7 @@ def create_workshops(db: Session, artisan: User) -> list:
             created_workshops.append(existing)
             continue
         
-        # Créer l'atelier
+
         workshop = Workshop(
             id=uuid.uuid4(),
             title=workshop_data["title"],
@@ -438,7 +429,7 @@ def create_workshops(db: Session, artisan: User) -> list:
         db.add(workshop)
         db.flush()
         
-        # Créer les sessions
+
         for session_idx in range(workshop_data["sessions"]):
             session_date = base_date + timedelta(
                 days=session_idx * 7 + idx * 2
@@ -468,7 +459,6 @@ def create_workshops(db: Session, artisan: User) -> list:
     
     db.commit()
     return created_workshops
-
 
 def create_reviews(db: Session, products: list, buyers: tuple) -> list:
     """Crée des avis sur les produits"""
@@ -510,7 +500,7 @@ def create_reviews(db: Session, products: list, buyers: tuple) -> list:
         
         product = products[review_data["product_idx"]]
         
-        # Vérifier si l'avis existe déjà
+
         existing = db.query(Review).filter(
             Review.reviewable_type == 'product',
             Review.reviewable_id == product.id,
@@ -545,22 +535,22 @@ def seed_demo_data():
     
     db = SessionLocal()
     try:
-        # Créer les utilisateurs
+
         print("\n👤 Création des utilisateurs...")
         artisan = create_artisan_user(db)
         buyers = create_buyer_users(db)
         
-        # Créer les produits
+
         print("\n🎨 Création des produits...")
         products = create_products(db, artisan)
         print(f"✓ {len(products)} produits créés/vérifiés")
         
-        # Créer les ateliers
+
         print("\n🎓 Création des ateliers...")
         workshops = create_workshops(db, artisan)
         print(f"✓ {len(workshops)} ateliers créés/vérifiés")
         
-        # Créer les avis
+
         print("\n⭐ Création des avis...")
         reviews = create_reviews(db, products, buyers)
         if reviews:
@@ -584,8 +574,6 @@ def seed_demo_data():
     finally:
         db.close()
 
-
 if __name__ == "__main__":
     seed_demo_data()
 
-# Made with Bob

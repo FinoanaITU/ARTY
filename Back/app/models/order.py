@@ -4,7 +4,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID
 
-
 class Cart(BaseModel):
     __tablename__ = "carts"
     
@@ -17,11 +16,9 @@ class Cart(BaseModel):
     discount_amount = Column(Numeric(10, 2), default=0)
     expires_at = Column(DateTime, index=True)
     
-    # Relationships
-    # Temporarily removed back_populates to avoid circular import
+
     user = relationship("User", foreign_keys=[user_id])
     items = relationship("CartItem", back_populates="cart")
-
 
 class CartItem(BaseModel):
     __tablename__ = "cart_items"
@@ -34,11 +31,9 @@ class CartItem(BaseModel):
     total_price = Column(Numeric(10, 2), nullable=False)
     customization_notes = Column(Text)
     
-    # Relationships
+
     cart = relationship("Cart", back_populates="items")
     product = relationship("Product")
-    # variant = relationship("ProductVariant", back_populates="cart_items")
-
 
 class Order(BaseModel):
     __tablename__ = "orders"
@@ -69,14 +64,6 @@ class Order(BaseModel):
     ip_address = Column(INET)
     user_agent = Column(Text)
     
-    # Relationships
-    # Temporarily commented out to avoid circular import issues
-    # user = relationship("User", foreign_keys=[user_id])
-    # items = relationship("OrderItem", back_populates="order")
-    # payments = relationship("Payment", back_populates="order")
-    # status_history = relationship("OrderStatusHistory", back_populates="order")
-    # reviews = relationship("Review", back_populates="order")
-
 
 class OrderItem(BaseModel):
     __tablename__ = "order_items"
@@ -96,13 +83,6 @@ class OrderItem(BaseModel):
     product_snapshot = Column(JSON)
     customization_notes = Column(Text)
     
-    # Relationships
-    # Temporarily commented out
-    # order = relationship("Order", back_populates="items")
-    # product = relationship("Product", back_populates="order_items")
-    # variant = relationship("ProductVariant", back_populates="order_items")
-    # artisan = relationship("User")
-
 
 class Payment(BaseModel):
     __tablename__ = "payments"
@@ -123,11 +103,6 @@ class Payment(BaseModel):
     failed_at = Column(DateTime)
     refunded_at = Column(DateTime)
     
-    # Relationships
-    # Temporarily commented out
-    # order = relationship("Order", back_populates="payments")
-    # user = relationship("User")
-
 
 class OrderStatusHistory(BaseModel):
     __tablename__ = "order_status_history"
@@ -138,7 +113,4 @@ class OrderStatusHistory(BaseModel):
     notified_customer = Column(Boolean, default=False)
     changed_by_user_id = Column(GUID(), ForeignKey("users.id"), index=True)
     
-    # Relationships
-    # Temporarily commented out
-    # order = relationship("Order", back_populates="status_history")
-    # changed_by = relationship("User") 
+

@@ -39,12 +39,11 @@ interface WorkshopFormData {
   tags: string[];
 }
 
-// Helper pour normaliser les URLs d'images
 const normalizeImageUrl = (url: string | undefined | null): string => {
   if (!url) return '';
-  // Si l'URL commence par http:// or https://, la laisser telle quelle
+  
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  // Construire l'URL complète avec la base du backend
+  
   const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
   return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
 };
@@ -61,7 +60,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   
-  // Refs pour les champs obligatoires
+  
   const titleRef = React.useRef<HTMLInputElement>(null);
   const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
   const categoryRef = React.useRef<HTMLButtonElement>(null);
@@ -90,16 +89,16 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
     tags: []
   });
 
-  // Stocker les données initiales pour détecter les modifications
+  
   const [initialFormData, setInitialFormData] = useState<WorkshopFormData>(formData);
 
-  // Récupérer les données complètes de l'atelier depuis le backend
+  
   useEffect(() => {
     const loadWorkshopData = async () => {
       if (workshop && isOpen) {
         setIsLoadingWorkshop(true);
         try {
-          // Récupérer les données complètes depuis le backend
+          
           const fullWorkshopData = await apiService.getWorkshop(workshop.id);
           setWorkshopData(fullWorkshopData);
 
@@ -127,7 +126,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
           setFormData(formDataFromWorkshop);
           setInitialFormData(formDataFromWorkshop);
           
-          // Afficher les images existantes
+          
           const existingPreviews: string[] = [];
           if (fullWorkshopData.featured_image_url) {
             existingPreviews.push(normalizeImageUrl(fullWorkshopData.featured_image_url));
@@ -209,12 +208,12 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
     setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Vérifier si des modifications ont été apportées
+  
   const hasChanges = () => {
     return JSON.stringify(formData) !== JSON.stringify(initialFormData);
   };
 
-  // Valider et mettre le focus sur le premier champ requis manquant
+  
   const validateAndFocus = (): boolean => {
     if (!formData.title?.trim()) {
       toast({
@@ -288,7 +287,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Vérifier si des modifications ont été faites
+    
     if (!hasChanges()) {
       toast({
         title: "Aucune modification",
@@ -298,7 +297,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
       return;
     }
 
-    // Valider les champs obligatoires avec focus
+    
     if (!validateAndFocus()) {
       return;
     }
@@ -307,7 +306,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
 
     try {
 
-      // Préparer les données pour l'API
+      
       const workshopData: any = {
         title: formData.title,
         description: formData.description,
@@ -329,7 +328,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
         tags: formData.tags?.filter(t => t.trim() !== ''),
       };
 
-      // Mise à jour de l'atelier
+      
       const updatedWorkshop = await apiService.updateWorkshop(workshop.id, workshopData);
 
       toast({
@@ -344,10 +343,10 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
       let errorMessage = 'Erreur lors de la mise à jour';
       const errorDetail = error.response?.data?.detail;
       
-      // Gérer l'erreur de description trop courte
+      
       if (errorDetail && (errorDetail.includes('String should have at least 10 characters') || errorDetail.includes('description'))) {
         errorMessage = 'Description trop courte (minimum 10 caractères)';
-        // Mettre le focus sur le champ description
+        
         setTimeout(() => {
           descriptionRef.current?.focus();
           descriptionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -388,7 +387,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
           </div>
         ) : (
         <form key={workshop.id} onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Informations de base */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Informations générales</CardTitle>
@@ -482,7 +481,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Prix et participants */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Prix et participants</CardTitle>
@@ -555,7 +554,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Localisation */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Localisation</CardTitle>
@@ -586,7 +585,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Ce qu'on apprendra */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Ce que les participants apprendront</CardTitle>
@@ -620,7 +619,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Matériel inclus */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Matériel inclus</CardTitle>
@@ -654,7 +653,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Matériel à apporter */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Matériel à apporter</CardTitle>
@@ -688,7 +687,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Prérequis */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Prérequis</CardTitle>
@@ -703,7 +702,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Tags */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle>Tags</CardTitle>
@@ -738,7 +737,7 @@ export const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Photos existantes */}
+          {}
           {photoPreviews.length > 0 && (
             <Card>
               <CardHeader>

@@ -68,7 +68,7 @@ const ArtisanProfile = () => {
     fetchProducts();
   }, [id]);
 
-  // Helper pour normaliser les URLs d'images
+  
   const normalizeImageUrl = (url: string | undefined | null): string => {
     if (!url) return 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face';
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -118,20 +118,18 @@ const ArtisanProfile = () => {
     );
   }
 
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
       <Navigation />
       
       <div className="px-4 py-6">
         <div className="max-w-6xl mx-auto">
-          {/* Back Button */}
+          {}
           <Link to="/artisans" className="inline-flex items-center text-orange-600 hover:text-orange-700 mb-6">
             ← Retour aux artisans
           </Link>
 
-          {/* Artisan Header */}
+          {}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex flex-col md:flex-row gap-6">
               <div className="w-32 h-32 mx-auto md:mx-0 bg-orange-100 rounded-full overflow-hidden">
@@ -197,7 +195,7 @@ const ArtisanProfile = () => {
                     const inStock = product.stock > 0;
                     const productImage = product.images && product.images.length > 0 
                       ? product.images[0] 
-                      : 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&h=400&fit=crop';
+                      : 'https:
                     
                     return (
                       <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">

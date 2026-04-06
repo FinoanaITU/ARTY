@@ -1,18 +1,15 @@
 #!/bin/bash
-# Script pour configurer la base de données PostgreSQL de test
 
 set -e
 
 echo "🔧 Configuration de la base de données PostgreSQL pour les tests..."
 
-# Variables par défaut
 DB_NAME="${TEST_DB_NAME:-artizaho_test_db}"
 DB_USER="${TEST_DB_USER:-test_user}"
 DB_PASSWORD="${TEST_DB_PASSWORD:-test_password}"
 DB_HOST="${TEST_DB_HOST:-localhost}"
 DB_PORT="${TEST_DB_PORT:-5432}"
 
-# Vérifier si PostgreSQL est installé
 if ! command -v psql &> /dev/null; then
     echo "❌ PostgreSQL n'est pas installé sur ce système."
     echo "📦 Installation recommandée:"
@@ -22,7 +19,6 @@ if ! command -v psql &> /dev/null; then
     exit 1
 fi
 
-# Vérifier si la base de données existe déjà
 if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
     echo "✅ La base de données '$DB_NAME' existe déjà."
     read -p "Voulez-vous la supprimer et la recréer? (y/N): " -n 1 -r
@@ -36,7 +32,6 @@ if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -lqt | cut -d \| -f 1 | grep -
     fi
 fi
 
-# Créer la base de données
 echo "📦 Création de la base de données '$DB_NAME'..."
 psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -c "CREATE DATABASE $DB_NAME;"
 

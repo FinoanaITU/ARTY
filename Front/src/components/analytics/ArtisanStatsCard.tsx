@@ -11,7 +11,7 @@ interface ArtisanStatsCardProps {
 export const ArtisanStatsCard: React.FC<ArtisanStatsCardProps> = ({ data }) => {
   return (
     <div className="space-y-6">
-      {/* Stats générales */}
+      {}
       <div className="grid md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
@@ -54,7 +54,7 @@ export const ArtisanStatsCard: React.FC<ArtisanStatsCardProps> = ({ data }) => {
         </Card>
       </div>
 
-      {/* Nouveaux artisans ce mois */}
+      {}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -69,7 +69,7 @@ export const ArtisanStatsCard: React.FC<ArtisanStatsCardProps> = ({ data }) => {
         </CardContent>
       </Card>
 
-      {/* Répartition par spécialité */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Répartition par spécialité</CardTitle>
@@ -108,7 +108,7 @@ export const ArtisanStatsCard: React.FC<ArtisanStatsCardProps> = ({ data }) => {
         </CardContent>
       </Card>
 
-      {/* Répartition par région */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Répartition par région</CardTitle>
@@ -132,7 +132,7 @@ export const ArtisanStatsCard: React.FC<ArtisanStatsCardProps> = ({ data }) => {
         </CardContent>
       </Card>
 
-      {/* Top performers */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Top Performers</CardTitle>

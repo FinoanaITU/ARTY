@@ -25,7 +25,7 @@ export const ArtisanWorkshopManager: React.FC<ArtisanWorkshopManagerProps> = ({
   onDeleteWorkshop,
   onViewWorkshop
 }) => {
-  // Statistiques des ateliers
+  
   const stats = {
     total: workshops.length,
     published: workshops.filter(w => w.status === 'published').length,
@@ -43,7 +43,7 @@ export const ArtisanWorkshopManager: React.FC<ArtisanWorkshopManagerProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header avec bouton de création */}
+      {}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
@@ -67,7 +67,7 @@ export const ArtisanWorkshopManager: React.FC<ArtisanWorkshopManagerProps> = ({
         )}
       </div>
 
-      {/* Statistiques */}
+      {}
       {workshops.length > 0 && (
         <div className="flex flex-wrap gap-4">
           <Badge variant="outline" className="px-3 py-1">
@@ -87,7 +87,7 @@ export const ArtisanWorkshopManager: React.FC<ArtisanWorkshopManagerProps> = ({
         </div>
       )}
 
-      {/* Liste des ateliers */}
+      {}
       {workshops.length === 0 ? (
         <Card>
           <CardHeader>

@@ -5,9 +5,6 @@ from uuid import UUID
 from datetime import datetime
 from app.models.user import UserRole, BuyerType, Nationality, ProfileStatus
 
-
-# ============ INPUT SCHEMAS ============
-
 class BuyerRegisterIn(BaseModel):
     """
     Schema pour l'inscription d'un acheteur (particulier ou entreprise)
@@ -36,7 +33,6 @@ class BuyerRegisterIn(BaseModel):
                 raise ValueError("company_name est requis pour les entreprises")
         return self
 
-
 class ArtisanRegisterIn(BaseModel):
     """
     Schema pour l'inscription d'un artisan (formulaire multi-étapes - 5 étapes)
@@ -51,20 +47,20 @@ class ArtisanRegisterIn(BaseModel):
     password: str = Field(..., min_length=6)
     name: str = Field(..., min_length=2, max_length=200)
     phone: Optional[str] = None
-    region: str  # Étape 1: Localisation
-    city: str  # Étape 1: Localisation
+    region: str
+    city: str
     address: Optional[str] = None
-    languages: List[str] = Field(default_factory=list)  # Étape 2: Langues parlées
-    company_name: str = Field(..., min_length=1)  # Étape 3: Nom entreprise
-    main_specialty: str  # Étape 4: Spécialité principale
-    other_skills: List[str] = Field(default_factory=list)  # Étape 4: Autres compétences
-    years_experience: Optional[str] = None  # Étape 4: Années d'expérience
-    activity_description: str = Field(..., min_length=10)  # Étape 4: Description de l'activité
-    brand_story: Optional[str] = None  # Étape 4: Histoire de la marque (optionnel)
-    offerings: List[str] = Field(..., description="Étape 5: ['products', 'workshops', 'both']")  # Étape 5: Offres
-    nif: Optional[str] = None  # Étape 5: Document administratif (optionnel)
-    stat: Optional[str] = None  # Étape 5: Document administratif (optionnel)
-    documents_not_available: bool = False  # Étape 5: Si les documents ne sont pas disponibles
+    languages: List[str] = Field(default_factory=list)
+    company_name: str = Field(..., min_length=1)
+    main_specialty: str
+    other_skills: List[str] = Field(default_factory=list)
+    years_experience: Optional[str] = None
+    activity_description: str = Field(..., min_length=10)
+    brand_story: Optional[str] = None
+    offerings: List[str] = Field(..., description="Étape 5: ['products', 'workshops', 'both']")
+    nif: Optional[str] = None
+    stat: Optional[str] = None
+    documents_not_available: bool = False
     
     @model_validator(mode='after')
     def validate_offerings(self):
@@ -74,12 +70,10 @@ class ArtisanRegisterIn(BaseModel):
             raise ValueError(f"offerings doit contenir au moins un élément parmi: {valid_values}")
         return self
 
-
 class LoginIn(BaseModel):
     """Schema pour la connexion"""
     email: EmailStr
     password: str = Field(..., min_length=1, description="Le mot de passe ne peut pas être vide")
-
 
 class UserUpdate(BaseModel):
     """
@@ -98,7 +92,6 @@ class UserUpdate(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class ArtisanProfileUpdate(BaseModel):
     """
@@ -129,7 +122,6 @@ class ArtisanProfileUpdate(BaseModel):
     class Config:
         from_attributes = True
 
-
 class UserWithArtisanUpdate(BaseModel):
     """
     Schema combiné pour mettre à jour User + ArtisanProfile en une seule requête.
@@ -141,9 +133,6 @@ class UserWithArtisanUpdate(BaseModel):
     class Config:
         from_attributes = True
 
-
-# ============ OUTPUT SCHEMAS ============
-
 class ArtisanBasic(BaseModel):
     """Schema basique pour un artisan (utilisé dans d'autres schemas)"""
     id: UUID
@@ -153,47 +142,41 @@ class ArtisanBasic(BaseModel):
     class Config:
         from_attributes = True
 
-
 class UserOut(BaseModel):
     """Schema de sortie pour un utilisateur"""
     id: UUID
     email: EmailStr
     name: str
-    role: str  # String pour compatibilité JSON
+    role: str
     avatar: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     country: Optional[str] = None
-    buyer_type: Optional[str] = None  # String pour compatibilité
-    nationality: Optional[str] = None  # String pour compatibilité
+    buyer_type: Optional[str] = None
+    nationality: Optional[str] = None
     company_name: Optional[str] = None
     siret: Optional[str] = None
-    specialty: Optional[str] = None  # Pour artisans
-    description: Optional[str] = None  # Pour artisans
-    experience: Optional[str] = None  # Pour artisans
-    artisan_profile: Optional['ArtisanProfileOut'] = None  # Profil artisan complet
+    specialty: Optional[str] = None
+    description: Optional[str] = None
+    experience: Optional[str] = None
+    artisan_profile: Optional['ArtisanProfileOut'] = None
     created_at: datetime
     updated_at: datetime
     
     class Config:
         from_attributes = True
 
-
 class TokenOut(BaseModel):
     """Schema de réponse avec token JWT"""
     access_token: str
     token_type: str = "bearer"
-    refresh_token: Optional[str] = None  # Optionnel pour compatibilité
+    refresh_token: Optional[str] = None
     user: UserOut
-
 
 class RefreshTokenIn(BaseModel):
     """Schema pour refresh token"""
     refresh_token: str
-
-
-# ============ ARTISAN PROFILE SCHEMAS ============
 
 class ArtisanProfileOut(BaseModel):
     """Schema de sortie pour le profil artisan"""
@@ -223,29 +206,22 @@ class ArtisanProfileOut(BaseModel):
     class Config:
         from_attributes = True
 
-
-# ============ LEGACY SCHEMAS (pour compatibilité) ============
-
 class UserBase(BaseModel):
     email: EmailStr
     name: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
-
 class UserCreate(UserBase):
     password: str
-
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-
 class Token(BaseModel):
     access_token: str
     token_type: str
-
 
 class User(UserBase):
     id: UUID

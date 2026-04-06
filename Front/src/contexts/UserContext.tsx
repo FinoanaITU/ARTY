@@ -18,7 +18,7 @@ interface User {
   specialty?: string;
   description?: string;
   experience?: string;
-  // Compatibilité avec l'ancien format
+  
   buyerType?: BuyerType;
   locationType?: LocationType;
   companyName?: string;
@@ -41,7 +41,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Charger l'utilisateur au démarrage depuis le token
+  
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('access_token');
@@ -49,13 +49,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (token && savedUser) {
         try {
-          // Vérifier que le token est valide en récupérant l'utilisateur
+          
           const userData = await apiService.getCurrentUser();
           const formattedUser = formatUserFromApi(userData);
           setUser(formattedUser);
           localStorage.setItem('user', JSON.stringify(formattedUser));
         } catch (error) {
-          // Token invalide, nettoyer
+          
           console.error('Error loading user:', error);
           apiService.clearTokens();
           setUser(null);
@@ -81,7 +81,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       specialty: apiUser.specialty,
       description: apiUser.description,
       experience: apiUser.experience,
-      // Compatibilité avec l'ancien format
+      
       buyerType: apiUser.buyer_type,
       locationType: apiUser.nationality === 'local' ? 'local' : 'etranger',
       companyName: apiUser.company_name,
@@ -93,10 +93,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await apiService.login(email, password);
       const { access_token, refresh_token, user: userData } = response;
 
-      // Sauvegarder les tokens
+      
       apiService.setTokens(access_token, refresh_token);
 
-      // Formater et sauvegarder l'utilisateur
+      
       const formattedUser = formatUserFromApi(userData);
       setUser(formattedUser);
       localStorage.setItem('user', JSON.stringify(formattedUser));
@@ -126,7 +126,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(formattedUser));
     } catch (error) {
       console.error('Error refreshing user:', error);
-      // Si erreur, déconnecter
+      
       await logout();
     }
   };
@@ -139,7 +139,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedUser.email = 'marie.dubois@email.com';
         updatedUser.buyerType = 'particulier';
         updatedUser.locationType = 'local';
-        // Remove artisan-specific fields
+        
         delete updatedUser.specialty;
         delete updatedUser.description;
         delete updatedUser.experience;
@@ -149,7 +149,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedUser.specialty = 'vannerie';
         updatedUser.description = 'Artisan spécialisé dans la vannerie traditionnelle malgache';
         updatedUser.experience = '10 ans';
-        // Remove buyer-specific fields
+        
         delete updatedUser.buyerType;
         delete updatedUser.locationType;
         delete updatedUser.companyName;
@@ -157,7 +157,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (role === 'admin') {
         updatedUser.name = 'Admin Artizaho';
         updatedUser.email = 'admin@artizaho.mg';
-        // Remove role-specific fields
+        
         delete updatedUser.buyerType;
         delete updatedUser.locationType;
         delete updatedUser.companyName;

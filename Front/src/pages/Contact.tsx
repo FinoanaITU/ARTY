@@ -31,14 +31,14 @@ const Contact = () => {
       return;
     }
 
-    // Simulate form submission
+    
     console.log('Contact form submitted:', formData);
     toast({
       title: "Message envoyé !",
       description: "Nous vous répondrons dans les plus brefs délais."
     });
     
-    // Reset form
+    
     setFormData({
       name: '',
       email: '',
@@ -55,7 +55,7 @@ const Contact = () => {
       
       <div className="px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
+          {}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-artisan-brown mb-4">
               Contactez-nous

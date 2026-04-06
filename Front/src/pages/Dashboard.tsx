@@ -93,7 +93,7 @@ const Dashboard = () => {
       } else if (user.role === 'artisan') {
         navigate('/artisan-dashboard');
       }
-      // For buyers, stay on this page
+      
     }
   }, [user, navigate]);
 
@@ -121,9 +121,9 @@ const Dashboard = () => {
     }
   ]);
 
-  // Mock data for buyer
+  
   const buyerData = {
-    orders, // Use the state instead of static data
+    orders, 
     workshops: [
       {
         id: 1,
@@ -197,9 +197,9 @@ const Dashboard = () => {
     );
   }
 
-  // This dashboard is now only for buyers
+  
   if (user.role !== 'buyer') {
-    return null; // Will be redirected by useEffect
+    return null; 
   }
 
   const renderBuyerDashboard = () => {
@@ -276,7 +276,7 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {/* Date information display */}
+                {}
                 <div className="text-xs text-gray-500 space-y-1 mb-3">
                   {order.pickupDate && (
                     <div className="flex justify-between">
@@ -345,7 +345,7 @@ const Dashboard = () => {
     );
   };
 
-  // Remove artisan dashboard content - moved to ArtisanDashboard.tsx
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50 pb-20 md:pb-0">
@@ -353,7 +353,7 @@ const Dashboard = () => {
       
       <div className="px-4 py-6">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
+          {}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Bonjour {user.name} !
@@ -363,7 +363,7 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Dashboard Content - Only for buyers */}
+          {}
           {renderBuyerDashboard()}
         </div>
       </div>

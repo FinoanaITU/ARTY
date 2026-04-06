@@ -10,7 +10,6 @@ from app.models.user import User, ArtisanProfile, ArtisanPhoto, UserSession, Soc
 from fastapi.staticfiles import StaticFiles
 import os
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting up Artizaho Backend...")
@@ -21,13 +20,11 @@ async def lifespan(app: FastAPI):
         seed_initial_data()
     except Exception as e:
         print(f"Warning: Could not seed initial data: {e}")
-        # Ne pas bloquer le démarrage si le seed échoue
-        # (peut arriver si les tables n'existent pas encore)
+
     
     yield
-    # Shutdown
-    print("Shutting down Artizaho Backend...")
 
+    print("Shutting down Artizaho Backend...")
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -38,14 +35,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Mount static files so uploaded files under `static/uploads` are served
-# Determine the absolute static directory based on project layout
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 static_dir = os.path.join(base_dir, 'static')
 if os.path.isdir(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# CORS middleware
 allow_origin_regex = None
 if settings.DEBUG:
     allow_origin_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
@@ -59,15 +53,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Trusted host middleware
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=["*"] if settings.DEBUG else ["localhost", "127.0.0.1"]
 )
 
-# Include API router
 app.include_router(api_router, prefix="/api/v1")
-
 
 @app.get("/")
 async def root():
@@ -77,11 +68,9 @@ async def root():
         "status": "running"
     }
 
-
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
 
 if __name__ == "__main__":
     import uvicorn

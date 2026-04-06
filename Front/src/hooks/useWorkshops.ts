@@ -31,7 +31,7 @@ export const useWorkshops = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load workshops list with filtering
+  
   const loadWorkshops = useCallback(async (filters?: FilterParams) => {
     try {
       setLoading(true);
@@ -40,12 +40,12 @@ export const useWorkshops = () => {
       setWorkshopsList(response);
       setWorkshops(response.items as any[]);
     } catch (err: any) {
-      // Treat 404 as "no data" to enable mock fallback without error banner
+      
       const status = err?.response?.status;
       if (status === 404) {
         setWorkshopsList({ items: [], total: 0, page: filters?.page || 1, pages: 0 } as any);
         setWorkshops([]);
-        // Do not set error to keep UI clean and show fallback
+        
       } else {
         setError(err.message || 'Failed to load workshops');
         console.error('Error loading workshops:', err);
@@ -55,7 +55,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Get single workshop by ID
+  
   const getWorkshop = useCallback(async (workshopId: string) => {
     try {
       setLoading(true);
@@ -72,7 +72,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Get availability
+  
   const getAvailability = useCallback(
     async (workshopId: string, startDate?: string, endDate?: string) => {
       try {
@@ -88,7 +88,7 @@ export const useWorkshops = () => {
     []
   );
 
-  // Get sessions
+  
   const getSessions = useCallback(
     async (workshopId: string, dateFrom?: string, dateTo?: string) => {
       try {
@@ -111,7 +111,7 @@ export const useWorkshops = () => {
     []
   );
 
-  // Create workshop
+  
   const createWorkshop = useCallback(async (data: WorkshopCreate) => {
     try {
       setLoading(true);
@@ -128,7 +128,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Update workshop
+  
   const updateWorkshop = useCallback(async (workshopId: string, data: WorkshopUpdate) => {
     try {
       setLoading(true);
@@ -145,7 +145,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Delete workshop
+  
   const deleteWorkshop = useCallback(async (workshopId: string) => {
     try {
       setLoading(true);
@@ -162,7 +162,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Publish workshop
+  
   const publishWorkshop = useCallback(async (workshopId: string) => {
     try {
       setLoading(true);
@@ -179,7 +179,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Unpublish workshop
+  
   const unpublishWorkshop = useCallback(async (workshopId: string) => {
     try {
       setLoading(true);
@@ -196,7 +196,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Archive workshop
+  
   const archiveWorkshop = useCallback(async (workshopId: string) => {
     try {
       setLoading(true);
@@ -213,7 +213,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Create session
+  
   const createSession = useCallback(
     async (workshopId: string, data: WorkshopSessionCreate) => {
       try {
@@ -233,7 +233,7 @@ export const useWorkshops = () => {
     []
   );
 
-  // Delete session
+  
   const deleteSession = useCallback(
     async (workshopId: string, sessionId: string) => {
       try {
@@ -253,7 +253,7 @@ export const useWorkshops = () => {
     []
   );
 
-  // Book workshop
+  
   const bookWorkshop = useCallback(
     async (workshopId: string, bookingData: any): Promise<BookingConfirmation | null> => {
       try {
@@ -272,7 +272,7 @@ export const useWorkshops = () => {
     []
   );
 
-  // Cancel booking
+  
   const cancelBooking = useCallback(async (bookingId: string) => {
     try {
       setLoading(true);
@@ -289,7 +289,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Confirm booking
+  
   const confirmBooking = useCallback(async (bookingId: string) => {
     try {
       setLoading(true);
@@ -306,7 +306,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Get user bookings
+  
   const getUserBookings = useCallback(async () => {
     try {
       setLoading(true);
@@ -323,7 +323,7 @@ export const useWorkshops = () => {
     }
   }, []);
 
-  // Get workshop bookings (artisan)
+  
   const getWorkshopBookings = useCallback(async (workshopId: string, params?: any) => {
     try {
       setLoading(true);
@@ -341,7 +341,7 @@ export const useWorkshops = () => {
   }, []);
 
   return {
-    // State
+    
     workshops,
     workshopsList,
     currentWorkshop,
@@ -350,7 +350,7 @@ export const useWorkshops = () => {
     loading,
     error,
 
-    // Methods
+    
     loadWorkshops,
     getWorkshop,
     getAvailability,

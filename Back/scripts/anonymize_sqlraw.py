@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Preview & Anonymize script using raw SQL to avoid ORM relationship issues.
 Shows what data will be changed and optionally applies the changes.
@@ -16,7 +16,6 @@ from app.core.database import SessionLocal
 from app.core.config import settings
 from faker import Faker
 
-# Configuration
 MADAGASCAR_CITIES = [
     "Antananarivo", "Antsirabe", "Fianarantsoa", "Toliara", "Mahajanga",
     "Antsiranana", "Morondava", "Andapa", "Antalaha", "Sambava"
@@ -31,20 +30,17 @@ PHONE_PREFIXES = ["033", "034", "032", "038", "030", "031", "037", "039"]
 
 fake = Faker('fr_FR')
 
-
 def generate_fake_phone():
     """Generate fake Madagascar phone number"""
     prefix = random.choice(PHONE_PREFIXES)
     number = "".join(str(random.randint(0, 9)) for _ in range(7))
     return f"+261{prefix}{number}"
 
-
 def generate_fake_company_name():
     """Generate fake company name"""
     prefixes = ["Entreprise", "Compagnie", "Société", "Atelier"]
     suffixes = fake.words(nb=2)
     return f"{random.choice(prefixes)} {' '.join(suffixes).title()}"
-
 
 def generate_fake_address():
     """Generate fake address in Madagascar"""
@@ -57,21 +53,17 @@ def generate_fake_address():
     postal_code = "".join(str(random.randint(0, 9)) for _ in range(3)) + "00"
     return f"{street_number} {random.choice(street_names)}, {postal_code} {city}"
 
-
 def generate_fake_siret():
     """Generate fake SIRET number"""
     return "".join(str(random.randint(0, 9)) for _ in range(14))
-
 
 def generate_fake_nif():
     """Generate fake NIF number"""
     return "".join(str(random.randint(0, 9)) for _ in range(13))
 
-
 def generate_fake_stat():
     """Generate fake STAT number"""
     return f"STAT{random.randint(100000, 999999)}"
-
 
 def preview_users(db):
     """Preview user data that will be anonymized"""
@@ -120,7 +112,6 @@ def preview_users(db):
         print(f"✗ Error previewing users: {e}")
         return 0
 
-
 def preview_artisan_profiles(db):
     """Preview artisan profile data that will be anonymized"""
     try:
@@ -168,7 +159,6 @@ def preview_artisan_profiles(db):
         print(f"✗ Error previewing artisan profiles: {e}")
         return 0
 
-
 def preview_workshops(db):
     """Preview workshop data that will be anonymized"""
     try:
@@ -211,7 +201,6 @@ def preview_workshops(db):
         print(f"✗ Error previewing workshops: {e}")
         return 0
 
-
 def anonymize_data():
     """Anonymize data in the database"""
     db = SessionLocal()
@@ -220,7 +209,7 @@ def anonymize_data():
         print("ANONYMIZING DATA IN DATABASE...")
         print("="*100)
         
-        # Anonymize users
+
         try:
             db.execute(text("""
                 UPDATE users 
@@ -247,7 +236,7 @@ def anonymize_data():
             print(f"✗ Error anonymizing users: {e}")
             db.rollback()
         
-        # Anonymize artisan profiles
+
         try:
             db.execute(text("""
                 UPDATE artisan_profiles 
@@ -274,7 +263,7 @@ def anonymize_data():
             print(f"✗ Error anonymizing artisan profiles: {e}")
             db.rollback()
         
-        # Anonymize workshops
+
         try:
             db.execute(text("""
                 UPDATE workshops 
@@ -302,7 +291,6 @@ def anonymize_data():
     finally:
         db.close()
 
-
 def main():
     print("\n" + "="*100)
     print("DATABASE ANONYMIZATION TOOL")
@@ -317,7 +305,7 @@ def main():
     
     db = SessionLocal()
     try:
-        # Show preview
+
         print("\n" + "="*100)
         print("PREVIEW - SAMPLE DATA TRANSFORMATIONS")
         print("="*100)
@@ -338,7 +326,7 @@ def main():
             print("✓ Database has no real data to anonymize. All good!")
             return 0
         
-        # Ask for confirmation
+
         response = input("Do you want to apply anonymization to the database? (yes/no): ").strip().lower()
         
         if response in ["yes", "y"]:
@@ -355,7 +343,6 @@ def main():
         return 1
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     sys.exit(main())

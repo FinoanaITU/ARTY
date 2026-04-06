@@ -78,7 +78,7 @@ const BecomeProfessional = () => {
       
       <div className="px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Hero Section */}
+          {}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-artisan-brown mb-6">
               Devenez Artisan Partenaire
@@ -165,7 +165,7 @@ const BecomeProfessional = () => {
             </div>
           </section>
 
-          {/* Process Section */}
+          {}
           <section className="mb-16">
             <h2 className="text-3xl font-bold text-artisan-brown text-center mb-12">
               Comment ça marche ?
@@ -193,7 +193,7 @@ const BecomeProfessional = () => {
             </div>
           </section>
 
-          {/* Testimonials */}
+          {}
           <section className="mb-16">
             <h2 className="text-3xl font-bold text-artisan-brown text-center mb-12">
               Témoignages d'artisans

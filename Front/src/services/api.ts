@@ -50,7 +50,6 @@ import type {
   QuoteStats
 } from '@/types/quote';
 
-// Base URL: prefer env var, fallback to FastAPI default '/api' (no version)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 class ApiService {
@@ -64,7 +63,7 @@ class ApiService {
       },
     });
 
-    // Intercepteur pour ajouter le token JWT aux requêtes
+    
     this.api.interceptors.request.use(
       (config) => {
         const token = this.getAccessToken();
@@ -78,13 +77,13 @@ class ApiService {
       }
     );
 
-    // Intercepteur pour gérer les erreurs et refresh token
+    
     this.api.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
 
-        // Si erreur 401 et pas déjà une requête de refresh
+        
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
 
@@ -102,7 +101,7 @@ class ApiService {
               return this.api(originalRequest);
             }
           } catch (refreshError) {
-            // Refresh failed, logout user
+            
             this.clearTokens();
             window.location.href = '/login';
             return Promise.reject(refreshError);
@@ -114,7 +113,7 @@ class ApiService {
     );
   }
 
-  // Gestion des tokens
+  
   private getAccessToken(): string | null {
     return localStorage.getItem('access_token');
   }
@@ -136,7 +135,7 @@ class ApiService {
     localStorage.removeItem('user');
   }
 
-  // Auth endpoints
+  
   async registerBuyer(data: {
     email: string;
     password: string;
@@ -178,11 +177,11 @@ class ApiService {
   ) {
     const formData = new FormData();
     
-    // Ajouter les champs textuels
+    
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
-          // Convertir les tableaux en JSON string ou liste séparée par virgules
+          
           formData.append(key, JSON.stringify(value));
         } else {
           formData.append(key, String(value));
@@ -190,7 +189,7 @@ class ApiService {
       }
     });
 
-    // Ajouter les photos
+    
     if (photos && photos.length > 0) {
       photos.slice(0, 5).forEach((photo) => {
         formData.append('photos', photo);
@@ -226,42 +225,24 @@ class ApiService {
    * @param skip - Pagination
    * @param limit - Pagination
    */
-  // NOTE: Endpoint GET /users n'existe pas dans le backend
-  // Pour récupérer la liste des utilisateurs/artisans, utiliser:
-  // - getAdminArtisanStats() pour les statistiques artisans
-  // - getArtisan(id) pour un artisan spécifique
-  /*
-  async getUsers(params?: {
-    role?: string;
-    skip?: number;
-    limit?: number;
-    sort_by?: string;
-    order?: 'asc' | 'desc';
-  }) {
-    const searchParams = new URLSearchParams();
-    if (params?.role) searchParams.append('role', params.role);
-    if (params?.skip !== undefined) searchParams.append('skip', params.skip.toString());
-    if (params?.limit !== undefined) searchParams.append('limit', params.limit.toString());
-    if (params?.sort_by) searchParams.append('sort_by', params.sort_by);
-    if (params?.order) searchParams.append('order', params.order);
-    
-    const response = await this.api.get(`/users?${searchParams.toString()}`);
-    return response.data;
-  }
-  */
+  
+  
+  
+  
+  
 
   async logout() {
     try {
       await this.api.post('/auth/logout');
     } catch (error) {
-      // Continue même si erreur
+      
       console.error('Logout error:', error);
     } finally {
       this.clearTokens();
     }
   }
 
-  // Product endpoints
+  
   async getProducts(params?: {
     category?: string;
     subcategory?: string;
@@ -307,18 +288,18 @@ class ApiService {
   ): Promise<ProductOut> {
     const formData = new FormData();
     
-    // Ajouter les champs textuels
+    
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (key === 'dimensions') {
-          // Dimensions sont envoyées séparément
+          
           const dims = value as { length?: number; width?: number; height?: number; weight?: number };
           if (dims.length !== undefined) formData.append('dimensions_length', String(dims.length));
           if (dims.width !== undefined) formData.append('dimensions_width', String(dims.width));
           if (dims.height !== undefined) formData.append('dimensions_height', String(dims.height));
           if (dims.weight !== undefined) formData.append('dimensions_weight', String(dims.weight));
         } else if (Array.isArray(value)) {
-          // Convertir les tableaux en liste séparée par virgules pour le backend
+          
           formData.append(key, value.join(','));
         } else {
           formData.append(key, String(value));
@@ -326,7 +307,7 @@ class ApiService {
       }
     });
 
-    // Ajouter les photos
+    
     if (photos && photos.length > 0) {
       photos.slice(0, 10).forEach((photo) => {
         formData.append('photos', photo);
@@ -369,18 +350,18 @@ class ApiService {
   ): Promise<ProductOut> {
     const formData = new FormData();
     
-    // Ajouter les champs textuels
+    
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (key === 'dimensions') {
-          // Dimensions sont envoyées séparément
+          
           const dims = value as { length?: number; width?: number; height?: number; weight?: number };
           if (dims.length !== undefined) formData.append('dimensions_length', String(dims.length));
           if (dims.width !== undefined) formData.append('dimensions_width', String(dims.width));
           if (dims.height !== undefined) formData.append('dimensions_height', String(dims.height));
           if (dims.weight !== undefined) formData.append('dimensions_weight', String(dims.weight));
         } else if (Array.isArray(value)) {
-          // Convertir les tableaux en liste séparée par virgules pour le backend
+          
           formData.append(key, value.join(','));
         } else {
           formData.append(key, String(value));
@@ -394,7 +375,7 @@ class ApiService {
       });
     }
 
-    // Image deletions (sent as JSON)
+    
     if (delete_image_ids && delete_image_ids.length > 0) {
       formData.append('delete_image_ids', JSON.stringify(delete_image_ids));
     }
@@ -461,7 +442,7 @@ class ApiService {
     return response.data;
   }
 
-  // Workshop endpoints
+  
   async getWorkshops(params?: {
     type?: string;
     category?: string;
@@ -471,7 +452,7 @@ class ApiService {
     page?: number;
     limit?: number;
   }): Promise<WorkshopListResponse> {
-    // Backend expects 'skip' and 'limit'; map page to skip
+    
     const query: any = { ...params };
     if (params?.page && params?.limit) {
       query.skip = (params.page - 1) * params.limit;
@@ -524,7 +505,7 @@ class ApiService {
   async createWorkshopWithPhotos(data: WorkshopCreate, photos?: File[], publish: boolean = false): Promise<WorkshopOut> {
     const formData = new FormData();
     
-    // Ajouter les données du formulaire
+    
     formData.append('title', data.title);
     formData.append('description', data.description);
     if (data.short_description) formData.append('short_description', data.short_description);
@@ -539,14 +520,14 @@ class ApiService {
     formData.append('location', data.location);
     if (data.address) formData.append('address', data.address);
     
-    // Ajouter les listes JSON
+    
     if (data.materials_included) formData.append('materials_included', JSON.stringify(data.materials_included));
     if (data.materials_to_bring) formData.append('materials_to_bring', JSON.stringify(data.materials_to_bring));
     if (data.prerequisites) formData.append('prerequisites', data.prerequisites);
     if (data.what_you_will_learn) formData.append('what_you_will_learn', JSON.stringify(data.what_you_will_learn));
     if (data.tags) formData.append('tags', JSON.stringify(data.tags));
     
-    // Ajouter les photos
+    
     if (photos) {
       photos.forEach((photo, index) => {
         formData.append('photos', photo);
@@ -617,7 +598,7 @@ class ApiService {
     return response.data;
   }
 
-  // Cart endpoints
+  
   async getCart() {
     const response = await this.api.get('/carts/me');
     return response.data;
@@ -646,7 +627,7 @@ class ApiService {
     await this.api.delete('/carts/');
   }
 
-  // Order endpoints
+  
   async getOrders(params?: {
     status?: string;
     page?: number;
@@ -677,12 +658,12 @@ class ApiService {
     return response.data;
   }
 
-  // Artisan stats endpoint
+  
   async getArtisanStats() {
     const response = await this.api.get('/analytics/artisan/stats');
     const data = response.data;
     
-    // Map backend snake_case to frontend camelCase
+    
     return {
       totalSales: data.total_revenue || 0,
       ordersThisMonth: data.monthly_sales || 0,
@@ -691,7 +672,7 @@ class ApiService {
     };
   }
 
-  // Review endpoints
+  
   async getProductReviews(productId: string, params?: { page?: number; limit?: number }) {
     const response = await this.api.get(`/products/${productId}/reviews`, { params });
     return response.data;
@@ -714,7 +695,7 @@ class ApiService {
     return response.data;
   }
 
-  // Unavailability endpoints
+  
   async getUnavailabilities() {
     const response = await this.api.get('/unavailabilities');
     return response.data.items || [];
@@ -734,7 +715,7 @@ class ApiService {
     await this.api.delete(`/unavailabilities/${unavailabilityId}`);
   }
 
-  // User profile endpoints
+  
   async updateUserProfile(data: {
     email?: string;
     phone?: string;
@@ -763,7 +744,7 @@ class ApiService {
     return response.data;
   }
 
-  // ===== ADMIN VALIDATION ENDPOINTS =====
+  
   
   /**
    * Récupère la liste des validations en attente
@@ -852,7 +833,7 @@ class ApiService {
     return response.data;
   }
 
-  // ===== ADMIN ANALYTICS ENDPOINTS (PHASE 2) =====
+  
   
   /**
    * Récupère la vue d'ensemble de la plateforme
@@ -905,7 +886,7 @@ class ApiService {
     return response.data;
   }
 
-  // ===== ADMIN PAYMENT TRACKING ENDPOINTS (PHASE 3) =====
+  
 
   /**
    * Récupère la liste des paiements
@@ -1006,7 +987,7 @@ class ApiService {
     return response.data;
   }
 
-  // ===== QUOTE MANAGEMENT ENDPOINTS =====
+  
 
   /**
    * Créer une demande de devis
@@ -1096,7 +1077,7 @@ class ApiService {
     return response.data;
   }
 
-  // ===== SUBSCRIPTION ADMIN ENDPOINTS (PHASE 5) =====
+  
 
   /**
    * Vue d'ensemble des abonnements
@@ -1193,7 +1174,7 @@ class ApiService {
     return response.data;
   }
 
-  // Méthodes génériques pour d'autres endpoints
+  
   get(endpoint: string, config?: any) {
     return this.api.get(endpoint, config);
   }
@@ -1215,7 +1196,6 @@ class ApiService {
   }
 }
 
-// Export instance singleton
 export const apiService = new ApiService();
 export default apiService;
 

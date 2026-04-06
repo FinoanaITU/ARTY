@@ -91,7 +91,7 @@ const QuoteStatusDisplay: React.FC<QuoteStatusDisplayProps> = ({
           {statusInfo.description}
         </div>
 
-        {/* Basic Info */}
+        {}
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -110,7 +110,7 @@ const QuoteStatusDisplay: React.FC<QuoteStatusDisplayProps> = ({
           </div>
         </div>
 
-        {/* Quote Details */}
+        {}
         {quoteRequest.status === 'quoted' && quoteRequest.quoteDetails && (
           <Card className="bg-blue-50 border-blue-200">
             <CardHeader className="pb-3">

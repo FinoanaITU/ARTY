@@ -10,13 +10,13 @@ export const formatCurrency = (amount: number | undefined | null, language: 'fr'
   }
 
   if (language === 'fr') {
-    // French locale: use € (Euro)
+    
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
     }).format(amount);
   } else {
-    // Malagasy: use Ar (Ariary)
+    
     return `${amount.toLocaleString('fr-FR')} Ar`;
   }
 };

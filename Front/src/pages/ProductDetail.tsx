@@ -34,7 +34,7 @@ const ProductDetail = () => {
   const [showBulkForm, setShowBulkForm] = useState(false);
   const [selectedPriceVariation, setSelectedPriceVariation] = useState<PriceVariation | null>(null);
 
-  // Charger le produit
+  
   useEffect(() => {
     const loadProduct = async () => {
       if (!id) {
@@ -46,7 +46,7 @@ const ProductDetail = () => {
       try {
         const productData = await apiService.getProduct(id);
         setProduct(productData);
-        // Limiter la quantité au stock disponible
+        
         if (productData.stock > 0) {
           setQuantity(Math.min(quantity, productData.stock));
         }
@@ -130,7 +130,7 @@ const ProductDetail = () => {
       
       <div className="px-4 py-6">
         <div className="max-w-7xl mx-auto">
-          {/* Breadcrumb */}
+          {}
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
             <Link to="/" className="hover:text-orange-600">Accueil</Link>
             <span>/</span>
@@ -139,7 +139,7 @@ const ProductDetail = () => {
             <span className="text-gray-900">{product.name}</span>
           </div>
 
-          {/* Back button */}
+          {}
           <div className="mb-6">
             <Link to="/products">
               <Button variant="ghost" className="text-orange-600 hover:text-orange-700">
@@ -150,7 +150,7 @@ const ProductDetail = () => {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8 mb-8">
-            {/* Product Images */}
+            {}
             <div>
               <ProductImageGallery 
                 images={product.images && product.images.length > 0 ? product.images : ['https://via.placeholder.com/600?text=Image+non+disponible']} 
@@ -158,7 +158,7 @@ const ProductDetail = () => {
               />
             </div>
 
-            {/* Product Info */}
+            {}
             <div className="space-y-6">
               <div>
                 <div className="flex items-center gap-2 text-sm text-orange-600 mb-2">
@@ -205,7 +205,7 @@ const ProductDetail = () => {
                   </div>
                 )}
                 
-                {/* Prix pour tous les utilisateurs */}
+                {}
                 <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200 mb-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-orange-600">
@@ -215,7 +215,7 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Product Details */}
+              {}
               <Card className="border-gray-200">
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-gray-900 mb-3">Informations produit</h3>
@@ -253,7 +253,7 @@ const ProductDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Materials */}
+              {}
               {product.materials && product.materials.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Matériaux utilisés</h3>
@@ -267,7 +267,7 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              {/* Available Colors */}
+              {}
               {product.available_colors && product.available_colors.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Couleurs disponibles</h3>
@@ -281,7 +281,7 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              {/* Code promo section - Only for logged in users */}
+              {}
               {isLoggedIn && (
                 <Card className="border-orange-200">
                   <CardContent className="pt-4">
@@ -333,7 +333,7 @@ const ProductDetail = () => {
                 </Card>
               )}
 
-              {/* Quantity and Actions */}
+              {}
               <div className="space-y-4">
                 {isLoggedIn && (
                   <div className="flex items-center gap-4">
@@ -417,7 +417,7 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Product Description */}
+          {}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Description</CardTitle>
@@ -425,7 +425,7 @@ const ProductDetail = () => {
             <CardContent>
               <p className="text-gray-700 leading-relaxed whitespace-pre-line">{product.description}</p>
               
-              {/* Metadata */}
+              {}
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="flex flex-wrap gap-4 text-xs text-gray-500">
                   <div>
@@ -454,7 +454,7 @@ const ProductDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Artisan Info */}
+          {}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>À propos de l'artisan</CardTitle>
@@ -478,18 +478,18 @@ const ProductDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Workshop Recommendations */}
+          {}
           <div className="mb-8">
             <WorkshopRecommendations category={product.category} />
           </div>
 
-          {/* Reviews */}
+          {}
           <ProductReviews productId={product.id} />
 
-          {/* Similar Products */}
+          {}
           <SimilarProducts currentProductId={product.id} category={product.category} />
 
-          {/* Bulk Order Form Modal */}
+          {}
           {showBulkForm && product.bulk_order_enabled && (
             <BulkOrderForm 
               productId={product.id}

@@ -20,7 +20,7 @@ from app.schemas.admin import (
     ArtisanStatsOut,
     ConversionStatsOut,
     UserBehaviorStatsOut,
-    # Payment tracking schemas
+
     PaymentOut,
     PaymentListResponse,
     RecordPaymentRequest,
@@ -29,10 +29,10 @@ from app.schemas.admin import (
     PayoutListResponse,
     GeneratePayoutRequest,
     MarkPayoutPaidRequest,
-    # Quote schemas
+
     QuoteRequestIn,
     QuoteOut,
-    # Subscription schemas
+
     SubscriptionOut,
     SubscriptionListResponse,
     SubscriptionOverviewResponse,
@@ -47,9 +47,6 @@ from app.services.admin_analytics_service import AdminAnalyticsService
 from app.services.payment_tracking_service import PaymentTrackingService
 
 router = APIRouter()
-
-
-# ===== VALIDATION ENDPOINTS =====
 
 @router.get(
     "/validations/pending",
@@ -74,7 +71,6 @@ async def get_pending_validations(
         skip=skip,
         limit=limit
     )
-
 
 @router.post(
     "/validations/artisan/{artisan_id}",
@@ -108,7 +104,6 @@ async def validate_artisan_profile(
         "status": user.artisan_profile.status.value if user.artisan_profile else None
     }
 
-
 @router.post(
     "/validations/product/{product_id}",
     response_model=dict,
@@ -140,7 +135,6 @@ async def validate_product(
         "product_id": str(product.id),
         "status": product.status
     }
-
 
 @router.post(
     "/validations/workshop/{workshop_id}",
@@ -174,7 +168,6 @@ async def validate_workshop(
         "status": workshop.status
     }
 
-
 @router.get(
     "/validations/stats",
     response_model=ValidationStatsOut,
@@ -200,9 +193,6 @@ async def get_validation_stats(
         period=period
     )
 
-
-# ===== ANALYTICS ENDPOINTS =====
-
 @router.get(
     "/analytics/overview",
     response_model=PlatformOverviewOut,
@@ -225,7 +215,6 @@ async def get_platform_overview(
     """
     analytics_service = AdminAnalyticsService(db)
     return await analytics_service.get_platform_overview()
-
 
 @router.get(
     "/analytics/revenue",
@@ -256,7 +245,6 @@ async def get_revenue_stats(
         end_date=end_date
     )
 
-
 @router.get(
     "/analytics/artisans",
     response_model=ArtisanStatsOut,
@@ -279,7 +267,6 @@ async def get_artisan_stats(
     analytics_service = AdminAnalyticsService(db)
     return await analytics_service.get_artisan_stats()
 
-
 @router.get(
     "/analytics/conversion",
     response_model=ConversionStatsOut,
@@ -300,7 +287,6 @@ async def get_conversion_stats(
     """
     analytics_service = AdminAnalyticsService(db)
     return await analytics_service.get_conversion_stats()
-
 
 @router.get(
     "/analytics/users",
@@ -323,9 +309,6 @@ async def get_user_behavior_stats(
     """
     analytics_service = AdminAnalyticsService(db)
     return await analytics_service.get_user_behavior_stats()
-
-
-# ===== PAYMENT TRACKING ENDPOINTS =====
 
 @router.get(
     "/payments",
@@ -356,7 +339,6 @@ async def get_all_payments(
         limit=limit
     )
 
-
 @router.get(
     "/payments/{payment_id}",
     response_model=PaymentOut,
@@ -381,7 +363,6 @@ async def get_payment_by_id(
     
     return payment
 
-
 @router.get(
     "/payments/{payment_id}/history",
     response_model=List[PaymentHistoryOut],
@@ -404,7 +385,6 @@ async def get_payment_history(
         db=db,
         payment_id=str(payment_id)
     )
-
 
 @router.post(
     "/payments/{payment_id}/record",
@@ -436,7 +416,6 @@ async def record_payment(
         admin_id=current_admin.id
     )
 
-
 @router.get(
     "/payouts/pending",
     response_model=PayoutListResponse,
@@ -461,7 +440,6 @@ async def get_pending_payouts(
         skip=skip,
         limit=limit
     )
-
 
 @router.post(
     "/payouts/generate",
@@ -492,7 +470,6 @@ async def generate_artisan_payout(
         request=payout_request
     )
 
-
 @router.post(
     "/payouts/{payout_id}/mark-paid",
     response_model=ArtisanPayoutOut,
@@ -521,7 +498,6 @@ async def mark_payout_as_paid(
         request=paid_request
     )
 
-
 @router.get(
     "/payouts/{artisan_id}/history",
     response_model=PayoutListResponse,
@@ -548,10 +524,6 @@ async def get_artisan_payout_history(
         skip=skip,
         limit=limit
     )
-
-
-
-# ===== QUOTE MANAGER ENDPOINTS =====
 
 @router.post(
     "/quotes",
@@ -591,7 +563,6 @@ async def create_quote_request(
         "message": "Quote request created successfully"
     }
 
-
 @router.get(
     "/quotes",
     summary="Lister tous les devis",
@@ -630,7 +601,6 @@ async def get_all_quotes(
     
     return result
 
-
 @router.get(
     "/quotes/my",
     summary="Mes demandes de devis",
@@ -655,7 +625,6 @@ async def get_my_quotes(
     )
     
     return result
-
 
 @router.get(
     "/quotes/{quote_id}",
@@ -697,7 +666,6 @@ async def get_quote_details(
         "completed_at": quote.completed_at.isoformat() if quote.completed_at else None,
     }
 
-
 @router.patch(
     "/quotes/{quote_id}",
     summary="Mettre à jour un devis",
@@ -733,7 +701,6 @@ async def update_quote(
         "message": "Quote updated successfully"
     }
 
-
 @router.post(
     "/quotes/{quote_id}/approve",
     summary="Approuver un devis",
@@ -758,7 +725,6 @@ async def approve_quote(
         "message": "Quote approved successfully"
     }
 
-
 @router.post(
     "/quotes/{quote_id}/reject",
     summary="Rejeter un devis",
@@ -781,7 +747,6 @@ async def reject_quote(
         "status": quote.status,
         "message": "Quote rejected"
     }
-
 
 @router.post(
     "/quotes/{quote_id}/convert-to-order",
@@ -806,7 +771,6 @@ async def convert_quote_to_order(
         "message": "Quote converted to order successfully"
     }
 
-
 @router.get(
     "/quotes/stats/overview",
     summary="Statistiques des devis",
@@ -830,9 +794,6 @@ async def get_quote_stats(
     stats = await QuoteService.get_quote_stats(db=db)
     
     return stats
-
-
-# ===== SUBSCRIPTION ENDPOINTS =====
 
 @router.get(
     "/subscriptions/overview",
@@ -861,7 +822,6 @@ async def get_subscriptions_overview(
         period=perspective
     )
     return overview
-
 
 @router.get(
     "/subscriptions/list",
@@ -898,7 +858,6 @@ async def get_subscriptions_list(
     )
     return result
 
-
 @router.get(
     "/subscriptions/{subscription_id}",
     response_model=SubscriptionOut,
@@ -920,7 +879,6 @@ async def get_subscription_detail(
         subscription_id=subscription_id
     )
     return subscription
-
 
 @router.post(
     "/subscriptions/{subscription_id}/cancel",
@@ -950,7 +908,6 @@ async def cancel_subscription(
         reason=cancel_request.reason
     )
     return subscription
-
 
 @router.post(
     "/subscriptions/{subscription_id}/extend",
@@ -983,7 +940,6 @@ async def extend_subscription(
     )
     return subscription
 
-
 @router.post(
     "/subscriptions/{subscription_id}/add-credits",
     response_model=SubscriptionOut,
@@ -1006,7 +962,7 @@ async def add_bonus_credits(
     """
     from app.services.admin_subscription_service import AdminSubscriptionService
     
-    # Convert amount to Decimal
+
     amount = Decimal(str(credits_request.amount))
     
     subscription = await AdminSubscriptionService.add_bonus_credits(
@@ -1017,7 +973,6 @@ async def add_bonus_credits(
         reason=credits_request.reason
     )
     return subscription
-
 
 @router.get(
     "/subscriptions/{subscription_id}/history",
@@ -1046,7 +1001,6 @@ async def get_subscription_history(
     )
     return history
 
-
 @router.get(
     "/subscriptions/stats/detailed",
     response_model=SubscriptionStatsResponse,
@@ -1071,7 +1025,6 @@ async def get_subscription_stats(
     
     stats = await AdminSubscriptionService.get_subscription_stats(db=db)
     return stats
-
 
 @router.get("/")
 async def get_admin_dashboard():

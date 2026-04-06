@@ -29,16 +29,13 @@ from app.crud.bulk_order import bulk_order_crud
 from app.utils.id_utils import normalize_id, id_to_string, get_db_type
 from app.core.config import settings
 
-
 router = APIRouter()
-
 
 def _product_to_out(product: Product, db: Session, request: Request) -> ProductOut:
     """Convertit un Product en ProductOut"""
     from uuid import UUID as UUIDType
     
-    # Récupérer les images (le CRUD gère la conversion d'ID)
-    # Build absolute URLs for images so frontend can load them directly
+
     raw_images = [img.image_url for img in product_crud.get_images(db, product.id)]
     raw_image_objs = product_crud.get_images(db, product.id)
     upload_prefix = settings.UPLOAD_DIR.lstrip('./')
@@ -49,10 +46,9 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
         if img_path.startswith('http'):
             images.append(img_path)
         else:
-            # request.base_url includes scheme+host+port
+
             images.append(f"{str(request.base_url).rstrip('/')}/{upload_prefix}/{img_path}")
 
-    # Build image items with IDs so frontend can perform delete/reorder actions
     image_items = []
     for img in raw_image_objs:
         img_path = img.image_url
@@ -62,20 +58,19 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
             url = img_path
         else:
             url = f"{str(request.base_url).rstrip('/')}/{upload_prefix}/{img_path}"
-        # Ensure id is a UUID for Pydantic
+
         try:
             img_id = img.id
         except Exception:
             img_id = None
         image_items.append({"id": img_id, "url": url})
     
-    # Récupérer l'artisan
-    # Le GUID type devrait convertir automatiquement, mais on s'assure que c'est un UUID
+
     artisan = db.query(User).filter(User.id == product.artisan_id).first()
     if not artisan:
         raise ValueError(f"Artisan not found for product {product.id}")
     
-    # S'assurer que les IDs sont des UUID objects pour Pydantic
+
     product_id = product.id
     if not isinstance(product_id, UUIDType):
         product_id = UUIDType(str(product_id))
@@ -84,13 +79,13 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
     if not isinstance(artisan_id, UUIDType):
         artisan_id = UUIDType(str(artisan_id))
     
-    # Créer l'objet ArtisanBasic avec validation Pydantic
+
     artisan_basic = ArtisanBasic(
         id=artisan_id,
         name=artisan.name
     )
     
-    # Extraire les dimensions
+
     dimensions = None
     if product.dimensions:
         dimensions = {
@@ -100,10 +95,10 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
             "weight": product.dimensions.get("weight")
         }
     
-    # Récupérer la catégorie
+
     category_obj = db.query(Category).filter(Category.id == product.category_id).first()
     if category_obj:
-        # Si la catégorie a un parent, c'est une sous-catégorie
+
         if category_obj.parent_id:
             parent_category = db.query(Category).filter(Category.id == category_obj.parent_id).first()
             category_name = parent_category.name if parent_category else category_obj.name
@@ -115,11 +110,10 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
         category_name = "Non catégorisé"
         subcategory_name = None
     
-    # S'assurer que production_time_days n'est pas None (requis par le schema)
+
     production_time_days = product.production_time_days if product.production_time_days is not None else 0
     
-    # ArrayType gère automatiquement la conversion JSON <-> list pour SQLite/PostgreSQL
-    # Mais on s'assure que c'est toujours une liste (fallback si None)
+
     materials_list = product.materials if product.materials is not None else []
     if not isinstance(materials_list, list):
         materials_list = []
@@ -128,14 +122,13 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
     if not isinstance(colors_list, list):
         colors_list = []
     
-    # Convertir le prix en float pour la sérialisation JSON
-    # Le prix peut être Decimal, string, int ou float selon la base de données
+
     price_value = product.price
     if price_value is None:
         price_value = 0.0
     else:
         try:
-            # Convertir en float (Decimal, string, int, float)
+
             if isinstance(price_value, str):
                 price_value = float(price_value)
             else:
@@ -145,7 +138,7 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
     
     return ProductOut(
         id=product_id,
-        name=product.title,  # Le modèle utilise 'title' mais le schema utilise 'name'
+        name=product.title,
         description=product.description or "",
         category=category_name,
         subcategory=subcategory_name,
@@ -168,12 +161,11 @@ def _product_to_out(product: Product, db: Session, request: Request) -> ProductO
         updated_at=product.updated_at
     )
 
-
 def _product_to_list_item(product: Product, db: Session, request: Request) -> ProductListItem:
     """Convertit un Product en ProductListItem"""
     from uuid import UUID as UUIDType
     
-    # Récupérer les images (seulement la première pour la liste, le CRUD gère la conversion d'ID)
+
     raw_images = [img.image_url for img in product_crud.get_images(db, product.id)[:1]]
     upload_prefix = settings.UPLOAD_DIR.lstrip('./')
     images = []
@@ -185,12 +177,12 @@ def _product_to_list_item(product: Product, db: Session, request: Request) -> Pr
         else:
             images.append(f"{str(request.base_url).rstrip('/')}/{upload_prefix}/{img_path}")
     
-    # Récupérer l'artisan
+
     artisan = db.query(User).filter(User.id == product.artisan_id).first()
     if not artisan:
         raise ValueError(f"Artisan not found for product {product.id}")
     
-    # S'assurer que les IDs sont des UUID objects pour Pydantic
+
     product_id = product.id
     if not isinstance(product_id, UUIDType):
         product_id = UUIDType(str(product_id))
@@ -199,13 +191,13 @@ def _product_to_list_item(product: Product, db: Session, request: Request) -> Pr
     if not isinstance(artisan_id, UUIDType):
         artisan_id = UUIDType(str(artisan_id))
     
-    # Créer l'objet ArtisanBasic avec validation Pydantic
+
     artisan_basic = ArtisanBasic(
         id=artisan_id,
         name=artisan.name
     )
     
-    # Convertir le prix en float pour la sérialisation JSON
+
     price_value = product.price
     if price_value is None:
         price_value = 0.0
@@ -227,7 +219,6 @@ def _product_to_list_item(product: Product, db: Session, request: Request) -> Pr
         review_count=product.rating_count or 0,
         created_at=product.created_at
     )
-
 
 @router.get("/", response_model=ProductListResponse)
 async def get_products(
@@ -257,11 +248,10 @@ async def get_products(
     """
     skip = (page - 1) * limit
     
-    # If an artisan_id is provided we may need to include unpublished products
-    # Only allow returning all statuses when the requester is the same artisan or an admin.
+
     status_param = None
     if artisan_id:
-        # Check Authorization header for a bearer token
+
         auth_header = None
         if request is not None:
             auth_header = request.headers.get('authorization')
@@ -271,12 +261,12 @@ async def get_products(
             payload = verify_token(token)
             if payload:
                 sub = payload.get('sub')
-                # If token subject matches the requested artisan_id, allow all statuses
+
                 try:
                     if str(sub) == str(artisan_id):
                         status_param = '__all__'
                     else:
-                        # Check user role from DB to allow admins
+
                         user = db.query(User).filter(User.id == sub).first()
                         if user and user.role == UserRole.ADMIN:
                             status_param = '__all__'
@@ -297,8 +287,7 @@ async def get_products(
         limit=limit
     )
     
-    # Return full product objects so the frontend's edit modal can consume
-    # all expected fields (materials, available_colors, dimensions, etc.)
+
     items = [_product_to_out(product, db, request) for product in products]
     pages = (total + limit - 1) // limit if total > 0 else 1
     
@@ -310,7 +299,6 @@ async def get_products(
         limit=limit
     )
 
-
 @router.get("/categories", response_model=CategoriesResponse)
 async def get_categories(
     db: Session = Depends(get_db)
@@ -319,8 +307,7 @@ async def get_categories(
     Liste des catégories avec leurs sous-catégories
     """
     from sqlalchemy import or_
-    # Récupérer toutes les catégories principales (sans parent)
-    # Utiliser is_(None) qui fonctionne avec SQLAlchemy pour tous les types
+
     main_categories = db.query(Category).filter(
         Category.parent_id.is_(None),
         Category.is_active == True
@@ -328,7 +315,7 @@ async def get_categories(
     
     categories_out = []
     for cat in main_categories:
-        # Récupérer les sous-catégories
+
         subcategories = db.query(Category).filter(
             Category.parent_id == cat.id,
             Category.is_active == True
@@ -340,7 +327,6 @@ async def get_categories(
         ))
     
     return CategoriesResponse(categories=categories_out)
-
 
 @router.get("/{product_id}", response_model=ProductOut)
 async def get_product(
@@ -361,11 +347,9 @@ async def get_product(
             detail="Produit non trouvé"
         )
     
-    # Vérifier que le produit est publié (sauf si l'utilisateur est l'artisan ou admin)
-    # TODO: Ajouter cette vérification avec get_current_active_user optionnel
+
     
     return _product_to_out(product, db, request)
-
 
 @router.post("/", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 async def create_product(
@@ -374,8 +358,8 @@ async def create_product(
     category: str = Form(...),
     subcategory: Optional[str] = Form(None),
     price: Decimal = Form(...),
-    materials: Optional[str] = Form(None),  # JSON string ou liste séparée par virgules
-    available_colors: Optional[str] = Form(None),  # JSON string ou liste séparée par virgules
+    materials: Optional[str] = Form(None),
+    available_colors: Optional[str] = Form(None),
     stock: int = Form(0),
     customizable: bool = Form(False),
     production_time_days: int = Form(...),
@@ -396,13 +380,12 @@ async def create_product(
     - Upload de photos (max 10)
     - Statut par défaut: draft
     """
-    # Vérifier que l'utilisateur a un profil artisan
-    # Le GUID TypeDecorator gère automatiquement la conversion UUID <-> string
+
     from app.models.user import ArtisanProfile
-    # Utiliser directement current_user.id - le GUID TypeDecorator gère la conversion
+
     artisan_profile = db.query(ArtisanProfile).filter(ArtisanProfile.user_id == current_user.id).first()
     if not artisan_profile:
-        # Essayer aussi avec la relation si disponible (pour PostgreSQL)
+
         try:
             if hasattr(current_user, 'artisan_profile') and current_user.artisan_profile:
                 artisan_profile = current_user.artisan_profile
@@ -414,7 +397,7 @@ async def create_product(
             detail="Vous devez avoir un profil artisan pour créer des produits"
         )
     
-    # Parser les listes
+
     import json
     materials_list = []
     if materials:
@@ -430,7 +413,7 @@ async def create_product(
         except Exception:
             colors_list = [c.strip() for c in available_colors.split(",") if c.strip()]
     
-    # Préparer les dimensions
+
     dimensions = None
     if dimensions_length or dimensions_width or dimensions_height or dimensions_weight:
         from app.schemas.product import ProductDimensions
@@ -441,14 +424,14 @@ async def create_product(
             weight=dimensions_weight
         )
     
-    # Créer le schema ProductCreate avec gestion des erreurs de validation
+
     try:
         product_data = ProductCreate(
             name=name,
             description=description,
             category=category,
             subcategory=subcategory,
-            price=float(price),  # Convertir Decimal en float pour la validation
+            price=float(price),
             materials=materials_list,
             available_colors=colors_list,
             dimensions=dimensions,
@@ -459,7 +442,7 @@ async def create_product(
             min_bulk_quantity=min_bulk_quantity
         )
     except Exception as e:
-        # Si c'est une ValidationError Pydantic, retourner un code 422
+
         from pydantic import ValidationError
         if isinstance(e, ValidationError):
             raise HTTPException(
@@ -468,13 +451,13 @@ async def create_product(
             )
         raise
     
-    # Upload des photos
+
     image_urls = []
     if photos:
         storage_service = StorageService()
-        for photo_file in photos[:10]:  # Max 10 photos
+        for photo_file in photos[:10]:
             try:
-                # upload_file is async - await so we get the URL string, not a coroutine
+
                 photo_url = await storage_service.upload_file(
                     file=photo_file,
                     folder="products",
@@ -482,10 +465,10 @@ async def create_product(
                 )
                 image_urls.append(photo_url)
             except Exception as e:
-                # Log l'erreur mais continue
+
                 print(f"Erreur lors de l'upload de la photo: {e}")
     
-    # Créer le produit
+
     product = product_crud.create(
         db,
         obj_in=product_data,
@@ -494,7 +477,6 @@ async def create_product(
     )
     
     return _product_to_out(product, db, request)
-
 
 @router.patch("/{product_id}", response_model=ProductOut)
 async def update_product(
@@ -529,8 +511,7 @@ async def update_product(
             detail="Produit non trouvé"
         )
     
-    # Vérifier que l'utilisateur est le propriétaire ou admin
-    # Normaliser les IDs pour la comparaison (pour compatibilité SQLite)
+
     db_type = get_db_type(db)
     product_artisan_id = id_to_string(product.artisan_id) if db_type == 'sqlite' else product.artisan_id
     current_user_id = id_to_string(current_user.id) if db_type == 'sqlite' else current_user.id
@@ -541,7 +522,7 @@ async def update_product(
             detail="Vous n'avez pas la permission de modifier ce produit"
         )
     
-    # Parser les listes si fournies
+
     import json
     update_data = {}
     
@@ -578,15 +559,14 @@ async def update_product(
     if product_status is not None:
         update_data["status"] = product_status
     
-    # Créer le ProductUpdate avec les données parsées
+
     product_update = ProductUpdate(**update_data)
     
-    # Mettre à jour le produit
-    # Process requested image deletions (sent as JSON array or comma-separated)
+
     if delete_image_ids:
         import json
         try:
-            # Support JSON array or comma-separated list
+
             if delete_image_ids.strip().startswith('['):
                 ids = json.loads(delete_image_ids)
             else:
@@ -598,11 +578,10 @@ async def update_product(
 
         if ids:
             storage_service = StorageService()
-            # Attempt to delete files from storage.
-            # If any deletion fails, abort the update.
+
             image_rows = []
             for img_id in ids:
-                # Try to find the image row
+
                 try:
                     q = db.query(ProductImage)
                     img_row = q.filter(ProductImage.id == img_id).first()
@@ -616,7 +595,7 @@ async def update_product(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail=msg,
                     )
-                # Verify ownership
+
                 img_product_id = img_row.product_id
                 if get_db_type(db) == 'sqlite':
                     prod_id_comp = id_to_string(product.id)
@@ -631,7 +610,6 @@ async def update_product(
                     )
                 image_rows.append(img_row)
 
-            # Delete files from storage
             for img_row in image_rows:
                 try:
                     storage_service.delete_file(img_row.image_url)
@@ -643,7 +621,6 @@ async def update_product(
                         detail=detail_msg,
                     )
 
-            # Delete DB rows
             for img_row in image_rows:
                 try:
                     db.delete(img_row)
@@ -656,14 +633,12 @@ async def update_product(
                     )
             db.commit()
 
-    # Update product fields
     updated_product = product_crud.update(
         db,
         db_obj=product,
         obj_in=product_update,
     )
 
-    # If new photos were uploaded, save them and attach to the product
     if photos:
         storage_service = StorageService()
         image_urls = []
@@ -679,13 +654,12 @@ async def update_product(
                 print(f"Erreur lors de l'upload de la photo (update): {e}")
 
         if image_urls:
-            # Append images to the product
+
             product_crud.add_images(db, updated_product.id, image_urls)
-            # Refresh the product instance to include new images
+
             updated_product = product_crud.get_by_id(db, product_id)
     
     return _product_to_out(updated_product, db, request)
-
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(
@@ -704,8 +678,7 @@ async def delete_product(
             detail="Produit non trouvé"
         )
     
-    # Vérifier que l'utilisateur est le propriétaire ou admin
-    # Normaliser les IDs pour la comparaison (pour compatibilité SQLite)
+
     db_type = get_db_type(db)
     if db_type == 'sqlite':
         product_artisan_id = id_to_string(product.artisan_id)
@@ -727,7 +700,6 @@ async def delete_product(
     
     return None
 
-
 @router.delete("/{product_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product_image(
     product_id: UUID,
@@ -742,7 +714,6 @@ async def delete_product_image(
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produit non trouvé")
 
-    # Vérifier que l'utilisateur est le propriétaire ou admin
     db_type = get_db_type(db)
     product_artisan_id = id_to_string(product.artisan_id) if db_type == 'sqlite' else product.artisan_id
     current_user_id = id_to_string(current_user.id) if db_type == 'sqlite' else current_user.id
@@ -750,8 +721,6 @@ async def delete_product_image(
     if product_artisan_id != current_user_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vous n'avez pas la permission de modifier ce produit")
 
-    # Trouver l'image
-    # Gérer SQLite string ids vs UUID
     img = None
     try:
         img = db.query(ProductImage).filter(ProductImage.id == image_id).first()
@@ -764,7 +733,6 @@ async def delete_product_image(
     if not img:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image non trouvée")
 
-    # Vérifier qu'elle appartient bien au produit
     img_product_id = img.product_id
     if db_type == 'sqlite':
         img_product_id = id_to_string(img_product_id)
@@ -773,19 +741,16 @@ async def delete_product_image(
     if str(img_product_id) != str(prod_id_comp):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cette image n'appartient pas à ce produit")
 
-    # Supprimer le fichier physique
     try:
         storage_service = StorageService()
         storage_service.delete_file(img.image_url)
     except Exception as e:
         print(f"Erreur lors de la suppression du fichier image: {e}")
 
-    # Supprimer l'enregistrement DB
     db.delete(img)
     db.commit()
 
     return None
-
 
 @router.get("/{product_id}/similar", response_model=ProductListResponse)
 async def get_similar_products(
@@ -800,7 +765,7 @@ async def get_similar_products(
     - **product_id**: UUID du produit
     - **limit**: Nombre de produits similaires à retourner (défaut: 3, max: 20)
     """
-    # Vérifier que le produit existe
+
     product = product_crud.get_by_id(db, product_id)
     if not product:
         raise HTTPException(
@@ -808,14 +773,14 @@ async def get_similar_products(
             detail="Produit non trouvé"
         )
     
-    # Récupérer les produits similaires
+
     similar_products = product_crud.get_similar_products(
         db,
         product_id=product_id,
         limit=limit
     )
     
-    # Return full product objects with request so images URLs are absolute
+
     items = [_product_to_out(product, db, request) for product in similar_products]
     
     return ProductListResponse(
@@ -825,7 +790,6 @@ async def get_similar_products(
         pages=1,
         limit=limit
     )
-
 
 @router.post("/{product_id}/bulk-order-request", response_model=BulkOrderRequestOut, status_code=status.HTTP_201_CREATED)
 async def create_bulk_order_request(
@@ -839,7 +803,7 @@ async def create_bulk_order_request(
     - **product_id**: UUID du produit
     - Calcule automatiquement les remises progressives selon la quantité
     """
-    # Vérifier que le produit existe
+
     product = product_crud.get_by_id(db, product_id)
     if not product:
         raise HTTPException(
@@ -847,14 +811,14 @@ async def create_bulk_order_request(
             detail="Produit non trouvé"
         )
     
-    # Vérifier que le produit autorise les commandes en gros
+
     if not product.made_to_order:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ce produit n'accepte pas les commandes en gros"
         )
     
-    # Vérifier la quantité minimum
+
     min_quantity = product.min_bulk_quantity if product.min_bulk_quantity else 5
     if bulk_order.quantity < min_quantity:
         raise HTTPException(
@@ -862,7 +826,7 @@ async def create_bulk_order_request(
             detail=f"La quantité minimum pour une commande en gros est de {min_quantity} pièces"
         )
     
-    # Créer la demande de commande en gros
+
     bulk_order_request = bulk_order_crud.create(
         db,
         product_id=product_id,

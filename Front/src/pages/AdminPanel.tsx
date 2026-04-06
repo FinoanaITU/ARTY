@@ -33,7 +33,7 @@ const AdminPanel = () => {
   const [payoutsLoading, setPayoutsLoading] = useState(false);
   const [payoutsError, setPayoutsError] = useState<string | null>(null);
 
-  // States pour les données réelles (remplace les mocks)
+  
   const [adminStats, setAdminStats] = useState({
     totalProductSales: 0,
     totalWorkshopSales: 0,
@@ -150,7 +150,7 @@ const AdminPanel = () => {
     }
   };
 
-  // Chargement des stats globales
+  
   const loadAdminStats = async () => {
     try {
       setStatsLoading(true);
@@ -180,7 +180,7 @@ const AdminPanel = () => {
     }
   };
 
-  // Chargement des ateliers à venir
+  
   const loadUpcomingWorkshops = async () => {
     try {
       setWorkshopsLoading(true);
@@ -190,7 +190,7 @@ const AdminPanel = () => {
         status: 'published'
       });
 
-      // Transformer et filtrer pour obtenir les 3 prochains ateliers
+      
       const now = new Date();
       const items = response.items || [];
       const workshops = items
@@ -222,16 +222,16 @@ const AdminPanel = () => {
     }
   };
 
-  // Chargement des artisans
+  
   const loadArtisans = async () => {
     try {
       setArtisansLoading(true);
-      // Note: Pas d'endpoint /users pour lister les utilisateurs
-      // On utilise les données analytics pour l'instant
+      
+      
       const artisansData = await apiService.getAdminArtisanStats();
       
-      // Pour l'instant, on affiche un message indiquant le nombre total
-      // En attendant un vrai endpoint de listing
+      
+      
       setRecentArtisans([
         {
           id: 'summary',
@@ -252,7 +252,7 @@ const AdminPanel = () => {
     }
   };
 
-  // Chargement des commandes
+  
   const loadOrders = async () => {
     try {
       setOrdersLoading(true);
@@ -265,7 +265,7 @@ const AdminPanel = () => {
       const orders = items.map((order: any) => ({
         id: order.id,
         buyer: order.user_name || 'N/A',
-        artisan: 'N/A', // Les items contiennent l'artisan, pas la commande directement
+        artisan: 'N/A', 
         amount: order.total_amount || 0,
         date: order.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
         status: order.status || 'pending',
@@ -281,13 +281,13 @@ const AdminPanel = () => {
     }
   };
 
-  // Handlers pour les actions artisans
+  
   const handleViewArtisanProfile = (artisanId: string) => {
     window.location.href = `/artisans/${artisanId}`;
   };
 
   const handleManageArtisanProducts = (artisanId: string) => {
-    // Future: navigate to admin products page filtered by artisan
+    
     toast({
       title: 'Fonction à venir',
       description: 'Gestion des produits artisan en cours de développement'
@@ -421,16 +421,10 @@ const AdminPanel = () => {
 
             <TabsContent value="overview">
               <div className="grid md:grid-cols-2 gap-6 mb-6">
-                {/* Section Activité récente commentée - en attente d'un endpoint API */}
-                {/* <Card>
-                  <CardHeader>
-                    <CardTitle>Activité récente</CardTitle>
-                    <CardDescription>Les dernières actions sur la plateforme</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-500 text-sm">Fonctionnalité en cours de développement</p>
-                  </CardContent>
-                </Card> */}
+                {}
+                {
+
+}
 
                 <Card className="md:col-span-2">
                   <CardHeader>
@@ -469,7 +463,7 @@ const AdminPanel = () => {
                 </Card>
               </div>
               
-              {/* Calendrier des ateliers à venir */}
+              {}
               <WorkshopCalendar upcomingWorkshops={upcomingWorkshops} />
             </TabsContent>
 

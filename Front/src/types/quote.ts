@@ -50,7 +50,7 @@ export interface Quote {
   estimated_price?: number | null;
   final_price?: number | null;
   admin_notes?: string | null;
-  requested_at: string; // ISO datetime
+  requested_at: string; 
   quoted_at?: string | null;
   responded_at?: string | null;
   completed_at?: string | null;
@@ -77,9 +77,9 @@ export interface QuoteStats {
   approved: number;
   rejected: number;
   completed: number;
-  approval_rate?: number; // percentage (0-100)
-  conversion_rate?: number; // percentage (0-100)
-  average_response_time?: number; // hours
+  approval_rate?: number; 
+  conversion_rate?: number; 
+  average_response_time?: number; 
   total_value?: number;
 }
 

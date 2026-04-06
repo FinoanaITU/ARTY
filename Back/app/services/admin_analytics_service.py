@@ -14,7 +14,6 @@ from app.models.workshop import Workshop, WorkshopBooking
 from app.models.order import Order, OrderItem
 from app.core.database import get_db
 
-
 class AdminAnalyticsService:
     """Service for admin analytics and statistics"""
     
@@ -30,7 +29,7 @@ class AdminAnalyticsService:
         Get platform-wide overview statistics.
         Returns counts for users, artisans, products, workshops, orders, and validations.
         """
-        # Count total users by role
+
         total_users = self.db.query(func.count(User.id)).scalar() or 0
         total_buyers = self.db.query(func.count(User.id)).filter(
             User.role == UserRole.BUYER
@@ -39,12 +38,12 @@ class AdminAnalyticsService:
             User.role == UserRole.ADMIN
         ).scalar() or 0
         
-        # Artisans stats
+
         total_artisans = self.db.query(func.count(User.id)).filter(
             User.role == UserRole.ARTISAN
         ).scalar() or 0
         
-        # Active artisans (avec profil publié)
+
         active_artisans = self.db.query(func.count(distinct(User.id))).join(
             ArtisanProfile, ArtisanProfile.user_id == User.id
         ).filter(
@@ -52,7 +51,7 @@ class AdminAnalyticsService:
             ArtisanProfile.status == ProfileStatus.PUBLISHED
         ).scalar() or 0
         
-        # Pending artisans (avec profil en attente)
+
         pending_artisans = self.db.query(func.count(User.id)).join(
             ArtisanProfile, ArtisanProfile.user_id == User.id
         ).filter(
@@ -60,7 +59,7 @@ class AdminAnalyticsService:
             ArtisanProfile.status == ProfileStatus.PENDING_APPROVAL
         ).scalar() or 0
         
-        # Products stats
+
         total_products = self.db.query(func.count(Product.id)).scalar() or 0
         published_products = self.db.query(func.count(Product.id)).filter(
             Product.status == "published"
@@ -69,7 +68,7 @@ class AdminAnalyticsService:
             Product.status == "pending"
         ).scalar() or 0
         
-        # Workshops stats
+
         total_workshops = self.db.query(func.count(Workshop.id)).scalar() or 0
         published_workshops = self.db.query(func.count(Workshop.id)).filter(
             Workshop.status == "published"
@@ -78,11 +77,11 @@ class AdminAnalyticsService:
             Workshop.status == "pending"
         ).scalar() or 0
         
-        # Orders and Bookings
+
         total_orders = self.db.query(func.count(Order.id)).scalar() or 0
         total_bookings = self.db.query(func.count(WorkshopBooking.id)).scalar() or 0
         
-        # Pending validations count
+
         pending_validations = pending_artisans + pending_products + pending_workshops
         
         return {
@@ -126,7 +125,7 @@ class AdminAnalyticsService:
             start_date: Custom start date (optional)
             end_date: Custom end date (optional)
         """
-        # Calculate date range
+
         if start_date and end_date:
             date_filter_start = start_date
             date_filter_end = end_date
@@ -144,18 +143,18 @@ class AdminAnalyticsService:
             elif period == "year":
                 date_filter_start = today - timedelta(days=365)
                 date_filter_end = today
-            else:  # "all"
+            else:
                 date_filter_start = None
                 date_filter_end = None
         
-        # Base query for orders
+
         order_query = self.db.query(Order).filter(
             Order.payment_status.in_(["paid", "completed"])
         )
         
         if date_filter_start and date_filter_end:
             if self._is_sqlite():
-                # SQLite date comparison
+
                 order_query = order_query.filter(
                     func.date(Order.created_at) >= date_filter_start,
                     func.date(Order.created_at) <= date_filter_end
@@ -166,14 +165,14 @@ class AdminAnalyticsService:
                     cast(Order.created_at, Date) <= date_filter_end
                 )
         
-        # Calculate total revenue from orders
+
         total_product_revenue = self.db.query(
             func.coalesce(func.sum(Order.total_amount), 0)
         ).filter(
             Order.id.in_([o.id for o in order_query.all()])
         ).scalar() or Decimal('0')
         
-        # Base query for workshop bookings
+
         booking_query = self.db.query(WorkshopBooking).filter(
             WorkshopBooking.payment_status.in_(["paid", "completed"])
         )
@@ -190,25 +189,24 @@ class AdminAnalyticsService:
                     cast(WorkshopBooking.created_at, Date) <= date_filter_end
                 )
         
-        # Calculate workshop revenue
+
         total_workshop_revenue = self.db.query(
             func.coalesce(func.sum(WorkshopBooking.total_price), 0)
         ).filter(
             WorkshopBooking.id.in_([b.id for b in booking_query.all()])
         ).scalar() or Decimal('0')
         
-        # Calculate total revenue
+
         total_revenue = float(total_product_revenue) + float(total_workshop_revenue)
         
-        # Calculate commission (assumption: 15% for Artizaho artisans, 20% for Uber)
-        # For now, we'll use a simple 15% average
+
         commission_rate = 0.15
         total_commission = total_revenue * commission_rate
         
-        # Revenue by category (top 5)
+
         revenue_by_category = []
         
-        # Get daily breakdown if applicable
+
         daily_breakdown = []
         if period in ["week", "month"] and date_filter_start and date_filter_end:
             daily_breakdown = self._get_daily_revenue_breakdown(
@@ -238,7 +236,7 @@ class AdminAnalyticsService:
         current = start_date
         
         while current <= end_date:
-            # Orders for this day
+
             if self._is_sqlite():
                 daily_orders_revenue = self.db.query(
                     func.coalesce(func.sum(Order.total_amount), 0)
@@ -283,15 +281,15 @@ class AdminAnalyticsService:
     
     async def get_artisan_stats(self) -> Dict[str, Any]:
         """Get comprehensive artisan statistics"""
-        # Total artisans
+
         total_artisans = self.db.query(func.count(User.id)).filter(
             User.role == UserRole.ARTISAN
         ).scalar() or 0
         
-        # Active artisans (with sales in last 30 days)
+
         thirty_days_ago = datetime.now() - timedelta(days=30)
         
-        # Artisans with product orders (last 30 days)
+
         artisans_with_orders = self.db.query(
             func.count(distinct(OrderItem.artisan_id))
         ).join(
@@ -300,7 +298,7 @@ class AdminAnalyticsService:
             Order.created_at >= thirty_days_ago
         ).scalar() or 0
         
-        # Artisans with workshop bookings (last 30 days)
+
         artisans_with_bookings = self.db.query(
             func.count(distinct(Workshop.artisan_id))
         ).join(
@@ -309,11 +307,10 @@ class AdminAnalyticsService:
             WorkshopBooking.created_at >= thirty_days_ago
         ).scalar() or 0
         
-        # Active = artisans with orders OR bookings (mais peut y avoir chevauchement)
-        # Pour simplifier, on prend le max ou on somme (peut surestimer)
+
         active_artisans = max(artisans_with_orders, artisans_with_bookings)
         
-        # Pending approval (via ArtisanProfile)
+
         pending_approval = self.db.query(func.count(User.id)).join(
             ArtisanProfile, ArtisanProfile.user_id == User.id
         ).filter(
@@ -321,7 +318,7 @@ class AdminAnalyticsService:
             ArtisanProfile.status == ProfileStatus.PENDING_APPROVAL
         ).scalar() or 0
         
-        # By specialty (top 5) - utiliser main_specialty depuis ArtisanProfile
+
         by_specialty = self.db.query(
             ArtisanProfile.main_specialty,
             func.count(User.id).label('count')
@@ -339,7 +336,7 @@ class AdminAnalyticsService:
             if specialty:
                 specialty_stats.append({"specialty": specialty, "count": count})
         
-        # By region (top 5) - utiliser region depuis ArtisanProfile
+
         by_region = self.db.query(
             ArtisanProfile.region,
             func.count(User.id).label('count')
@@ -354,14 +351,14 @@ class AdminAnalyticsService:
         
         region_stats = [{"region": region, "count": count} for region, count in by_region if region]
         
-        # New this month
+
         first_day_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         new_this_month = self.db.query(func.count(User.id)).filter(
             User.role == UserRole.ARTISAN,
             User.created_at >= first_day_of_month
         ).scalar() or 0
         
-        # Top performers by sales (top 10)
+
         top_performers = self._get_top_artisans_by_sales(limit=10)
         
         return {
@@ -378,7 +375,7 @@ class AdminAnalyticsService:
         """Get top artisans ranked by sales revenue"""
         artisan_revenues = {}
         
-        # Get revenue from product orders - query directly
+
         product_sales = self.db.query(
             OrderItem.artisan_id,
             func.sum(OrderItem.total_price).label('revenue')
@@ -388,11 +385,11 @@ class AdminAnalyticsService:
             Order.payment_status.in_(["paid", "completed"])
         ).group_by(OrderItem.artisan_id).all()
         
-        # Add product sales to dict
+
         for artisan_id, revenue in product_sales:
             artisan_revenues[artisan_id] = float(revenue or 0)
         
-        # Get revenue from workshop bookings - query directly
+
         workshop_sales = self.db.query(
             Workshop.artisan_id,
             func.sum(WorkshopBooking.total_price).label('revenue')
@@ -402,21 +399,21 @@ class AdminAnalyticsService:
             WorkshopBooking.payment_status.in_(["paid", "completed"])
         ).group_by(Workshop.artisan_id).all()
         
-        # Add workshop sales to dict
+
         for artisan_id, revenue in workshop_sales:
             if artisan_id in artisan_revenues:
                 artisan_revenues[artisan_id] += float(revenue or 0)
             else:
                 artisan_revenues[artisan_id] = float(revenue or 0)
         
-        # Sort by revenue
+
         sorted_artisans = sorted(
             artisan_revenues.items(),
             key=lambda x: x[1],
             reverse=True
         )[:limit]
         
-        # Get artisan details
+
         top_performers = []
         for artisan_id, revenue in sorted_artisans:
             artisan = self.db.query(User).filter(User.id == artisan_id).first()
@@ -436,7 +433,7 @@ class AdminAnalyticsService:
         Note: This requires view/click tracking which might not be fully implemented yet.
         Returns estimated/placeholder values where tracking is not available.
         """
-        # Product conversions
+
         total_products = self.db.query(func.count(Product.id)).filter(
             Product.status == "published"
         ).scalar() or 0
@@ -448,7 +445,7 @@ class AdminAnalyticsService:
         
         products_with_sales = self.db.query(func.count(distinct(OrderItem.product_id))).scalar() or 0
         
-        # Workshop conversions
+
         total_workshops = self.db.query(func.count(Workshop.id)).filter(
             Workshop.status == "published"
         ).scalar() or 0
@@ -457,7 +454,7 @@ class AdminAnalyticsService:
             func.count(distinct(WorkshopBooking.workshop_id))
         ).scalar() or 0
         
-        # Calculate rates (avoid division by zero)
+
         product_view_to_sale_rate = (
             (products_with_sales / products_with_views * 100)
             if products_with_views > 0 else 0
@@ -468,7 +465,7 @@ class AdminAnalyticsService:
             if total_workshops > 0 else 0
         )
         
-        # User conversions
+
         total_users = self.db.query(func.count(User.id)).filter(
             User.role == UserRole.BUYER
         ).scalar() or 0
@@ -492,7 +489,7 @@ class AdminAnalyticsService:
     
     async def get_user_behavior_stats(self) -> Dict[str, Any]:
         """Get user behavior and engagement statistics"""
-        # Average Order Value (AOV)
+
         total_revenue = self.db.query(
             func.coalesce(func.sum(Order.total_amount), 0)
         ).filter(
@@ -505,7 +502,7 @@ class AdminAnalyticsService:
         
         avg_order_value = float(total_revenue) / total_orders if total_orders > 0 else 0
         
-        # Average cart size (items per order)
+
         total_items = self.db.query(
             func.coalesce(func.sum(OrderItem.quantity), 0)
         ).join(
@@ -516,7 +513,7 @@ class AdminAnalyticsService:
         
         avg_cart_size = total_items / total_orders if total_orders > 0 else 0
         
-        # Repeat customers
+
         repeat_customers = self.db.query(Order.user_id).filter(
             Order.payment_status.in_(["paid", "completed"])
         ).group_by(Order.user_id).having(
@@ -534,7 +531,7 @@ class AdminAnalyticsService:
             if total_customers > 0 else 0
         )
         
-        # Payment method preferences
+
         payment_methods = self.db.query(
             Order.payment_status,
             func.count(Order.id).label('count')
@@ -550,7 +547,6 @@ class AdminAnalyticsService:
             "repeat_customers": repeat_customers,
             "payment_method_stats": payment_stats
         }
-
 
 async def get_analytics_service(db: Session = None) -> AdminAnalyticsService:
     """Get analytics service instance"""

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Script pour créer des ateliers sur inscription avec des sessions programmées
 """
@@ -9,13 +9,11 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import uuid
 
-# Add the Back directory to the path
 sys.path.append('/app')
 
 from app.core.database import SessionLocal
 from app.models.workshop import Workshop, WorkshopSession
 from app.models.user import User
-
 
 def create_inscription_workshops():
     """Créer des ateliers sur inscription avec sessions programmées"""
@@ -23,11 +21,11 @@ def create_inscription_workshops():
     db = SessionLocal()
     
     try:
-        # Récupérer les artisans existants
+
         artisans = db.query(User).filter(User.role == 'artisan').all()
         if not artisans:
             print("Aucun artisan trouvé. Création d'un artisan test...")
-            # Créer un artisan pour les tests
+
             artisan = User(
                 id=uuid.uuid4(),
                 username="nivo_andriamana",
@@ -41,7 +39,7 @@ def create_inscription_workshops():
         
         print(f"Artisans trouvés : {[a.name for a in artisans]}")
         
-        # Ateliers sur inscription à créer
+
         inscription_workshops_data = [
             {
                 "title": "Poterie Traditionnelle et Céramique Malgache",
@@ -70,7 +68,7 @@ Niveau débutant, aucune expérience préalable requise. L'atelier se déroule d
                 "base_price": Decimal("35000"),
                 "min_participants": 4,
                 "max_participants": 8,
-                "duration_minutes": 300,  # 5 heures
+                "duration_minutes": 300,
                 "location_type": "physical",
                 "address": "Atelier Céramique, Quartier Andohalo, Antananarivo",
                 "room_details": "Atelier équipé de 8 tours de potier traditionnels, four de cuisson, espace de séchage",
@@ -97,17 +95,17 @@ Niveau débutant, aucune expérience préalable requise. L'atelier se déroule d
                 "tags": ["poterie", "céramique", "tradition", "artisanat", "malgache"],
                 "sessions": [
                     {
-                        "start_datetime": datetime.now() + timedelta(days=7, hours=14),  # Samedi prochain 14h
+                        "start_datetime": datetime.now() + timedelta(days=7, hours=14),
                         "participants": 3,
                         "price": Decimal("35000")
                     },
                     {
-                        "start_datetime": datetime.now() + timedelta(days=14, hours=9),  # Samedi suivant 9h
+                        "start_datetime": datetime.now() + timedelta(days=14, hours=9),
                         "participants": 6,
                         "price": Decimal("35000")
                     },
                     {
-                        "start_datetime": datetime.now() + timedelta(days=21, hours=14),  # Samedi d'après 14h
+                        "start_datetime": datetime.now() + timedelta(days=21, hours=14),
                         "participants": 2,
                         "price": Decimal("35000")
                     }
@@ -146,7 +144,7 @@ Repartez avec vos créations et les techniques pour continuer à la maison !""",
                 "base_price": Decimal("22000"),
                 "min_participants": 5,
                 "max_participants": 12,
-                "duration_minutes": 180,  # 3 heures
+                "duration_minutes": 180,
                 "location_type": "physical",
                 "address": "Atelier Bijouterie, Marché Artisanal La Digue, Antananarivo",
                 "room_details": "Espace de travail avec établis individuels, outils de précision, microscopes, système d'éclairage optimal",
@@ -173,17 +171,17 @@ Repartez avec vos créations et les techniques pour continuer à la maison !""",
                 "tags": ["bijouterie", "pierres", "artisanat", "création", "malgache"],
                 "sessions": [
                     {
-                        "start_datetime": datetime.now() + timedelta(days=5, hours=10),  # Jeudi prochain 10h
+                        "start_datetime": datetime.now() + timedelta(days=5, hours=10),
                         "participants": 8,
                         "price": Decimal("22000")
                     },
                     {
-                        "start_datetime": datetime.now() + timedelta(days=12, hours=14),  # Jeudi suivant 14h
+                        "start_datetime": datetime.now() + timedelta(days=12, hours=14),
                         "participants": 4,
                         "price": Decimal("22000")
                     },
                     {
-                        "start_datetime": datetime.now() + timedelta(days=19, hours=10),  # Jeudi d'après 10h
+                        "start_datetime": datetime.now() + timedelta(days=19, hours=10),
                         "participants": 7,
                         "price": Decimal("22000")
                     }
@@ -227,7 +225,7 @@ Cet atelier s'adresse aux passionnés de textile et de culture malgache. Aucune 
                 "base_price": Decimal("45000"),
                 "min_participants": 3,
                 "max_participants": 6,
-                "duration_minutes": 360,  # 6 heures
+                "duration_minutes": 360,
                 "location_type": "physical", 
                 "address": "Atelier Textile Traditionnel, Ambositra",
                 "room_details": "Atelier authentique avec 6 métiers à tisser traditionnels, espace de préparation des fils, zone de teinture naturelle",
@@ -259,12 +257,12 @@ Cet atelier s'adresse aux passionnés de textile et de culture malgache. Aucune 
                 "tags": ["tissage", "lamba", "soie", "tradition", "textile"],
                 "sessions": [
                     {
-                        "start_datetime": datetime.now() + timedelta(days=9, hours=8),  # Lundi suivant 8h
+                        "start_datetime": datetime.now() + timedelta(days=9, hours=8),
                         "participants": 2,
                         "price": Decimal("45000")
                     },
                     {
-                        "start_datetime": datetime.now() + timedelta(days=16, hours=8),  # Lundi d'après 8h  
+                        "start_datetime": datetime.now() + timedelta(days=16, hours=8),
                         "participants": 4,
                         "price": Decimal("45000")
                     }
@@ -312,7 +310,7 @@ Atelier adapté aux débutants motivés et aux intermédiaires souhaitant perfec
                 "base_price": Decimal("28000"),
                 "min_participants": 4,
                 "max_participants": 10,
-                "duration_minutes": 240,  # 4 heures
+                "duration_minutes": 240,
                 "location_type": "physical",
                 "address": "Atelier Sculpture, Village Artisanal Antanifotsy",
                 "room_details": "Atelier spacieux avec établis individuels, système d'aspiration, rangement outils sécurisé, espace exposition",
@@ -345,17 +343,17 @@ Atelier adapté aux débutants motivés et aux intermédiaires souhaitant perfec
                 "tags": ["sculpture", "bois", "masque", "totem", "artisanat"],
                 "sessions": [
                     {
-                        "start_datetime": datetime.now() + timedelta(days=6, hours=9),  # Vendredi prochain 9h
+                        "start_datetime": datetime.now() + timedelta(days=6, hours=9),
                         "participants": 7,
                         "price": Decimal("28000")
                     },
                     {
-                        "start_datetime": datetime.now() + timedelta(days=13, hours=13),  # Vendredi suivant 13h
+                        "start_datetime": datetime.now() + timedelta(days=13, hours=13),
                         "participants": 5,
                         "price": Decimal("28000")
                     },
                     {
-                        "start_datetime": datetime.now() + timedelta(days=20, hours=9),  # Vendredi d'après 9h
+                        "start_datetime": datetime.now() + timedelta(days=20, hours=9),
                         "participants": 3,
                         "price": Decimal("28000")
                     }
@@ -363,15 +361,15 @@ Atelier adapté aux débutants motivés et aux intermédiaires souhaitant perfec
             }
         ]
         
-        # Créer les ateliers et sessions
+
         created_workshops = []
         
         for workshop_data in inscription_workshops_data:
-            # Extraire les sessions avant de créer l'atelier
+
             sessions_data = workshop_data.pop("sessions")
             artisan_obj = workshop_data.pop("artisan")
             
-            # Créer l'atelier
+
             workshop = Workshop(
                 id=uuid.uuid4(),
                 artisan_id=artisan_obj.id,
@@ -381,9 +379,9 @@ Atelier adapté aux débutants motivés et aux intermédiaires souhaitant perfec
             )
             
             db.add(workshop)
-            db.flush()  # Pour obtenir l'ID
+            db.flush()
             
-            # Créer les sessions
+
             for session_data in sessions_data:
                 participants = session_data.pop("participants", 0)
                 
@@ -403,7 +401,7 @@ Atelier adapté aux débutants motivés et aux intermédiaires souhaitant perfec
             
             created_workshops.append(workshop)
         
-        # Sauvegarder
+
         db.commit()
         
         print(f"✅ Créé {len(created_workshops)} ateliers sur inscription avec leurs sessions")
@@ -420,7 +418,6 @@ Atelier adapté aux débutants motivés et aux intermédiaires souhaitant perfec
         
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     success = create_inscription_workshops()

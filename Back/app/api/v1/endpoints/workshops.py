@@ -41,9 +41,6 @@ from app.core.exceptions import (
 
 router = APIRouter(prefix="/workshops", tags=["workshops"])
 
-
-# ============ PUBLIC ENDPOINTS ============
-
 @router.get("", response_model=WorkshopListResponse)
 async def list_workshops(
     db: Session = Depends(get_db),
@@ -82,7 +79,6 @@ async def list_workshops(
         limit=limit,
     )
 
-
 @router.get("/{workshop_id}", response_model=WorkshopOut)
 async def get_workshop(
     workshop_id: UUID = Path(...),
@@ -93,18 +89,17 @@ async def get_workshop(
     """
     workshop = WorkshopService.get_workshop(db, workshop_id)
     
-    # Enrichir les informations de l'instructeur depuis la relation artisan si vides
+
     if workshop.artisan:
         if not workshop.instructor_name:
             workshop.instructor_name = workshop.artisan.name
         if not workshop.instructor_image and workshop.artisan.avatar:
             workshop.instructor_image = workshop.artisan.avatar
         if not workshop.instructor_bio and hasattr(workshop.artisan, 'artisan_profile') and workshop.artisan.artisan_profile:
-            # Utiliser about ou activity_description depuis le profil artisan
+
             workshop.instructor_bio = workshop.artisan.artisan_profile.about or workshop.artisan.artisan_profile.activity_description
     
     return WorkshopOut.model_validate(workshop)
-
 
 @router.get("/{workshop_id}/availability", response_model=AvailabilityResponse)
 async def get_workshop_availability(
@@ -124,7 +119,7 @@ async def get_workshop_availability(
     ]
     
     booked_dates = [s.start_datetime for s in sessions]
-    unavailable_dates = []  # Could be extended based on artisan availability
+    unavailable_dates = []
     
     return AvailabilityResponse(
         workshop_id=workshop_id,
@@ -132,7 +127,6 @@ async def get_workshop_availability(
         booked_dates=booked_dates,
         unavailable_dates=unavailable_dates,
     )
-
 
 @router.get("/{workshop_id}/artisan-unavailability")
 async def get_artisan_unavailability(
@@ -142,10 +136,10 @@ async def get_artisan_unavailability(
     """
     Récupérer les indisponibilités de l'artisan pour un atelier donné
     """
-    # Récupérer l'atelier pour obtenir l'ID de l'artisan
+
     workshop = WorkshopService.get_workshop(db, workshop_id)
     
-    # Récupérer les indisponibilités de l'artisan
+
     unavailabilities = db.query(ArtisanUnavailability).filter(
         ArtisanUnavailability.artisan_id == workshop.artisan_id,
         ArtisanUnavailability.status == "approved"
@@ -153,12 +147,9 @@ async def get_artisan_unavailability(
     
     return [UnavailabilityOut.model_validate(u) for u in unavailabilities]
 
-
-# ============ ARTISAN ENDPOINTS ============
-
 @router.post("", response_model=WorkshopOut, status_code=201)
 async def create_workshop(
-    # Données du formulaire
+
     title: str = Form(...),
     description: str = Form(...),
     short_description: Optional[str] = Form(None),
@@ -172,13 +163,13 @@ async def create_workshop(
     duration_minutes: int = Form(...),
     location: str = Form(...),
     address: Optional[str] = Form(None),
-    materials_included: Optional[str] = Form(None),  # JSON string
-    materials_to_bring: Optional[str] = Form(None),  # JSON string
+    materials_included: Optional[str] = Form(None),
+    materials_to_bring: Optional[str] = Form(None),
     prerequisites: Optional[str] = Form(None),
-    what_you_will_learn: Optional[str] = Form(None),  # JSON string
-    tags: Optional[str] = Form(None),  # JSON string
-    publish: bool = Query(False),  # Nouveau paramètre pour publication
-    # Photos
+    what_you_will_learn: Optional[str] = Form(None),
+    tags: Optional[str] = Form(None),
+    publish: bool = Query(False),
+
     photos: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -190,7 +181,7 @@ async def create_workshop(
     if current_user.role.value != "artisan":
         raise PermissionDenied("Only artisans can create workshops")
     
-    # Parse les champs JSON
+
     try:
         materials_included_list = json.loads(materials_included) if materials_included else None
         materials_to_bring_list = json.loads(materials_to_bring) if materials_to_bring else None
@@ -199,12 +190,12 @@ async def create_workshop(
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON format in array fields")
     
-    # Upload des photos
+
     image_urls = []
     gallery_images = []
     if photos:
         storage_service = StorageService()
-        for i, photo_file in enumerate(photos[:5]):  # Max 5 photos
+        for i, photo_file in enumerate(photos[:5]):
             try:
                 photo_url = await storage_service.upload_file(
                     file=photo_file,
@@ -212,13 +203,13 @@ async def create_workshop(
                     allowed_extensions=["jpg", "jpeg", "png", "webp"]
                 )
                 if i == 0:
-                    image_urls.append(photo_url)  # Première photo comme featured
+                    image_urls.append(photo_url)
                 else:
                     gallery_images.append(photo_url)
             except Exception as e:
                 print(f"Erreur lors de l'upload de la photo: {e}")
     
-    # Créer l'objet WorkshopCreate
+
     workshop_create = WorkshopCreate(
         title=title,
         description=description,
@@ -251,11 +242,10 @@ async def create_workshop(
     
     return WorkshopOut.model_validate(workshop)
 
-
 @router.post("/json", response_model=WorkshopOut, status_code=201)
 async def create_workshop_json(
     workshop_create: WorkshopCreate,
-    publish: bool = Query(False),  # Nouveau paramètre pour publication
+    publish: bool = Query(False),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -274,7 +264,6 @@ async def create_workshop_json(
     )
     
     return WorkshopOut.model_validate(workshop)
-
 
 @router.patch("/{workshop_id}", response_model=WorkshopOut)
 async def update_workshop(
@@ -296,7 +285,6 @@ async def update_workshop(
     
     return WorkshopOut.model_validate(workshop)
 
-
 @router.delete("/{workshop_id}", status_code=204)
 async def delete_workshop(
     workshop_id: UUID = Path(...),
@@ -312,7 +300,6 @@ async def delete_workshop(
         workshop_id=workshop_id,
         artisan_id=current_user.id,
     )
-
 
 @router.post("/{workshop_id}/publish", response_model=WorkshopOut)
 async def publish_workshop(
@@ -332,7 +319,6 @@ async def publish_workshop(
     
     return WorkshopOut.model_validate(workshop)
 
-
 @router.post("/{workshop_id}/unpublish", response_model=WorkshopOut)
 async def unpublish_workshop(
     workshop_id: UUID = Path(...),
@@ -351,7 +337,6 @@ async def unpublish_workshop(
     
     return WorkshopOut.model_validate(workshop)
 
-
 @router.post("/{workshop_id}/archive", response_model=WorkshopOut)
 async def archive_workshop(
     workshop_id: UUID = Path(...),
@@ -369,9 +354,6 @@ async def archive_workshop(
     )
     
     return WorkshopOut.model_validate(workshop)
-
-
-# ============ SESSION MANAGEMENT ============
 
 @router.post("/{workshop_id}/sessions", response_model=WorkshopSessionOut, status_code=201)
 async def create_session(
@@ -393,7 +375,6 @@ async def create_session(
     
     return WorkshopSessionOut.model_validate(session)
 
-
 @router.get("/{workshop_id}/sessions", response_model=list[WorkshopSessionOut])
 async def list_workshop_sessions(
     workshop_id: UUID = Path(...),
@@ -404,7 +385,6 @@ async def list_workshop_sessions(
     """
     sessions = WorkshopService.list_sessions(db, workshop_id)
     return [WorkshopSessionOut.model_validate(s) for s in sessions]
-
 
 @router.delete("/{workshop_id}/sessions/{session_id}", status_code=204)
 async def delete_session(
@@ -422,9 +402,6 @@ async def delete_session(
         session_id=session_id,
         artisan_id=current_user.id,
     )
-
-
-# ============ BOOKING ENDPOINTS ============
 
 @router.post("/{workshop_id}/book", response_model=BookingConfirmation, status_code=201)
 async def create_booking(
@@ -456,7 +433,6 @@ async def create_booking(
         created_at=booking.created_at,
     )
 
-
 @router.get("/bookings/user", response_model=list[WorkshopBookingOut])
 async def list_user_bookings(
     db: Session = Depends(get_db),
@@ -475,7 +451,6 @@ async def list_user_bookings(
     )
     
     return [WorkshopBookingOut.model_validate(b) for b in bookings]
-
 
 @router.get("/{workshop_id}/bookings", response_model=list[WorkshopBookingOut])
 async def list_workshop_bookings(
@@ -499,7 +474,6 @@ async def list_workshop_bookings(
     
     return [WorkshopBookingOut.model_validate(b) for b in bookings]
 
-
 @router.post("/bookings/{booking_id}/cancel", response_model=WorkshopBookingOut)
 async def cancel_booking(
     booking_id: UUID = Path(...),
@@ -517,7 +491,6 @@ async def cancel_booking(
     )
     
     return WorkshopBookingOut.model_validate(booking)
-
 
 @router.post("/bookings/{booking_id}/confirm", response_model=WorkshopBookingOut)
 async def confirm_booking(
@@ -537,7 +510,6 @@ async def confirm_booking(
     
     return WorkshopBookingOut.model_validate(booking)
 
-
 @router.get("/{workshop_id}/time-slots")
 async def get_workshop_time_slots(
     workshop_id: UUID = Path(...),
@@ -550,7 +522,7 @@ async def get_workshop_time_slots(
     from datetime import datetime
     from app.schemas.workshop_time_slot import TimeSlotSummary, WorkshopTimeSlotOut
     
-    # Parser la date depuis le paramètre
+
     if date_param:
         try:
             target_date = datetime.strptime(date_param, "%Y-%m-%d").date()
@@ -560,13 +532,13 @@ async def get_workshop_time_slots(
         from datetime import date as date_type
         target_date = date_type.today()
     
-    # Récupérer les créneaux depuis la base de données
+
     time_slots = db.query(WorkshopTimeSlot).filter(
         WorkshopTimeSlot.workshop_id == workshop_id,
         WorkshopTimeSlot.date == target_date
     ).order_by(WorkshopTimeSlot.start_time).all()
     
-    # Convertir au format attendu par le frontend
+
     result = []
     for slot in time_slots:
         slot_out = WorkshopTimeSlotOut.model_validate(slot)
@@ -574,9 +546,6 @@ async def get_workshop_time_slots(
         result.append(summary.model_dump())
     
     return result
-
-
-# ============ ATELIERS SUR INSCRIPTION ============
 
 @router.get("/inscription/upcoming", response_model=List[dict])
 async def get_upcoming_inscription_workshops(
@@ -591,7 +560,7 @@ async def get_upcoming_inscription_workshops(
     from sqlalchemy import and_
     from datetime import datetime
     
-    # Récupérer les ateliers sur inscription avec leurs sessions futures
+
     query = (
         db.query(Workshop, WorkshopSession)
         .join(WorkshopSession, Workshop.id == WorkshopSession.workshop_id)
@@ -610,11 +579,11 @@ async def get_upcoming_inscription_workshops(
     
     results = query.all()
     
-    # Grouper par atelier
+
     workshops_data = {}
     for workshop, session in results:
         if workshop.id not in workshops_data:
-            # Récupérer l'artisan
+
             artisan = db.query(User).filter(User.id == workshop.artisan_id).first()
             
             workshops_data[workshop.id] = {
@@ -642,7 +611,7 @@ async def get_upcoming_inscription_workshops(
                 "sessions": []
             }
         
-        # Ajouter la session
+
         session_data = {
             "id": str(session.id),
             "start_datetime": session.start_datetime.isoformat(),

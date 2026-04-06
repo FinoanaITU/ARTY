@@ -8,7 +8,6 @@ from datetime import datetime
 from uuid import UUID
 from enum import Enum
 
-
 class OrderStatus(str, Enum):
     """Statuts de commande"""
     PENDING = "pending"
@@ -19,7 +18,6 @@ class OrderStatus(str, Enum):
     CANCELLED = "cancelled"
     REFUNDED = "refunded"
 
-
 class PaymentStatus(str, Enum):
     """Statuts de paiement"""
     PENDING = "pending"
@@ -27,14 +25,12 @@ class PaymentStatus(str, Enum):
     FAILED = "failed"
     REFUNDED = "refunded"
 
-
 class PaymentMethod(str, Enum):
     """Méthodes de paiement"""
     CARD = "card"
     MOBILE_MONEY = "mobile_money"
     BANK_TRANSFER = "bank_transfer"
     CASH_ON_DELIVERY = "cash_on_delivery"
-
 
 class AddressSchema(BaseModel):
     """Schéma d'adresse"""
@@ -45,7 +41,6 @@ class AddressSchema(BaseModel):
     country: str = "Madagascar"
     phone: str
 
-
 class OrderCreate(BaseModel):
     """Schéma pour créer une commande"""
     shipping_address: AddressSchema
@@ -54,12 +49,10 @@ class OrderCreate(BaseModel):
     notes: Optional[str] = None
     use_shipping_for_billing: bool = True
 
-
 class OrderStatusUpdate(BaseModel):
     """Mise à jour du statut de commande"""
     status: OrderStatus
     notes: Optional[str] = None
-
 
 class OrderItemOut(BaseModel):
     """Item de commande (output)"""
@@ -77,7 +70,6 @@ class OrderItemOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class PaymentOut(BaseModel):
     """Paiement (output)"""
     id: UUID
@@ -92,7 +84,6 @@ class PaymentOut(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class OrderOut(BaseModel):
     """Commande complète (output)"""
@@ -118,7 +109,6 @@ class OrderOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class OrderSummary(BaseModel):
     """Résumé de commande pour listes"""
     id: UUID
@@ -131,7 +121,6 @@ class OrderSummary(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class PaginatedOrdersResponse(BaseModel):
     """Réponse paginée pour liste de commandes"""

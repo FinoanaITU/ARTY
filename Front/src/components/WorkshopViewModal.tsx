@@ -68,7 +68,7 @@ export const WorkshopViewModal: React.FC<WorkshopViewModalProps> = ({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Images */}
+          {}
           {(workshop.featured_image_url || workshop.gallery_images?.length > 0) && (
             <Card>
               <CardHeader>
@@ -101,7 +101,7 @@ export const WorkshopViewModal: React.FC<WorkshopViewModalProps> = ({
             </Card>
           )}
 
-          {/* Informations principales */}
+          {}
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -171,7 +171,7 @@ export const WorkshopViewModal: React.FC<WorkshopViewModalProps> = ({
             </Card>
           </div>
 
-          {/* Description */}
+          {}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Description</CardTitle>
@@ -187,7 +187,7 @@ export const WorkshopViewModal: React.FC<WorkshopViewModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* Ce que vous apprendrez */}
+          {}
           {workshop.what_you_will_learn && workshop.what_you_will_learn.length > 0 && (
             <Card>
               <CardHeader>
@@ -209,7 +209,7 @@ export const WorkshopViewModal: React.FC<WorkshopViewModalProps> = ({
             </Card>
           )}
 
-          {/* Matériaux et prérequis */}
+          {}
           <div className="grid md:grid-cols-2 gap-6">
             {workshop.materials_included && workshop.materials_included.length > 0 && (
               <Card>
@@ -245,7 +245,7 @@ export const WorkshopViewModal: React.FC<WorkshopViewModalProps> = ({
             )}
           </div>
 
-          {/* Prérequis */}
+          {}
           {workshop.prerequisites && (
             <Card>
               <CardHeader>
@@ -257,7 +257,7 @@ export const WorkshopViewModal: React.FC<WorkshopViewModalProps> = ({
             </Card>
           )}
 
-          {/* Tags */}
+          {}
           {workshop.tags && workshop.tags.length > 0 && (
             <Card>
               <CardHeader>

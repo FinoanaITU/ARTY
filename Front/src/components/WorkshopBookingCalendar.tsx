@@ -58,7 +58,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   const { addItem } = useCart();
   const { language } = useLanguage();
 
-  // Check if a date is unavailable due to artisan's schedule
+  
   const isDateUnavailable = (date: Date) => {
     return artisanUnavailability.some(period => {
       if (period.type === 'single') {
@@ -71,7 +71,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     });
   };
 
-  // Get unavailability reason for a specific date
+  
   const getUnavailabilityReason = (date: Date) => {
     const period = artisanUnavailability.find(period => {
       if (period.type === 'single') {
@@ -85,20 +85,20 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     return period?.reason;
   };
 
-  // Get real time slots from API
+  
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingTimeSlots, setLoadingTimeSlots] = useState(false);
 
-  // Fetch time slots when date changes
+  
   useEffect(() => {
     if (selectedDate && isDateSelectable(selectedDate)) {
       setLoadingTimeSlots(true);
-      const dateStr = selectedDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+      const dateStr = selectedDate.toISOString().split('T')[0]; 
       
       fetch(`http://localhost:8000/api/v1/workshops/${workshopId}/time-slots?date=${dateStr}`)
         .then(response => response.json())
         .then(data => {
-          // Convert API response to TimeSlot format
+          
           const slots: TimeSlot[] = data.map((slot: any) => ({
             time: slot.time,
             available: slot.available,
@@ -121,7 +121,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   }, [selectedDate, workshopId]);
 
   const getAvailableTimeSlots = (date: Date): TimeSlot[] => {
-    // If artisan is unavailable, return empty array
+    
     if (isDateUnavailable(date)) {
       return [];
     }
@@ -129,7 +129,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     return timeSlots;
   };
 
-  // Get slot status and styling
+  
   const getSlotStatus = (slot: TimeSlot) => {
     if (!slot.available) {
       return {
@@ -165,7 +165,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
       };
     }
 
-    // Almost full (within 2 spots of max)
+    
     const remaining = slot.maxParticipants - slot.currentParticipants;
     return {
       status: 'almost-full',
@@ -181,7 +181,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
 
   const handleBooking = () => {
     if (selectedDate && selectedTime && selectedPriceVariation) {
-      // Check if reservation is allowed (5 business days minimum)
+      
       const reservationCheck = isReservationAllowed(selectedDate);
       
       if (!reservationCheck.allowed) {
@@ -189,12 +189,12 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
         return;
       }
 
-      // Add to cart instead of direct booking
+      
       addItem({
         type: 'workshop',
         workshopId,
         name: `Atelier - ${duration}`,
-        artisan: 'Artisan Name', // This should come from props
+        artisan: 'Artisan Name', 
         price: selectedPriceVariation.discountedPrice,
         quantity: 1,
         image: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=300&h=300&fit=crop',
@@ -216,7 +216,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     setShowCustomRequest(false);
   };
 
-  // For inscription type, show only custom request option
+  
   if (workshopType === 'inscription') {
     if (showCustomRequest) {
       return (
@@ -273,12 +273,12 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
   }
 
   const isDateAvailable = (date: Date) => {
-    // Only disable past dates for selection
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const isPastDate = date < today;
     
-    // For reservation workshops, check 5-day minimum
+    
     if (workshopType === 'reservation') {
       const reservationCheck = isReservationAllowed(date);
       if (!reservationCheck.allowed) {
@@ -289,7 +289,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     return !isPastDate;
   };
 
-  // Check if date is selectable (available for booking)
+  
   const isDateSelectable = (date: Date) => {
     const day = date.getDay();
     const isWeekend = day === 0 || day === 6;
@@ -298,7 +298,7 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
     return isDateAvailable(date) && !isWeekend && !isArtisanUnavailable;
   };
 
-  // Check if date is a weekend
+  
   const isWeekend = (date: Date) => {
     const day = date.getDay();
     return day === 0 || day === 6;
@@ -322,13 +322,13 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Price Variation Selector */}
+      {}
       <PriceVariationSelector
         basePrice={basePrice}
         onPriceChange={setSelectedPriceVariation}
       />
 
-      {/* Payment Plan Selector */}
+      {}
       {selectedPriceVariation && (
         <PaymentPlanSelector
           totalPrice={selectedPriceVariation.discountedPrice}
@@ -359,11 +359,11 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
             mode="single"
             selected={selectedDate}
             onSelect={(date) => {
-              // Only allow selection of selectable dates
+              
               if (date && isDateSelectable(date)) {
                 setSelectedDate(date);
               } else if (date && !isDateSelectable(date)) {
-                // Show why date is not selectable
+                
                 return;
               } else {
                 setSelectedDate(date);
@@ -579,7 +579,6 @@ const WorkshopBookingCalendar: React.FC<WorkshopBookingCalendarProps> = ({
                   })
                 )}
               </div>
-
 
             </CardContent>
           </Card>

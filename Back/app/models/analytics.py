@@ -4,7 +4,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID
 
-
 class AnalyticsEvent(BaseModel):
     __tablename__ = "analytics_events"
     
@@ -26,9 +25,6 @@ class AnalyticsEvent(BaseModel):
     country = Column(String(3))
     city = Column(String(100))
     
-    # Relationships - ALL COMMENTED OUT to avoid circular dependency issues
-    # user = relationship("User")
-
 
 class DailyStats(BaseModel):
     __tablename__ = "daily_stats"
@@ -46,8 +42,6 @@ class DailyStats(BaseModel):
     conversion_rate = Column(Numeric(5, 4), default=0)
     average_order_value = Column(Numeric(10, 2), default=0)
     
-    # No relationships
-
 
 class ArtisanStats(BaseModel):
     __tablename__ = "artisan_stats"
@@ -62,5 +56,4 @@ class ArtisanStats(BaseModel):
     total_reviews = Column(Integer, default=0)
     last_updated = Column(DateTime)
     
-    # Relationships - ALL COMMENTED OUT
-    # artisan = relationship("User")
+

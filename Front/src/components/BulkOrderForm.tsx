@@ -40,7 +40,7 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
     total_amount: number;
   } | null>(null);
 
-  // Calculer les remises selon la grille backend
+  
   const calculateBulkPrice = (qty: number) => {
     let discount = 0;
     if (qty >= 50) discount = 0.25;
@@ -61,7 +61,7 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
     };
   };
 
-  // Mettre à jour les calculs quand la quantité change
+  
   React.useEffect(() => {
     const calculated = calculateBulkPrice(quantity);
     setBulkOrderData(calculated);
@@ -113,7 +113,7 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Quantity and Pricing */}
+            {}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -140,7 +140,7 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
                 />
               </div>
 
-              {/* Pricing Breakdown */}
+              {}
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -170,7 +170,7 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
                 </div>
               </div>
 
-              {/* Bulk Pricing Tiers */}
+              {}
               <div className="text-xs text-gray-600">
                 <p className="font-medium mb-1">Grille de remises:</p>
                 <div className="grid grid-cols-2 gap-1">
@@ -182,7 +182,7 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
               </div>
             </div>
 
-            {/* Customer Information */}
+            {}
             <div className="space-y-4">
               <h3 className="font-medium">Informations de contact</h3>
               
@@ -235,7 +235,7 @@ const BulkOrderForm = ({ productId, product, onClose }: BulkOrderFormProps) => {
               </div>
             </div>
 
-            {/* Actions */}
+            {}
             <div className="flex gap-3 pt-4">
               <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={loading}>
                 Annuler

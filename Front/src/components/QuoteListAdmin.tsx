@@ -111,7 +111,7 @@ export const QuoteListAdmin = ({ onSelectQuote, refreshTrigger }: QuoteListAdmin
 
   return (
     <div className="bg-white rounded-lg shadow">
-      {/* Header avec filtres */}
+      {}
       <div className="p-6 border-b border-gray-200">
         <h2 className="text-2xl font-bold mb-4">Demandes de devis</h2>
         
@@ -140,7 +140,7 @@ export const QuoteListAdmin = ({ onSelectQuote, refreshTrigger }: QuoteListAdmin
         </div>
       </div>
 
-      {/* Liste des devis */}
+      {}
       <div className="overflow-x-auto">
         {loading && !quotes.length ? (
           <div className="p-6 text-center text-gray-500">
@@ -249,7 +249,7 @@ export const QuoteListAdmin = ({ onSelectQuote, refreshTrigger }: QuoteListAdmin
         )}
       </div>
 
-      {/* Pagination */}
+      {}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
           <button

@@ -4,20 +4,17 @@ from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID
 import enum
 
-
 class ValidationType(str, enum.Enum):
     """Type de validation"""
     PROFILE = "profile"
     PRODUCT = "product"
     WORKSHOP = "workshop"
 
-
 class ValidationStatus(str, enum.Enum):
     """Statut de validation"""
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
-
 
 class ArtisanValidation(BaseModel):
     """Historique des validations d'artisans et de leurs contenus"""
@@ -31,6 +28,6 @@ class ArtisanValidation(BaseModel):
     validation_notes = Column(Text, nullable=True)
     validated_at = Column(DateTime, nullable=True)
     
-    # Relationships
+
     artisan = relationship("User", foreign_keys=[artisan_id], backref="validations")
     validator = relationship("User", foreign_keys=[validated_by])

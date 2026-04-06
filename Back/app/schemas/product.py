@@ -7,16 +7,12 @@ from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
 
-
-# ============ INPUT SCHEMAS ============
-
 class ProductDimensions(BaseModel):
     """Dimensions d'un produit"""
-    length: Optional[float] = None  # en cm
-    width: Optional[float] = None  # en cm
-    height: Optional[float] = None  # en cm
-    weight: Optional[float] = None  # en kg
-
+    length: Optional[float] = None
+    width: Optional[float] = None
+    height: Optional[float] = None
+    weight: Optional[float] = None
 
 class ProductCreate(BaseModel):
     """Schema pour la création d'un produit"""
@@ -33,7 +29,6 @@ class ProductCreate(BaseModel):
     production_time_days: int = Field(..., ge=1, description="Temps de fabrication en jours")
     bulk_order_enabled: bool = Field(default=False, description="Autorise les commandes en gros")
     min_bulk_quantity: Optional[int] = Field(None, ge=1, description="Quantité minimum pour commande en gros")
-
 
 class ProductUpdate(BaseModel):
     """Schema pour la mise à jour d'un produit"""
@@ -52,7 +47,6 @@ class ProductUpdate(BaseModel):
     min_bulk_quantity: Optional[int] = Field(None, ge=1)
     status: Optional[str] = Field(None, description="draft, pending_approval, published, rejected")
 
-
 class BulkOrderRequestIn(BaseModel):
     """Schema pour une demande de commande en gros"""
     quantity: int = Field(..., ge=1, description="Quantité demandée")
@@ -62,9 +56,6 @@ class BulkOrderRequestIn(BaseModel):
     company: Optional[str] = None
     message: Optional[str] = None
 
-
-# ============ OUTPUT SCHEMAS ============
-
 class ArtisanBasic(BaseModel):
     """Schema basique pour un artisan (utilisé dans ProductOut)"""
     id: UUID
@@ -72,7 +63,6 @@ class ArtisanBasic(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class ProductOut(BaseModel):
     """Schema de sortie pour un produit"""
@@ -83,7 +73,6 @@ class ProductOut(BaseModel):
     subcategory: Optional[str] = None
     price: float
     images: List[str] = Field(default_factory=list, description="URLs des images")
-    # Detailed image objects with IDs to allow deletion/reordering from frontend
 
     class ProductImageOut(BaseModel):
         id: UUID
@@ -102,7 +91,7 @@ class ProductOut(BaseModel):
     production_time_days: int
     bulk_order_enabled: bool
     min_bulk_quantity: Optional[int] = None
-    status: str  # draft, pending_approval, published, rejected
+    status: str
     rating: Optional[float] = Field(
         None, ge=0, le=5, description="Note moyenne"
     )
@@ -112,7 +101,6 @@ class ProductOut(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class ProductListItem(BaseModel):
     """Schema pour un produit dans une liste (version allégée)"""
@@ -130,17 +118,14 @@ class ProductListItem(BaseModel):
     class Config:
         from_attributes = True
 
-
 class ProductListResponse(BaseModel):
     """Schema de réponse pour la liste paginée de produits"""
-    # Return full ProductOut items so frontends that open an edit modal
-    # (which expects all product fields) receive complete objects.
+
     items: List[ProductOut]
     total: int
     page: int
     pages: int
     limit: int
-
 
 class CategoryOut(BaseModel):
     """Schema pour une catégorie"""
@@ -150,11 +135,9 @@ class CategoryOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class CategoriesResponse(BaseModel):
     """Schema de réponse pour les catégories"""
     categories: List[CategoryOut]
-
 
 class BulkOrderRequestOut(BaseModel):
     """Schema de sortie pour une demande de commande en gros"""

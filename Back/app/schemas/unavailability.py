@@ -8,19 +8,16 @@ from datetime import date, datetime
 from uuid import UUID
 from enum import Enum
 
-
 class UnavailabilityType(str, Enum):
     """Type d'indisponibilité"""
     SINGLE = "single"
     RANGE = "range"
-
 
 class UnavailabilityStatus(str, Enum):
     """Statut de l'indisponibilité"""
     PENDING = "pending"
     APPROVED = "approved" 
     REJECTED = "rejected"
-
 
 class UnavailabilityOut(BaseModel):
     """Schéma de sortie pour une indisponibilité d'artisan"""
@@ -37,7 +34,6 @@ class UnavailabilityOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class UnavailabilityCreate(BaseModel):
     """Schéma pour créer une indisponibilité"""
     start_date: date
@@ -46,7 +42,6 @@ class UnavailabilityCreate(BaseModel):
     type: UnavailabilityType = UnavailabilityType.SINGLE
     status: UnavailabilityStatus = UnavailabilityStatus.PENDING
 
-
 class UnavailabilityUpdate(BaseModel):
     """Schéma pour mettre à jour une indisponibilité"""
     start_date: Optional[date] = None
@@ -54,7 +49,6 @@ class UnavailabilityUpdate(BaseModel):
     reason: Optional[str] = None
     type: Optional[UnavailabilityType] = None
     status: Optional[UnavailabilityStatus] = None
-
 
 class UnavailabilityListResponse(BaseModel):
     """Réponse paginée pour liste d'indisponibilités"""

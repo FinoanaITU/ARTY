@@ -25,13 +25,13 @@ const Products = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
-  // Charger les catégories
+  
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const response = await apiService.getCategories();
         setCategories(response.categories || []);
-        // Développer la première catégorie par défaut
+        
         if (response.categories && response.categories.length > 0) {
           setExpandedCategories([response.categories[0].name]);
         }
@@ -43,7 +43,7 @@ const Products = () => {
     loadCategories();
   }, []);
 
-  // Charger les produits
+  
   useEffect(() => {
     const loadProducts = async () => {
       setLoading(true);
@@ -89,13 +89,13 @@ const Products = () => {
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(selectedCategory === category ? '' : category);
-    setSelectedSubcategory(''); // Reset subcategory when changing category
-    setPage(1); // Reset to first page
+    setSelectedSubcategory(''); 
+    setPage(1); 
   };
 
   const handleSubcategoryClick = (subcategory: string) => {
     setSelectedSubcategory(selectedSubcategory === subcategory ? '' : subcategory);
-    setPage(1); // Reset to first page
+    setPage(1); 
   };
 
   return (
@@ -104,7 +104,7 @@ const Products = () => {
       
       <div className="px-4 py-6">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
+          {}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Catalogue de Produits
@@ -233,7 +233,7 @@ const Products = () => {
                             alt={product.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+non+disponible';
+                              (e.target as HTMLImageElement).src = 'https:
                             }}
                           />
                         ) : (

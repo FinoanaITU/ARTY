@@ -10,7 +10,7 @@ export const useProductRecommendations = (currentProductId: number, category: st
     const fetchRecommendations = async () => {
       setLoading(true);
       
-      // Mock recommendations - in real app, fetch from backend
+      
       const mockRecommendations: ProductRecommendation[] = [
         {
           id: 3,
@@ -62,7 +62,7 @@ export const useWorkshopRecommendations = (currentWorkshopId?: number, category?
     const fetchRecommendations = async () => {
       setLoading(true);
       
-      // Mock recommendations - in real app, fetch from backend
+      
       const mockRecommendations: WorkshopRecommendation[] = [
         {
           id: 1,

@@ -19,7 +19,7 @@ interface WorkshopCalendarProps {
 }
 
 export const WorkshopCalendar: React.FC<WorkshopCalendarProps> = ({ upcomingWorkshops }) => {
-  // Grouper les ateliers par date
+  
   const groupedWorkshops = upcomingWorkshops.reduce((acc, workshop) => {
     const dateKey = workshop.date.toDateString();
     if (!acc[dateKey]) {

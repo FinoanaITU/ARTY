@@ -9,7 +9,6 @@ from app.models.product import BulkOrderRequest, Product
 from app.schemas.product import BulkOrderRequestIn
 import uuid
 
-
 def calculate_bulk_discount(quantity: int) -> Decimal:
     """
     Calcule le pourcentage de remise selon la quantité
@@ -36,7 +35,6 @@ def calculate_bulk_discount(quantity: int) -> Decimal:
     
     return discount_percentage
 
-
 class BulkOrderCRUD:
     """CRUD pour les demandes de commande en gros"""
     
@@ -49,15 +47,15 @@ class BulkOrderCRUD:
         unit_price: Decimal
     ) -> BulkOrderRequest:
         """Crée une nouvelle demande de commande en gros"""
-        # Calculer la remise
+
         discount_percentage = calculate_bulk_discount(obj_in.quantity)
         
-        # Calculer les montants
+
         subtotal = unit_price * obj_in.quantity
         discount_amount = (subtotal * discount_percentage) / Decimal('100')
         total_amount = subtotal - discount_amount
         
-        # Créer la demande
+
         bulk_order = BulkOrderRequest(
             id=uuid.uuid4(),
             product_id=product_id,
@@ -138,7 +136,5 @@ class BulkOrderCRUD:
         db.refresh(bulk_order)
         return bulk_order
 
-
-# Instance pour import facile
 bulk_order_crud = BulkOrderCRUD()
 

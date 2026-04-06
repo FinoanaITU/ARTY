@@ -73,7 +73,7 @@ const WorkshopFilters: React.FC<WorkshopFiltersProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Search Bar */}
+        {}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
@@ -85,7 +85,7 @@ const WorkshopFilters: React.FC<WorkshopFiltersProps> = ({
           />
         </div>
 
-        {/* Filters Row 1 */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Type d'atelier</label>
@@ -188,7 +188,7 @@ const WorkshopFilters: React.FC<WorkshopFiltersProps> = ({
           </div>
         </div>
 
-        {/* Reset Button */}
+        {}
         {hasActiveFilters && (
           <div className="flex justify-center pt-2">
             <Button 

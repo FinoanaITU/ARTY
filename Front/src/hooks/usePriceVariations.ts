@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { PriceVariation, PromoCode } from '@/types/cart';
 
 interface PriceVariationConfig {
-  tourist: number; // percentage discount
+  tourist: number; 
   local: number;
   business: number;
   tour_operator: number;
@@ -23,14 +23,14 @@ export const usePriceVariations = (basePrice: number, fixedUserType?: keyof Pric
   const [promoCode, setPromoCode] = useState<string>('');
   const [appliedPromoCode, setAppliedPromoCode] = useState<PromoCode | null>(null);
 
-  // Si un type fixe est fourni, l'utiliser
+  
   useEffect(() => {
     if (fixedUserType) {
       setSelectedUserType(fixedUserType);
     }
   }, [fixedUserType]);
 
-  // Mock promo codes - in real app, fetch from backend
+  
   const availablePromoCodes: PromoCode[] = [
     {
       code: 'LOCAL15',
@@ -60,12 +60,12 @@ export const usePriceVariations = (basePrice: number, fixedUserType?: keyof Pric
     let discount = defaultDiscounts[selectedUserType];
     let finalPrice = basePrice;
 
-    // Apply base discount
+    
     if (discount > 0) {
       finalPrice = basePrice * (1 - discount / 100);
     }
 
-    // Apply promo code if valid
+    
     if (appliedPromoCode) {
       if (appliedPromoCode.type === 'percentage') {
         finalPrice = finalPrice * (1 - appliedPromoCode.value / 100);
@@ -107,7 +107,7 @@ export const usePriceVariations = (basePrice: number, fixedUserType?: keyof Pric
     setPromoCode('');
   };
 
-  // Fonction pour obtenir le prix final directement
+  
   const getFinalPrice = (): number => {
     return calculatePrice().discountedPrice;
   };

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Script pour vérifier la connexion à la base de données
 Utilisé par le script d'entrypoint Docker
@@ -6,7 +6,6 @@ Utilisé par le script d'entrypoint Docker
 import sys
 import os
 
-# Ajouter le chemin du projet au PYTHONPATH
 sys.path.insert(0, '/app')
 
 try:

@@ -18,7 +18,7 @@ export const QuoteManager = () => {
 
   const handleQuoteCreated = (quoteId: string) => {
     setRefreshKey(prev => prev + 1);
-    // Rester sur l'onglet de création pour voir le message de succès
+    
     setTimeout(() => {
       setActiveTab('list');
     }, 1500);

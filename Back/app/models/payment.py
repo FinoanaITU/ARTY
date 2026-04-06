@@ -5,7 +5,6 @@ from sqlalchemy.sql import func
 import uuid
 from app.models.base import BaseModel, GUID
 
-
 class PaymentTracking(BaseModel):
     """
     Payment tracking records for orders and workshop bookings.
@@ -20,20 +19,19 @@ class PaymentTracking(BaseModel):
     user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     artisan_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     
-    # Payment details
-    type = Column(String(20), nullable=False)  # product/workshop
+
+    type = Column(String(20), nullable=False)
     amount_total = Column(Numeric(10, 2), nullable=False)
     amount_paid = Column(Numeric(10, 2), nullable=False, default=0)
     payment_status = Column(String(50), nullable=False, default="unpaid", index=True)
-    # unpaid/partial/paid/pending_collection
-    payment_method = Column(String(50), nullable=True)  # cash/mvola/orange_money/bank_transfer
-    artisan_type = Column(String(20), nullable=False, index=True)  # artizaho/uber
+
+    payment_method = Column(String(50), nullable=True)
+    artisan_type = Column(String(20), nullable=False, index=True)
     
-    # Timestamps
+
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    # Relationships
     order = relationship("Order", foreign_keys=[order_id], backref="payment_tracking_records")
     booking = relationship("WorkshopBooking", foreign_keys=[booking_id], backref="payment_tracking_records")
     user = relationship("User", foreign_keys=[user_id], backref="payment_trackings_as_customer")
@@ -50,7 +48,6 @@ class PaymentTracking(BaseModel):
     def __repr__(self):
         return f"<PaymentTracking {self.id} - {self.payment_status} - {self.amount_paid}/{self.amount_total}>"
 
-
 class PaymentTrackingHistory(BaseModel):
     """
     History of payment transactions for admin tracking.
@@ -61,24 +58,22 @@ class PaymentTrackingHistory(BaseModel):
     id = Column(GUID, primary_key=True, default=uuid.uuid4, index=True)
     payment_id = Column(GUID, ForeignKey("payment_tracking.id", ondelete="CASCADE"), nullable=False, index=True)
     
-    # Transaction details
+
     amount = Column(Numeric(10, 2), nullable=False)
     payment_method = Column(String(50), nullable=False)
     transaction_ref = Column(String(100), nullable=True)
     notes = Column(Text, nullable=True)
     
-    # Tracking
+
     paid_at = Column(DateTime, server_default=func.now(), nullable=False, index=True)
     recorded_by = Column(GUID, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
-    # Relationships
     payment = relationship("PaymentTracking", back_populates="history")
     recorder = relationship("User", foreign_keys=[recorded_by], backref="recorded_payment_trackings")
 
     def __repr__(self):
         return f"<PaymentTrackingHistory {self.id} - {self.amount} via {self.payment_method}>"
-
 
 class ArtisanPayout(BaseModel):
     """
@@ -90,29 +85,28 @@ class ArtisanPayout(BaseModel):
     id = Column(GUID, primary_key=True, default=uuid.uuid4, index=True)
     artisan_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     
-    # Period
+
     period_start = Column(Date, nullable=False, index=True)
     period_end = Column(Date, nullable=False, index=True)
     
-    # Financial calculations
+
     total_sales = Column(Numeric(10, 2), nullable=False)
-    commission_rate = Column(Numeric(5, 2), nullable=False)  # e.g., 15.00 or 20.00
+    commission_rate = Column(Numeric(5, 2), nullable=False)
     commission_amount = Column(Numeric(10, 2), nullable=False)
-    net_payout = Column(Numeric(10, 2), nullable=False)  # total_sales - commission_amount
+    net_payout = Column(Numeric(10, 2), nullable=False)
     
-    # Status tracking
+
     status = Column(String(20), nullable=False, default="pending", index=True)
-    # pending/processing/paid
+
     payment_method = Column(String(50), nullable=True)
     payment_ref = Column(String(100), nullable=True)
     paid_at = Column(DateTime, nullable=True, index=True)
     notes = Column(Text, nullable=True)
     
-    # Timestamps
+
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    # Relationships
     artisan = relationship("User", foreign_keys=[artisan_id], backref="payouts")
 
     def __repr__(self):

@@ -11,7 +11,6 @@ from app.models.user import User, ArtisanProfile, UserRole
 from app.schemas.user import UserUpdate, ArtisanProfileUpdate, UserWithArtisanUpdate, UserOut
 from app.services.storage import StorageService
 
-
 class UserService:
     """Service pour gérer les utilisateurs et leurs profils"""
     
@@ -41,7 +40,7 @@ class UserService:
         """Récupère un utilisateur avec son profil artisan si applicable"""
         user = db.query(User).filter(User.id == user_id).first()
         if user and user.role == UserRole.ARTISAN:
-            # Charger explicitement le profil artisan
+
             if not user.artisan_profile:
                 artisan_profile = db.query(ArtisanProfile).filter(
                     ArtisanProfile.user_id == user_id
@@ -60,7 +59,7 @@ class UserService:
         Met à jour le profil utilisateur de base.
         Gère la validation de l'email unique et l'upload d'avatar.
         """
-        # Récupérer l'utilisateur
+
         user = await UserService.get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(
@@ -68,7 +67,7 @@ class UserService:
                 detail="Utilisateur non trouvé"
             )
         
-        # Vérifier l'unicité de l'email si modifié
+
         if update_data.email and update_data.email != user.email:
             existing_user = db.query(User).filter(
                 User.email == update_data.email,
@@ -80,7 +79,7 @@ class UserService:
                     detail="Cet email est déjà utilisé"
                 )
         
-        # Mettre à jour les champs fournis (exclude_unset=True pour ne mettre à jour que les champs fournis)
+
         update_dict = update_data.model_dump(exclude_unset=True)
         
         for field, value in update_dict.items():
@@ -102,7 +101,7 @@ class UserService:
         Met à jour le profil artisan.
         Vérifie que l'utilisateur est bien un artisan.
         """
-        # Vérifier que l'utilisateur existe et est un artisan
+
         user = await UserService.get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(
@@ -116,7 +115,7 @@ class UserService:
                 detail="Seuls les artisans peuvent modifier ce profil"
             )
         
-        # Récupérer ou créer le profil artisan
+
         artisan_profile = db.query(ArtisanProfile).filter(
             ArtisanProfile.user_id == user_id
         ).first()
@@ -127,12 +126,12 @@ class UserService:
                 detail="Profil artisan non trouvé"
             )
         
-        # Gérer SQLite vs PostgreSQL pour les champs ARRAY
+
         is_sqlite = UserService._is_sqlite(db)
         update_dict = profile_update.model_dump(exclude_unset=True)
         
         if is_sqlite:
-            # Pour SQLite, convertir les listes en JSON strings
+
             import json
             for field, value in update_dict.items():
                 if isinstance(value, list):
@@ -140,7 +139,7 @@ class UserService:
                 elif isinstance(value, dict):
                     update_dict[field] = json.dumps(value)
         
-        # Mettre à jour les champs
+
         for field, value in update_dict.items():
             if hasattr(artisan_profile, field):
                 setattr(artisan_profile, field, value)
@@ -163,13 +162,13 @@ class UserService:
         user = None
         artisan_profile = None
         
-        # Mettre à jour l'utilisateur si données fournies
+
         if combined_update.user:
             user = await UserService.update_profile(db, user_id, combined_update.user)
         else:
             user = await UserService.get_user_by_id(db, user_id)
         
-        # Mettre à jour le profil artisan si données fournies
+
         if combined_update.artisan_profile:
             artisan_profile = await UserService.update_artisan_profile(
                 db, user_id, combined_update.artisan_profile
@@ -189,7 +188,7 @@ class UserService:
                 detail="Utilisateur non trouvé"
             )
         
-        # Soft delete
+
         user.is_active = False
         db.commit()
         
@@ -208,14 +207,14 @@ class UserService:
         """
         storage_service = StorageService()
         
-        # Upload le fichier
+
         avatar_url = await storage_service.upload_file(
             file_content=file_content,
             filename=filename,
             folder="avatars"
         )
         
-        # Mettre à jour l'utilisateur
+
         user = await UserService.get_user_by_id(db, user_id)
         if user:
             user.avatar = avatar_url

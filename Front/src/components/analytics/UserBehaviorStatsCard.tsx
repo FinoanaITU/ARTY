@@ -20,7 +20,7 @@ export const UserBehaviorStatsCard: React.FC<UserBehaviorStatsCardProps> = ({ da
 
   return (
     <div className="space-y-6">
-      {/* Métriques clés */}
+      {}
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardContent className="p-6">
@@ -53,7 +53,7 @@ export const UserBehaviorStatsCard: React.FC<UserBehaviorStatsCardProps> = ({ da
         </Card>
       </div>
 
-      {/* Clients récurrents */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Fidélité client</CardTitle>
@@ -83,7 +83,7 @@ export const UserBehaviorStatsCard: React.FC<UserBehaviorStatsCardProps> = ({ da
               </div>
             </div>
 
-            {/* Barre de progression */}
+            {}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-700">Fidélisation</span>
@@ -102,7 +102,7 @@ export const UserBehaviorStatsCard: React.FC<UserBehaviorStatsCardProps> = ({ da
         </CardContent>
       </Card>
 
-      {/* Moyens de paiement préférés */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Moyens de paiement</CardTitle>
@@ -153,7 +153,7 @@ export const UserBehaviorStatsCard: React.FC<UserBehaviorStatsCardProps> = ({ da
         </CardContent>
       </Card>
 
-      {/* Insights comportementaux */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Insights comportementaux</CardTitle>

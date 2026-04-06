@@ -10,7 +10,7 @@ interface CreditTransaction {
   amount: number;
   description: string;
   date: Date;
-  relatedTo?: string; // workshop title, product name, etc.
+  relatedTo?: string; 
 }
 
 interface Subscription {
@@ -51,7 +51,7 @@ export const CreditTracker: React.FC<CreditTrackerProps> = ({ subscription, tran
 
   return (
     <div className="space-y-6">
-      {/* Subscription Overview */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export const CreditTracker: React.FC<CreditTrackerProps> = ({ subscription, tran
         </CardContent>
       </Card>
 
-      {/* Credit History */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Historique des crédits</CardTitle>

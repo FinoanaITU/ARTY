@@ -19,9 +19,7 @@ from app.schemas.unavailability import (
     UnavailabilityListResponse,
 )
 
-
 router = APIRouter()
-
 
 @router.post(
     "/",
@@ -43,7 +41,7 @@ async def create_unavailability(
     - **type**: Type single ou range
     - **status**: Statut pending/approved/rejected
     """
-    # Vérifier que l'utilisateur est un artisan
+
     if not current_user.artisan_profile:
         from fastapi import HTTPException
         raise HTTPException(
@@ -53,9 +51,8 @@ async def create_unavailability(
 
     service = UnavailabilityService(db)
     return await service.create_unavailability(
-        artisan_id=current_user.id, data=data  # Utiliser l'ID du user, pas du profil
+        artisan_id=current_user.id, data=data
     )
-
 
 @router.get(
     "/",
@@ -87,13 +84,12 @@ async def list_unavailabilities(
 
     service = UnavailabilityService(db)
     return await service.get_artisan_unavailabilities(
-        artisan_id=current_user.id,  # Utiliser l'ID du user, pas du profil
+        artisan_id=current_user.id,
         page=page,
         page_size=page_size,
         status_filter=status_filter,
         start_from=start_from,
     )
-
 
 @router.get(
     "/upcoming",
@@ -122,7 +118,6 @@ async def get_upcoming_unavailabilities(
         artisan_id=current_user.id, limit=limit
     )
 
-
 @router.get(
     "/{unavailability_id}",
     response_model=UnavailabilityOut,
@@ -148,7 +143,6 @@ async def get_unavailability(
         unavailability_id=unavailability_id,
         artisan_id=current_user.id,
     )
-
 
 @router.patch(
     "/{unavailability_id}",
@@ -179,7 +173,6 @@ async def update_unavailability(
         artisan_id=current_user.id,
         data=data,
     )
-
 
 @router.delete(
     "/{unavailability_id}",

@@ -8,7 +8,6 @@ from fastapi import UploadFile
 from app.core.config import settings
 import aiofiles
 
-
 class StorageService:
     """Service pour gérer le stockage des fichiers"""
     
@@ -19,9 +18,9 @@ class StorageService:
     
     def _ensure_directory(self, folder_path: str):
         """Crée le répertoire s'il n'existe pas"""
-        # Utiliser le chemin absolu pour éviter les problèmes de chemins relatifs
+
         if not os.path.isabs(self.upload_dir):
-            # Si le chemin est relatif, le rendre absolu depuis le répertoire du projet
+
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             upload_dir = os.path.join(base_dir, self.upload_dir.lstrip('./'))
         else:
@@ -65,32 +64,32 @@ class StorageService:
         if max_size is None:
             max_size = self.max_file_size
         
-        # Vérifier l'extension
+
         if not self._validate_file(file, allowed_extensions):
             raise ValueError(f"Extension non autorisée. Extensions valides: {', '.join(allowed_extensions)}")
         
-        # Générer un nom unique
+
         file_extension = self._get_file_extension(file.filename)
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
         
-        # Créer le répertoire
+
         folder_path = self._ensure_directory(folder)
         
-        # Chemin complet du fichier
+
         file_path = os.path.join(folder_path, unique_filename)
         
-        # Lire le contenu du fichier
+
         content = await file.read()
         
-        # Vérifier la taille avant d'écrire
+
         if len(content) > max_size:
             raise ValueError(f"Fichier trop volumineux. Taille max: {max_size / 1024 / 1024}MB")
         
-        # Sauvegarder le fichier
+
         async with aiofiles.open(file_path, 'wb') as f:
             await f.write(content)
         
-        # Retourner l'URL relative
+
         return f"{folder}/{unique_filename}"
     
     def delete_file(self, file_path: str) -> bool:

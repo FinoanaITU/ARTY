@@ -6,7 +6,6 @@ from sqlalchemy.sql import func
 import uuid
 from app.models.base import BaseModel, GUID
 
-
 class Quote(BaseModel):
     """
     Quote records for custom product/workshop quotes.
@@ -17,7 +16,6 @@ class Quote(BaseModel):
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4, index=True)
 
-    # Users involved
     user_id = Column(
         GUID,
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -31,27 +29,23 @@ class Quote(BaseModel):
         index=True
     )
 
-    # Quote details
-    quote_type = Column(String(50), nullable=False)  # workshop/product/custom
+    quote_type = Column(String(50), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
     quantity = Column(Integer, nullable=False, default=1)
 
-    # Client information
-    client_type = Column(String(50), nullable=False)  # particulier/entreprise
+    client_type = Column(String(50), nullable=False)
     client_name = Column(String(255), nullable=False)
     client_email = Column(String(255), nullable=False)
     client_phone = Column(String(20), nullable=False)
     company_name = Column(String(255), nullable=True)
 
-    # Quote status and pricing
     status = Column(String(50), nullable=False, default="pending", index=True)
-    # pending/quoted/approved/rejected/completed
+
     estimated_price = Column(Numeric(10, 2), nullable=True)
     final_price = Column(Numeric(10, 2), nullable=True)
     admin_notes = Column(Text, nullable=True)
 
-    # Timeline
     requested_at = Column(
         DateTime,
         server_default=func.now(),
@@ -69,7 +63,6 @@ class Quote(BaseModel):
         nullable=False
     )
 
-    # Relationships
     user = relationship(
         "User",
         foreign_keys=[user_id],

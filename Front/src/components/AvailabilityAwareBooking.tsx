@@ -55,12 +55,12 @@ const AvailabilityAwareBooking: React.FC<AvailabilityAwareBookingProps> = ({
   };
 
   const handleCustomRequestSubmit = (request: CustomBookingRequestType) => {
-    // Check if the requested dates conflict with unavailability
+    
     const hasConflict = isDateInUnavailablePeriod(request.preferredDate) ||
       (request.alternativeDate && isDateInUnavailablePeriod(request.alternativeDate));
 
     if (hasConflict) {
-      // In a real app, you'd show a warning to the user
+      
       console.log('Requested dates conflict with artisan unavailability');
     }
 
@@ -86,7 +86,7 @@ const AvailabilityAwareBooking: React.FC<AvailabilityAwareBookingProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Artisan Availability Notice */}
+      {}
       {upcomingUnavailability.length > 0 && (
         <Card className="border-brand-orange/30 bg-brand-beige">
           <CardHeader>
@@ -121,7 +121,7 @@ const AvailabilityAwareBooking: React.FC<AvailabilityAwareBookingProps> = ({
         </Card>
       )}
 
-      {/* Standard Booking Calendar */}
+      {}
       <WorkshopBookingCalendar
         workshopId={workshopId}
         workshopType={workshopType}
@@ -133,7 +133,7 @@ const AvailabilityAwareBooking: React.FC<AvailabilityAwareBookingProps> = ({
         onCustomRequest={() => setShowCustomRequest(true)}
       />
 
-      {/* Alternative Booking Option */}
+      {}
       <Card className="border-brand-terracotta/30 bg-brand-beige">
         <CardContent className="pt-6">
           <div className="text-center space-y-3">

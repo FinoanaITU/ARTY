@@ -16,7 +16,7 @@ const TestLogin = () => {
       const response = await apiService.login(email, password);
       console.log('Login success:', response);
       
-      // Sauvegarder le token
+      
       localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       
@@ -25,7 +25,7 @@ const TestLogin = () => {
         description: `Connecté en tant que ${response.user.name} (${response.user.role})`
       });
       
-      // Rediriger vers le dashboard
+      
       window.location.href = '/dashboard';
     } catch (error: any) {
       console.error('Login error:', error);

@@ -1,17 +1,16 @@
-#!/usr/bin/env python3
+
 """
 Script pour corriger la révision Alembic dans la base de données
 Utilisé quand la révision enregistrée ne correspond plus aux migrations existantes
 
 Usage:
     python scripts/fix_migration_revision.py
-    # ou depuis Docker
+
     docker-compose exec backend python scripts/fix_migration_revision.py
 """
 import sys
 import os
 
-# Ajouter le répertoire parent au path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import create_engine, text, inspect
@@ -29,7 +28,7 @@ def check_tables():
     has_bulk_orders = 'bulk_order_requests' in tables
     has_users = 'users' in tables
     
-    # Vérifier la révision actuelle
+
     try:
         result = conn.execute(text('SELECT version_num FROM alembic_version'))
         current_rev = result.fetchone()
@@ -55,7 +54,7 @@ def fix_revision(new_revision):
     conn = engine.connect()
     
     try:
-        # Mettre à jour la révision
+
         conn.execute(text(f"UPDATE alembic_version SET version_num = '{new_revision}'"))
         conn.commit()
         print(f"✅ Révision mise à jour vers '{new_revision}'")
@@ -81,14 +80,13 @@ def main():
     print(f"  - Table products: {'✅' if state['has_products'] else '❌'}")
     print(f"  - Table bulk_order_requests: {'✅' if state['has_bulk_orders'] else '❌'}")
     
-    # Déterminer la bonne révision selon l'état des tables
+
     if state['current_rev'] == '004':
         print("\n⚠️  Problème détecté: La révision '004' n'existe plus dans les migrations")
         print("   Elle a été remplacée par '004_add_product_tables' et '004_add_bulk_order'")
         
         if state['has_products'] and state['has_categories'] and state['has_bulk_orders']:
-            # Les tables existent, la migration a été exécutée
-            # Mettre à jour vers la dernière révision
+
             new_rev = '004_add_bulk_order'
             print(f"\n💡 Les tables existent. Mise à jour vers '{new_rev}'...")
             if fix_revision(new_rev):
@@ -97,7 +95,7 @@ def main():
             else:
                 print("\n❌ Échec de la correction")
         elif state['has_products'] and state['has_categories']:
-            # Les tables products existent mais pas bulk_order_requests
+
             new_rev = '004_add_product_tables'
             print(f"\n💡 Tables products créées. Mise à jour vers '{new_rev}'...")
             if fix_revision(new_rev):
@@ -106,7 +104,7 @@ def main():
             else:
                 print("\n❌ Échec de la correction")
         else:
-            # Les tables n'existent pas, revenir à la révision précédente
+
             new_rev = '003'
             print(f"\n💡 Tables non créées. Retour vers '{new_rev}'...")
             if fix_revision(new_rev):

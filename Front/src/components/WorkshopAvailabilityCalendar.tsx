@@ -54,7 +54,7 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
     'Autre'
   ];
 
-  // Check if a date is unavailable
+  
   const isDateUnavailable = (date: Date): UnavailabilityPeriod | null => {
     for (const period of unavailabilities) {
       if (period.type === 'single') {
@@ -89,7 +89,7 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
     setUnavailabilities(updated);
     onUnavailabilityChange?.(updated);
 
-    // Reset form
+    
     setNewUnavailability({ type: 'single', reason: '', status: 'pending' });
     setSelectedDate(undefined);
     setShowDialog(false);
@@ -120,7 +120,7 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
+        {}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Calendrier de disponibilité</CardTitle>
@@ -130,7 +130,7 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Calendar Navigation */}
+              {}
               <div className="flex items-center justify-between mb-4">
                 <Button
                   variant="outline"
@@ -151,7 +151,7 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
                 </Button>
               </div>
 
-              {/* Calendar Grid */}
+              {}
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -162,7 +162,7 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
                 disabled={(date) => isBefore(date, new Date())}
               />
 
-              {/* Selected Period Info */}
+              {}
               {selectedDate && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm">
@@ -180,7 +180,7 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
           </CardContent>
         </Card>
 
-        {/* Statistics */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Statistiques</CardTitle>
@@ -304,7 +304,7 @@ export const WorkshopAvailabilityCalendar: React.FC<WorkshopAvailabilityCalendar
         </Card>
       </div>
 
-      {/* Unavailability List */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Périodes indisponibles</CardTitle>

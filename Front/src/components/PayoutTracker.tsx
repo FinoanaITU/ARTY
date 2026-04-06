@@ -116,7 +116,7 @@ export const PayoutTracker: React.FC<PayoutTrackerProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Tabs for different statuses */}
+      {}
       <Tabs defaultValue="pending" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pending">
@@ -166,7 +166,7 @@ export const PayoutTracker: React.FC<PayoutTrackerProps> = ({
                       </div>
                     </div>
 
-                    {/* Breakdown */}
+                    {}
                     <div className="grid md:grid-cols-4 gap-4 py-4 bg-gray-50 rounded-lg px-4 mb-4">
                       <div>
                         <p className="text-xs text-gray-600">Ventes totales</p>
@@ -194,7 +194,7 @@ export const PayoutTracker: React.FC<PayoutTrackerProps> = ({
                       </div>
                     </div>
 
-                    {/* Mark as Paid Dialog */}
+                    {}
                     <Dialog open={openPayoutId === payout.id} onOpenChange={(open) => {
                       if (!open) setOpenPayoutId(null);
                     }}>

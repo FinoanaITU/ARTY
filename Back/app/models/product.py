@@ -3,7 +3,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID, ArrayType
 
-
 class Category(BaseModel):
     __tablename__ = "categories"
     
@@ -20,12 +19,6 @@ class Category(BaseModel):
     level = Column(Integer, default=0)
     path = Column(String(255), index=True)
     
-    # Relationships
-    # Temporarily commented out to avoid configuration issues during auth setup
-    # parent = relationship("Category", remote_side="Category.id")
-    # children = relationship("Category")
-    # products = relationship("Product", back_populates="category")
-
 
 class Product(BaseModel):
     __tablename__ = "products"
@@ -67,23 +60,11 @@ class Product(BaseModel):
     rating_count = Column(Integer, default=0)
     published_at = Column(DateTime)
     
-    # Approval fields
+
     approved_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     approved_at = Column(DateTime, nullable=True)
     approval_notes = Column(Text, nullable=True)
     
-    # Relationships
-    # Temporarily commented out relationships that cause circular dependency issues
-    # These will be enabled when all models are properly configured
-    # category = relationship("Category", back_populates="products")
-    # artisan = relationship("User", back_populates="products")
-    # images = relationship("ProductImage", back_populates="product")
-    # variants = relationship("ProductVariant", back_populates="product")
-    # favorites = relationship("ProductFavorite", back_populates="product")
-    # cart_items = relationship("CartItem", back_populates="product")
-    # order_items = relationship("OrderItem", back_populates="product")
-    # reviews = relationship("Review", back_populates="product")
-
 
 class ProductImage(BaseModel):
     __tablename__ = "product_images"
@@ -98,10 +79,6 @@ class ProductImage(BaseModel):
     file_size = Column(Integer)
     format = Column(String(10))
     
-    # Relationships
-    # Temporarily commented out
-    # product = relationship("Product", back_populates="images")
-
 
 class ProductVariant(BaseModel):
     __tablename__ = "product_variants"
@@ -118,12 +95,6 @@ class ProductVariant(BaseModel):
     image_url = Column(String(500))
     is_active = Column(Boolean, default=True, index=True)
     
-    # Relationships
-    # Temporarily commented out
-    # product = relationship("Product", back_populates="variants")
-    # cart_items = relationship("CartItem", back_populates="variant")
-    # order_items = relationship("OrderItem", back_populates="variant")
-
 
 class ProductFavorite(BaseModel):
     __tablename__ = "product_favorites"
@@ -131,11 +102,6 @@ class ProductFavorite(BaseModel):
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     product_id = Column(GUID(), ForeignKey("products.id"), nullable=False, index=True)
     
-    # Relationships
-    # Temporarily commented out
-    # user = relationship("User")
-    # product = relationship("Product", back_populates="favorites")
-
 
 class BulkOrderRequest(BaseModel):
     __tablename__ = "bulk_order_requests"
@@ -151,11 +117,9 @@ class BulkOrderRequest(BaseModel):
     customer_phone = Column(String(50), nullable=False)
     company = Column(String(200))
     message = Column(Text)
-    status = Column(String(20), default='pending', index=True)  # pending, contacted, confirmed, cancelled
+    status = Column(String(20), default='pending', index=True)
     artisan_notes = Column(Text)
     contacted_at = Column(DateTime)
     confirmed_at = Column(DateTime)
     
-    # Relationships
-    # Temporarily commented out
-    # product = relationship("Product") 
+

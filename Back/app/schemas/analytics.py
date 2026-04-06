@@ -7,9 +7,6 @@ from uuid import UUID
 from datetime import datetime, date
 from decimal import Decimal
 
-
-# ============ ARTISAN STATS SCHEMAS ============
-
 class ArtisanStatsOut(BaseModel):
     """
     Statistiques complètes d'un artisan.
@@ -28,42 +25,40 @@ class ArtisanStatsOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class DashboardStatsOut(BaseModel):
     """
     Statistiques pour le dashboard artisan (vue d'ensemble).
     Comprend les stats récentes + tendances.
     """
-    # Stats générales
+
     total_products: int = 0
     active_products: int = 0
     total_workshops: int = 0
     
-    # Stats de ventes
+
     total_sales: int = 0
     total_revenue: Decimal = Decimal("0.00")
     pending_orders: int = 0
     in_production_orders: int = 0
     
-    # Stats du mois en cours
+
     monthly_sales: int = 0
     monthly_revenue: Decimal = Decimal("0.00")
     
-    # Stats de la semaine
+
     weekly_sales: int = 0
     weekly_revenue: Decimal = Decimal("0.00")
     
-    # Avis et notation
+
     average_rating: Decimal = Decimal("0.00")
     total_reviews: int = 0
     
-    # Tendances (comparaison avec période précédente)
-    sales_trend: str = "neutral"  # up, down, neutral
+
+    sales_trend: str = "neutral"
     revenue_trend: str = "neutral"
     
     class Config:
         from_attributes = True
-
 
 class SalesChartData(BaseModel):
     """
@@ -75,7 +70,6 @@ class SalesChartData(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class TopProduct(BaseModel):
     """
@@ -89,7 +83,6 @@ class TopProduct(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class RecentOrder(BaseModel):
     """
@@ -106,18 +99,16 @@ class RecentOrder(BaseModel):
     class Config:
         from_attributes = True
 
-
 class MonthlyRevenue(BaseModel):
     """
     Revenu mensuel.
     """
-    month: str  # Format: YYYY-MM
+    month: str
     revenue: Decimal
     sales_count: int
     
     class Config:
         from_attributes = True
-
 
 class ArtisanDashboardData(BaseModel):
     """
@@ -132,9 +123,6 @@ class ArtisanDashboardData(BaseModel):
     
     class Config:
         from_attributes = True
-
-
-# ============ ANALYTICS EVENTS SCHEMAS ============
 
 class AnalyticsEventCreate(BaseModel):
     """
@@ -151,7 +139,6 @@ class AnalyticsEventCreate(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class DailyStatsOut(BaseModel):
     """
@@ -172,9 +159,6 @@ class DailyStatsOut(BaseModel):
     
     class Config:
         from_attributes = True
-
-
-# ============ FILTERS & REQUESTS ============
 
 class StatsDateRange(BaseModel):
     """

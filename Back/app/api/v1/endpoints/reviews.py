@@ -19,9 +19,7 @@ from app.schemas.review import (
     ReviewHelpfulVoteCreate,
 )
 
-
 router = APIRouter()
-
 
 @router.post(
     "/products/{product_id}/reviews",
@@ -47,7 +45,7 @@ async def create_product_review(
     
     L'utilisateur ne peut laisser qu'un seul avis par produit.
     """
-    # Forcer reviewable_type = product et reviewable_id = product_id
+
     data.reviewable_type = "product"
     data.reviewable_id = product_id
 
@@ -55,7 +53,6 @@ async def create_product_review(
     return await service.create_review(
         user_id=current_user.id, data=data
     )
-
 
 @router.get(
     "/products/{product_id}/reviews",
@@ -90,7 +87,6 @@ async def get_product_reviews(
         verified_only=verified_only,
     )
 
-
 @router.get(
     "/products/{product_id}/reviews/stats",
     response_model=ReviewStatsOut,
@@ -115,7 +111,6 @@ async def get_product_review_stats(
         reviewable_id=product_id, reviewable_type="product"
     )
 
-
 @router.get(
     "/reviews/{review_id}",
     response_model=ReviewOut,
@@ -130,7 +125,6 @@ async def get_review(
     """
     service = ReviewService(db)
     return await service.get_review(review_id=review_id)
-
 
 @router.patch(
     "/reviews/{review_id}",
@@ -154,7 +148,6 @@ async def update_review(
         review_id=review_id, user_id=current_user.id, data=data
     )
 
-
 @router.delete(
     "/reviews/{review_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -175,7 +168,6 @@ async def delete_review(
     await service.delete_review(
         review_id=review_id, user_id=current_user.id
     )
-
 
 @router.post(
     "/reviews/{review_id}/helpful",

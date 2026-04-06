@@ -29,7 +29,7 @@ const Login = () => {
       await login(formData.email, formData.password);
       toast.success('Connexion réussie !');
       
-      // Rediriger selon le rôle
+      
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       if (user.role === 'admin') {
         navigate('/admin');

@@ -5,7 +5,6 @@ from sqlalchemy.sql import func
 from app.models.base import BaseModel
 import uuid
 
-
 class WorkshopTimeSlot(BaseModel):
     __tablename__ = "workshop_time_slots"
 
@@ -18,11 +17,10 @@ class WorkshopTimeSlot(BaseModel):
     current_participants = Column(Integer, nullable=False, default=0)
     min_participants = Column(Integer, nullable=False, default=4)
     is_available = Column(Boolean, nullable=False, default=True, index=True)
-    price_modifier = Column(Numeric(5, 2), default=1.0)  # Multiplicateur de prix
+    price_modifier = Column(Numeric(5, 2), default=1.0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    # Relations
     workshop = relationship("Workshop", back_populates="time_slots")
 
     def __repr__(self):

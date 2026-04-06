@@ -91,22 +91,22 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Navigation />
       
-      {/* Hero Section with Madagascar Baobab Background */}
+      {}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background with baobab trees */}
+        {}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-in-out"
           style={{
             backgroundImage: `url(${baobabHero})`,
           }}
         >
-          {/* Gradient overlay for better text readability with smooth blend */}
+          {}
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 transition-opacity duration-700"></div>
         </div>
         
-        {/* Cloud divider at bottom with seamless blend */}
+        {}
         <div className="absolute bottom-0 left-0 right-0 h-40 md:h-48 lg:h-56">
-          {/* Gradient blend to create seamless transition */}
+          {}
           <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent"></div>
           <div 
             className="absolute bottom-0 left-0 right-0 h-full bg-no-repeat bg-bottom bg-cover opacity-90 mix-blend-multiply"
@@ -118,7 +118,7 @@ const Index = () => {
           ></div>
         </div>
         
-        {/* Hero Content with entrance animations */}
+        {}
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto animate-fade-in">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-2xl animate-[slideUp_1s_ease-out_0.2s_both]">
             DÉCOUVREZ LE SAVOIR-FAIRE
@@ -130,7 +130,7 @@ const Index = () => {
             Des professionnels talentueux vous accueillent dans leurs ateliers uniques pour vous transmettre leur art et savoir-faire artisanal. Repartez avec votre création réalisée à la main !
           </p>
 
-          {/* Action Buttons with staggered animation */}
+          {}
           <div className="grid md:grid-cols-2 gap-4 max-w-md mx-auto animate-[slideUp_1s_ease-out_0.8s_both]">
             <Link to="/products">
               <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 hover:shadow-xl">
@@ -145,7 +145,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Scroll indicator with enhanced animation */}
+        {}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-[bounce_2s_infinite] hover:animate-pulse cursor-pointer">
           <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center transition-all duration-300 hover:border-white hover:scale-110">
             <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-[scrollDot_2s_infinite]"></div>
@@ -153,7 +153,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Section Notre Mission et Domaine */}
+      {}
       <section className="px-4 py-16 bg-white relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -166,7 +166,7 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-16">
-            {/* Ce que nous faisons */}
+            {}
             <div className="text-center">
               <div className="w-16 h-16 bg-artisan-brown rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,7 +195,7 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Pourquoi nous le faisons */}
+            {}
             <div className="text-center">
               <div className="w-16 h-16 bg-artisan-brown rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,11 +220,11 @@ const Index = () => {
                 alt="Équipe Artizaho" 
                 className="w-full h-80 object-cover rounded-2xl shadow-lg"
               />
-              {/* Effet de découpe en pointillés */}
+              {}
               <div className="absolute -bottom-6 -right-6 w-32 h-32 border-2 border-dashed border-artisan-brown rounded-full"></div>
             </div>
             
-            {/* Contenu texte */}
+            {}
             <div>
               <h2 className="text-3xl font-bold text-artisan-brown mb-6 border-b-2 border-artisan-brown inline-block pb-2">
                 QUI SOMMES NOUS
@@ -334,7 +334,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Section Témoignages - exacte du Figma */}
+      {}
       <section className="px-4 py-16 bg-white relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
@@ -346,7 +346,7 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial) => (
               <div key={testimonial.id} className="text-center">
-                {/* Quote icon circle */}
+                {}
                 <div className="w-16 h-16 bg-artisan-brown rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z"/>
@@ -365,7 +365,7 @@ const Index = () => {
             ))}
           </div>
           
-          {/* Pagination dots */}
+          {}
           <div className="flex justify-center gap-2 mt-12">
             <div className="w-3 h-3 bg-artisan-brown rounded-full"></div>
             <div className="w-3 h-3 bg-artisan-brown/30 rounded-full"></div>
@@ -377,7 +377,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Simple Signup CTA for non-logged users */}
+      {}
       {!isLoggedIn && (
         <section className="px-4 py-16 bg-background">
           <div className="max-w-4xl mx-auto">

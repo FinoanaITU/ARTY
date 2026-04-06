@@ -19,7 +19,6 @@ from app.services.user_service import UserService
 
 router = APIRouter()
 
-
 @router.get("/me", response_model=UserOut)
 async def get_current_user_profile(
     current_user: User = Depends(get_current_active_user),
@@ -36,7 +35,6 @@ async def get_current_user_profile(
         )
     
     return user
-
 
 @router.put("/me", response_model=UserOut)
 async def update_current_user_profile(
@@ -61,7 +59,6 @@ async def update_current_user_profile(
     """
     updated_user = await UserService.update_profile(db, current_user.id, user_update)
     return updated_user
-
 
 @router.put("/me/artisan", response_model=ArtisanProfileOut)
 async def update_artisan_profile(
@@ -93,7 +90,6 @@ async def update_artisan_profile(
     )
     return updated_profile
 
-
 @router.put("/me/complete", response_model=UserOut)
 async def update_user_and_artisan_combined(
     combined_update: UserWithArtisanUpdate,
@@ -121,10 +117,9 @@ async def update_user_and_artisan_combined(
         db, current_user.id, combined_update
     )
     
-    # Recharger l'utilisateur complet avec son profil
+
     updated_user = await UserService.get_user_with_profile(db, current_user.id)
     return updated_user
-
 
 @router.post("/me/avatar", response_model=dict)
 async def upload_user_avatar(
@@ -137,7 +132,7 @@ async def upload_user_avatar(
     Accepte les formats: jpg, jpeg, png, gif, webp
     Taille max: 5MB
     """
-    # Valider le type de fichier
+
     allowed_types = [
         "image/jpeg", "image/jpg", "image/png",
         "image/gif", "image/webp"
@@ -149,15 +144,15 @@ async def upload_user_avatar(
             detail=f"Type de fichier non autorisé. Formats: {formats}"
         )
     
-    # Valider la taille (5MB max)
+
     file_content = await file.read()
-    if len(file_content) > 5 * 1024 * 1024:  # 5MB
+    if len(file_content) > 5 * 1024 * 1024:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Le fichier est trop volumineux. Taille max: 5MB"
         )
     
-    # Upload l'avatar
+
     avatar_url = await UserService.upload_avatar(
         db, current_user.id, file_content, file.filename
     )
@@ -166,7 +161,6 @@ async def upload_user_avatar(
         "message": "Avatar uploadé avec succès",
         "avatar_url": avatar_url
     }
-
 
 @router.delete("/me")
 async def delete_current_user(
@@ -182,7 +176,6 @@ async def delete_current_user(
     return {
         "message": "Compte désactivé avec succès"
     }
-
 
 @router.get("/artisan/{artisan_id}", response_model=UserOut)
 async def get_artisan_public_profile(
@@ -200,7 +193,7 @@ async def get_artisan_public_profile(
             detail="Artisan non trouvé"
         )
     
-    # Vérifier que l'utilisateur est bien un artisan
+
     if user.role != UserRole.ARTISAN:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -208,7 +201,6 @@ async def get_artisan_public_profile(
         )
     
     return user
-
 
 @router.get("/{user_id}", response_model=UserOut)
 async def get_user_by_id(

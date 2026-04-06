@@ -44,12 +44,12 @@ const Cart = () => {
   const handleApplyPromo = () => {
     if (promoCode.trim()) {
       setAppliedPromo(promoCode);
-      // TODO: Implémenter la validation du code promo avec l'API
+      
     }
   };
 
   const handleCheckout = () => {
-    // TODO: Naviguer vers la page de paiement
+    
     navigate('/checkout');
   };
 
@@ -74,7 +74,7 @@ const Cart = () => {
 
     return (
       <div className="flex gap-4 p-4 bg-white rounded-lg border border-brand-beige hover:shadow-md transition-shadow">
-        {/* Image */}
+        {}
         <div className="flex-shrink-0">
           <img
             src={item.image || '/placeholder-product.jpg'}
@@ -83,7 +83,7 @@ const Cart = () => {
           />
         </div>
 
-        {/* Details */}
+        {}
         <div className="flex-grow">
           <div className="flex items-start justify-between">
             <div>
@@ -106,7 +106,7 @@ const Cart = () => {
                 <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.description}</p>
               )}
               
-              {/* Workshop specific details */}
+              {}
               {item.type === 'workshop' && item.selectedDate && (
                 <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
                   <Calendar className="h-4 w-4" />
@@ -117,7 +117,7 @@ const Cart = () => {
                 </div>
               )}
 
-              {/* Payment plan info */}
+              {}
               {item.paymentPlan && item.paymentPlan.type === 'installment' && (
                 <div className="mt-2 text-sm text-brand-orange">
                   <CreditCard className="h-4 w-4 inline mr-1" />
@@ -126,7 +126,7 @@ const Cart = () => {
               )}
             </div>
 
-            {/* Price section */}
+            {}
             <div className="text-right">
               {item.priceVariation ? (
                 <>
@@ -145,7 +145,7 @@ const Cart = () => {
             </div>
           </div>
 
-          {/* Quantity controls and actions */}
+          {}
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
               <Button
@@ -227,7 +227,7 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-beige/30 to-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {}
         <div className="mb-8">
           <Button
             variant="ghost"
@@ -262,10 +262,10 @@ const Cart = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart items */}
+          {}
           <div className="lg:col-span-2 space-y-6">
             {Object.keys(itemsByArtisan).length > 1 ? (
-              // Grouped by artisan
+              
               Object.entries(itemsByArtisan).map(([artisan, artisanItems]) => (
                 <Card key={artisan} className="border-brand-beige">
                   <CardHeader className="bg-brand-beige/30">
@@ -281,14 +281,14 @@ const Cart = () => {
                 </Card>
               ))
             ) : (
-              // Simple list
+              
               items.map(item => (
                 <CartItemCard key={item.id} item={item} />
               ))
             )}
           </div>
 
-          {/* Order summary */}
+          {}
           <div className="lg:col-span-1">
             <Card className="sticky top-4 border-brand-beige shadow-lg">
               <CardHeader className="bg-brand-beige/30">
@@ -297,7 +297,7 @@ const Cart = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                {/* Promo code */}
+                {}
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block">
                     Code promo
@@ -327,7 +327,7 @@ const Cart = () => {
 
                 <Separator />
 
-                {/* Price breakdown */}
+                {}
                 <div className="space-y-3">
                   <div className="flex justify-between text-gray-600">
                     <span>Sous-total ({itemCount} article{itemCount > 1 ? 's' : ''})</span>
@@ -349,7 +349,7 @@ const Cart = () => {
 
                 <Separator />
 
-                {/* Total */}
+                {}
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-bold text-brand-brown">Total</span>
                   <span className="text-2xl font-bold text-brand-orange">
@@ -357,7 +357,7 @@ const Cart = () => {
                   </span>
                 </div>
 
-                {/* Checkout button */}
+                {}
                 <Button
                   onClick={handleCheckout}
                   className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white py-6 text-lg font-semibold"
@@ -367,7 +367,7 @@ const Cart = () => {
                   Passer la commande
                 </Button>
 
-                {/* Info */}
+                {}
                 <div className="text-xs text-gray-500 text-center space-y-1">
                   <p>✓ Paiement sécurisé</p>
                   <p>✓ Livraison gratuite</p>

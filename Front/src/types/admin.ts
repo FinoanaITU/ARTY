@@ -95,10 +95,6 @@ export interface ValidationResponse {
   status?: string;
 }
 
-// ============================================
-// ANALYTICS TYPES (PHASE 2)
-// ============================================
-
 /**
  * Statistiques par rôle utilisateur
  */
@@ -235,10 +231,6 @@ export interface UserBehaviorStats {
  */
 export type StatsPeriod = 'day' | 'week' | 'month' | 'year' | 'all';
 
-// ============================================
-// PAYMENT TRACKING TYPES (PHASE 3)
-// ============================================
-
 export type PaymentTrackingStatus = 'unpaid' | 'partial' | 'paid' | 'pending_collection';
 export type PaymentTrackingMethod = 'cash' | 'mvola' | 'orange_money' | 'bank_transfer';
 export type PaymentTrackingType = 'product' | 'workshop';
@@ -333,10 +325,6 @@ export interface PayoutListResponse {
   total_commission: number;
 }
 
-// ============================================
-// SUBSCRIPTION ADMIN TYPES (PHASE 5)
-// ============================================
-
 export enum SubscriptionPlanType {
   BASIC = 'basic',
   PLUS = 'plus',
@@ -384,7 +372,7 @@ export interface SubscriptionOut {
   times_renewed: number;
   created_at: string;
   updated_at: string;
-  // Computed/joined fields
+  
   user_name?: string;
   user_email?: string;
 }

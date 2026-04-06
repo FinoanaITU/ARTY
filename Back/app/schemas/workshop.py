@@ -10,9 +10,6 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
-
-# ============ HELPERS ============
-
 def resolve_image_url(url: Optional[str]) -> Optional[str]:
     """
     Transforme une URL relative en URL absolue pour les images uploadées.
@@ -21,25 +18,21 @@ def resolve_image_url(url: Optional[str]) -> Optional[str]:
     if not url:
         return url
     
-    # Si l'URL commence déjà par http:// ou https://, la laisser telle quelle
+
     if url.startswith(('http://', 'https://')):
         return url
     
-    # Si l'URL commence par /, la laisser telle quelle (déjà absolue relative au domaine)
+
     if url.startswith('/'):
         return url
     
-    # Sinon, ajouter le préfixe /static/uploads/
+
     return f"/static/uploads/{url}"
-
-
-# ============ ENUMS ============
 
 class WorkshopType(str, Enum):
     """Type d'atelier"""
-    INSCRIPTION = "inscription"  # Dates fixes
-    RESERVATION = "reservation"  # Dates flexibles
-
+    INSCRIPTION = "inscription"
+    RESERVATION = "reservation"
 
 class WorkshopStatus(str, Enum):
     """Statut de l'atelier"""
@@ -49,13 +42,11 @@ class WorkshopStatus(str, Enum):
     REJECTED = "rejected"
     ARCHIVED = "archived"
 
-
 class SkillLevel(str, Enum):
     """Niveau de compétence"""
     BEGINNER = "Débutant"
     INTERMEDIATE = "Intermédiaire"
     ADVANCED = "Avancé"
-
 
 class SessionStatus(str, Enum):
     """Statut d'une session"""
@@ -63,7 +54,6 @@ class SessionStatus(str, Enum):
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
     COMPLETED = "completed"
-
 
 class BookingStatus(str, Enum):
     """Statut d'une réservation"""
@@ -73,16 +63,12 @@ class BookingStatus(str, Enum):
     ATTENDED = "attended"
     NO_SHOW = "no_show"
 
-
 class PaymentStatus(str, Enum):
     """Statut du paiement"""
     PENDING = "pending"
     PAID = "paid"
     PARTIAL = "partial"
     FAILED = "failed"
-
-
-# ============ INPUT SCHEMAS ============
 
 class PrivatizationOptions(BaseModel):
     """Options de privatisation d'un atelier"""
@@ -97,12 +83,10 @@ class PrivatizationOptions(BaseModel):
             raise ValueError("max_participants doit être >= min_participants")
         return v
 
-
 class ProgramItem(BaseModel):
     """Item du programme de l'atelier"""
     time: str = Field(..., description="Format HH:MM")
     activity: str = Field(..., min_length=3)
-
 
 class WorkshopCreate(BaseModel):
     """Schéma pour créer un atelier"""
@@ -150,7 +134,6 @@ class WorkshopCreate(BaseModel):
             raise ValueError("privatization_enabled doit être True si privatization_options est fourni")
         return v
 
-
 class WorkshopUpdate(BaseModel):
     """Schéma pour mettre à jour un atelier"""
     title: Optional[str] = Field(None, min_length=3, max_length=200)
@@ -178,7 +161,6 @@ class WorkshopUpdate(BaseModel):
     video_preview_url: Optional[str] = None
     status: Optional[WorkshopStatus] = None
 
-
 class WorkshopSessionCreate(BaseModel):
     """Schéma pour créer une session d'atelier"""
     start_datetime: datetime = Field(...)
@@ -194,7 +176,6 @@ class WorkshopSessionCreate(BaseModel):
             raise ValueError("end_datetime doit être après start_datetime")
         return v
 
-
 class WorkshopBookingCreate(BaseModel):
     """Schéma pour créer une réservation d'atelier"""
     session_id: UUID = Field(...)
@@ -203,14 +184,10 @@ class WorkshopBookingCreate(BaseModel):
     special_requests: Optional[str] = None
     dietary_restrictions: Optional[str] = None
 
-
 class WorkshopRegistrationCreate(BaseModel):
     """Schéma pour s'inscrire à un atelier (inscription type)"""
     participants_count: int = Field(..., ge=1, description="Nombre de participants")
     participant_names: Optional[List[str]] = None
-
-
-# ============ OUTPUT SCHEMAS ============
 
 class ArtisanBasic(BaseModel):
     """Schema basique pour un artisan"""
@@ -219,7 +196,6 @@ class ArtisanBasic(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class WorkshopSessionOut(BaseModel):
     """Schéma de sortie pour une session d'atelier"""
@@ -238,7 +214,6 @@ class WorkshopSessionOut(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class WorkshopBookingOut(BaseModel):
     """Schéma de sortie pour une réservation d'atelier"""
@@ -259,7 +234,6 @@ class WorkshopBookingOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class WorkshopOut(BaseModel):
     """Schéma de sortie pour un atelier (détails complets)"""
     id: UUID
@@ -267,32 +241,27 @@ class WorkshopOut(BaseModel):
     slug: str
     description: str
     short_description: Optional[str] = None
-    # artisan: ArtisanBasic  # Temporarily disabled - requires join
-    category: Optional[str] = None  # String category for quick access
-    workshop_type: Optional[str] = None  # Changed to optional string to match DB
-    skill_level: Optional[str] = None  # Changed to optional string to match DB
+
+    category: Optional[str] = None
+    workshop_type: Optional[str] = None
+    skill_level: Optional[str] = None
     base_price: Decimal
-    foreign_price: Optional[Decimal] = None  # Price for foreign participants
+    foreign_price: Optional[Decimal] = None
     max_participants: int
     min_participants: Optional[int] = 1
     duration_minutes: int
-    location: Optional[str] = None  # Location for filtering
-    address: Optional[str] = None  # Use address for detailed location
+    location: Optional[str] = None
+    address: Optional[str] = None
     room_details: Optional[str] = None
     materials_included: Optional[List[str]] = None
     materials_to_bring: Optional[List[str]] = None
     prerequisites: Optional[str] = None
     what_you_will_learn: Optional[List[str]] = None
-    # program: Optional[List[Dict[str, str]]] = None  # Column doesn't exist in DB
-    # privatization_enabled: bool = False  # Column doesn't exist in DB
-    # privatization_min_participants: Optional[int] = None  # Column doesn't exist in DB
-    # privatization_max_participants: Optional[int] = None  # Column doesn't exist in DB
-    # privatization_base_price: Optional[Decimal] = None  # Column doesn't exist in DB
-    # privatization_price_per_participant: Optional[Decimal] = None  # Column doesn't exist in DB
+
     featured_image_url: Optional[str] = None
     gallery_images: Optional[List[str]] = None
     video_preview_url: Optional[str] = None
-    status: Optional[str] = None  # Changed to string to match DB
+    status: Optional[str] = None
     total_bookings: Optional[int] = 0
     rating_average: Optional[Decimal] = None
     rating_count: Optional[int] = 0
@@ -300,7 +269,7 @@ class WorkshopOut(BaseModel):
     instructor_name: Optional[str] = None
     instructor_image: Optional[str] = None
     instructor_bio: Optional[str] = None
-    artisan_id: Optional[UUID] = None  # ID de l'artisan pour le lien profil
+    artisan_id: Optional[UUID] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -324,26 +293,25 @@ class WorkshopOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class WorkshopListItem(BaseModel):
     """Schéma de sortie pour un item de liste d'ateliers"""
     id: UUID
     title: str
     description: str
-    # artisan: ArtisanBasic  # Temporarily disabled - requires join
-    workshop_type: Optional[str] = None  # Changed to optional string to match DB
-    skill_level: Optional[str] = None  # Changed to optional string to match DB
+
+    workshop_type: Optional[str] = None
+    skill_level: Optional[str] = None
     base_price: Decimal
-    # foreign_price: Optional[Decimal] = None  # Column doesn't exist in DB
+
     max_participants: int
     duration_minutes: int
-    # location: str  # Column doesn't exist in DB
-    address: Optional[str] = None  # Use address instead of location
+
+    address: Optional[str] = None
     featured_image_url: Optional[str] = None
     total_bookings: Optional[int] = 0
     rating_average: Optional[Decimal] = None
     rating_count: Optional[int] = 0
-    status: Optional[str] = None  # Changed to string to match DB
+    status: Optional[str] = None
 
     @validator("featured_image_url", pre=True)
     def resolve_featured_image_url(cls, v):
@@ -353,7 +321,6 @@ class WorkshopListItem(BaseModel):
     class Config:
         from_attributes = True
 
-
 class WorkshopListResponse(BaseModel):
     """Réponse pour la liste des ateliers"""
     items: List[WorkshopListItem]
@@ -362,14 +329,12 @@ class WorkshopListResponse(BaseModel):
     pages: int
     limit: int
 
-
 class AvailabilityResponse(BaseModel):
     """Réponse pour la disponibilité d'un atelier"""
     workshop_id: UUID
     available_sessions: List[WorkshopSessionOut]
     booked_dates: List[datetime]
     unavailable_dates: List[datetime]
-
 
 class BookingConfirmation(BaseModel):
     """Confirmation de réservation"""

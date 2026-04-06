@@ -3,7 +3,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID
 
-
 class Workshop(BaseModel):
     __tablename__ = "workshops"
     
@@ -13,17 +12,17 @@ class Workshop(BaseModel):
     short_description = Column(String(500))
     artisan_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     category_id = Column(GUID(), ForeignKey("categories.id"), index=True)
-    category = Column(String(100), nullable=True)  # String category for quick access
+    category = Column(String(100), nullable=True)
     workshop_type = Column(String(20), default='group', index=True)
     skill_level = Column(String(20), default='beginner')
     base_price = Column(Numeric(10, 2), nullable=False)
-    foreign_price = Column(Numeric(10, 2))  # Price for foreign participants
+    foreign_price = Column(Numeric(10, 2))
     private_price = Column(Numeric(10, 2))
     currency = Column(String(3), default='MGA')
     min_participants = Column(Integer, default=1)
     max_participants = Column(Integer, nullable=False)
     duration_minutes = Column(Integer, nullable=False)
-    location = Column(String(200), nullable=True)  # Location for filtering
+    location = Column(String(200), nullable=True)
     location_type = Column(String(20), default='physical', index=True)
     address = Column(Text)
     room_details = Column(Text)
@@ -33,12 +32,7 @@ class Workshop(BaseModel):
     materials_to_bring = Column(ARRAY(Text))
     prerequisites = Column(Text)
     what_you_will_learn = Column(ARRAY(Text))
-    # program = Column(JSON)  # Stores program items with times and activities - not in DB
-    # privatization_enabled = Column(Boolean, default=False) - not in DB
-    # privatization_min_participants = Column(Integer) - not in DB
-    # privatization_max_participants = Column(Integer) - not in DB
-    # privatization_base_price = Column(Numeric(10, 2)) - not in DB
-    # privatization_price_per_participant = Column(Numeric(10, 2)) - not in DB
+
     featured_image_url = Column(String(500))
     gallery_images = Column(ARRAY(Text))
     video_preview_url = Column(String(500))
@@ -58,16 +52,15 @@ class Workshop(BaseModel):
     instructor_image = Column(String(500))
     instructor_bio = Column(Text)
     
-    # Approval fields
+
     approved_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     approved_at = Column(DateTime, nullable=True)
     approval_notes = Column(Text, nullable=True)
     
-    # Relationships
+
     artisan = relationship("User", foreign_keys=[artisan_id], back_populates="workshops")
     sessions = relationship("WorkshopSession", back_populates="workshop", cascade="all, delete-orphan")
     bookings = relationship("WorkshopBooking", back_populates="workshop", cascade="all, delete-orphan")
-
 
 class WorkshopSession(BaseModel):
     __tablename__ = "workshop_sessions"
@@ -87,17 +80,16 @@ class WorkshopSession(BaseModel):
     session_notes = Column(Text)
     special_instructions = Column(Text)
     
-    # Relationships
+
     workshop = relationship("Workshop", back_populates="sessions")
     bookings = relationship("WorkshopBooking", back_populates="session", cascade="all, delete-orphan")
     private_client = relationship("User", foreign_keys=[private_client_id])
-
 
 class WorkshopBooking(BaseModel):
     __tablename__ = "workshop_bookings"
     
     booking_number = Column(String(20), unique=True, nullable=False, index=True)
-    confirmation_code = Column(String(20), unique=True, nullable=False)  # For reference
+    confirmation_code = Column(String(20), unique=True, nullable=False)
     session_id = Column(GUID(), ForeignKey("workshop_sessions.id"), nullable=False, index=True)
     workshop_id = Column(GUID(), ForeignKey("workshops.id"), nullable=False, index=True)
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
@@ -119,11 +111,10 @@ class WorkshopBooking(BaseModel):
     certificate_issued = Column(Boolean, default=False)
     certificate_url = Column(String(500))
     
-    # Relationships
+
     session = relationship("WorkshopSession", back_populates="bookings")
     workshop = relationship("Workshop", back_populates="bookings")
     user = relationship("User", back_populates="workshop_bookings")
-
 
 class WorkshopAvailability(BaseModel):
     __tablename__ = "workshop_availability"
@@ -138,11 +129,9 @@ class WorkshopAvailability(BaseModel):
     valid_from = Column(Date)
     valid_until = Column(Date)
     
-    # Relationships
+
     artisan = relationship("User")
 
-
-# Configure relationships after class definitions to avoid circular imports
 def _configure_workshop_relationships():
     """Configure Workshop relationships after all models are defined"""
     try:
@@ -151,5 +140,4 @@ def _configure_workshop_relationships():
     except ImportError:
         pass
 
-# Call the configuration function
 _configure_workshop_relationships()

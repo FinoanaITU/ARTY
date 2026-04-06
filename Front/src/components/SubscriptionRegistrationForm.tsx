@@ -62,7 +62,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
     setIsProcessing(true);
 
     try {
-      // Ajouter l'abonnement au panier pour le traitement du paiement
+      
       addItem({
         type: 'subscription',
         subscriptionPlanId: plan.id,
@@ -70,7 +70,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
         description: plan.description,
         price: plan.price,
         quantity: 1,
-        image: '/placeholder.svg', // Image par défaut pour les abonnements
+        image: '/placeholder.svg', 
         subscriptionDetails: {
           duration: plan.duration,
           credits: plan.credits,
@@ -114,7 +114,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Aperçu de l'abonnement */}
+        {}
         <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">Ce qui est inclus :</h3>
@@ -130,7 +130,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
         </Card>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Informations personnelles */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-brand-brown">Informations personnelles</h3>
             
@@ -176,7 +176,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
 
           <Separator />
 
-          {/* Mode de paiement */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-brand-brown">Mode de paiement</h3>
             
@@ -214,7 +214,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
 
           <Separator />
 
-          {/* Récapitulatif */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-brand-brown">Récapitulatif</h3>
             
@@ -243,7 +243,7 @@ const SubscriptionRegistrationForm = ({ plan, onCancel }: SubscriptionRegistrati
             </div>
           </div>
 
-          {/* Boutons d'action */}
+          {}
           <div className="flex flex-col md:flex-row gap-3">
             <Button
               type="button"

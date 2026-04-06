@@ -21,7 +21,6 @@ from app.models.user import User
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
-
 @router.post("/register/buyer", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
 async def register_buyer(
     buyer_data: BuyerRegisterIn,
@@ -34,7 +33,7 @@ async def register_buyer(
         user = auth_service.create_buyer(db, buyer_data)
         tokens = auth_service.generate_tokens(user)
         
-        # Préparer la réponse avec les données utilisateur (buyer n'a pas de profil artisan)
+
         user_dict = {
             "id": str(user.id),
             "email": user.email,
@@ -71,7 +70,6 @@ async def register_buyer(
             detail="Erreur lors de la création du compte"
         )
 
-
 @router.post("/register/artisan", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
 async def register_artisan(
     email: str = Form(...),
@@ -81,14 +79,14 @@ async def register_artisan(
     region: str = Form(...),
     city: str = Form(...),
     address: Optional[str] = Form(None),
-    languages: Optional[str] = Form(None),  # JSON string ou liste séparée par virgule
+    languages: Optional[str] = Form(None),
     company_name: str = Form(...),
     main_specialty: str = Form(...),
     other_skills: Optional[str] = Form(None),
     years_experience: Optional[str] = Form(None),
     activity_description: str = Form(...),
     brand_story: Optional[str] = Form(None),
-    offerings: str = Form(...),  # JSON string ou liste séparée par virgule
+    offerings: str = Form(...),
     nif: Optional[str] = Form(None),
     stat: Optional[str] = Form(None),
     documents_not_available: bool = Form(False),
@@ -99,7 +97,7 @@ async def register_artisan(
     Inscription d'un nouvel artisan avec upload de photos (jusqu'à 5)
     """
     try:
-        # Parser les champs JSON/list
+
         import json
         languages_list = []
         if languages:
@@ -122,7 +120,7 @@ async def register_artisan(
             except Exception:
                 offerings_list = [o.strip() for o in offerings.split(",") if o.strip()]
         
-        # Créer l'objet ArtisanRegisterIn
+
         artisan_data = ArtisanRegisterIn(
             email=email,
             password=password,
@@ -144,14 +142,13 @@ async def register_artisan(
             documents_not_available=documents_not_available
         )
         
-        # Créer l'utilisateur et le profil
-        photos_list = photos[:5] if photos else None  # Max 5 photos
+
+        photos_list = photos[:5] if photos else None
         user, artisan_profile = await auth_service.create_artisan(db, artisan_data, photos_list)
         
         tokens = auth_service.generate_tokens(user)
         
-        # Préparer la réponse avec les données utilisateur
-        # Safely read artisan_profile attributes (peut être None si récupération échoue)
+
         specialty = None
         description = None
         experience = None
@@ -191,7 +188,7 @@ async def register_artisan(
             detail=str(e)
         )
     except Exception as e:
-        # Print full exception and traceback to aid test debugging (will appear in pytest -s output)
+
         import traceback
         print("Exception in register_artisan:", str(e))
         traceback.print_exc()
@@ -199,7 +196,6 @@ async def register_artisan(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la création du compte artisan: {str(e)}"
         )
-
 
 @router.post("/login", response_model=TokenOut)
 async def login(
@@ -220,7 +216,7 @@ async def login(
     
     tokens = auth_service.generate_tokens(user)
     
-    # Préparer la réponse avec les données utilisateur
+
     user_dict = {
         "id": str(user.id),
         "email": user.email,
@@ -238,7 +234,7 @@ async def login(
         "updated_at": user.updated_at,
     }
     
-    # Ajouter les infos artisan si nécessaire
+
     if user.role.value == "artisan" and user.artisan_profile:
         user_dict["specialty"] = user.artisan_profile.main_specialty
         user_dict["description"] = user.artisan_profile.activity_description
@@ -253,7 +249,6 @@ async def login(
         user=user_out
     )
 
-
 @router.get("/me", response_model=UserOut)
 async def get_current_user_info(
     current_user: User = Depends(get_current_active_user)
@@ -263,14 +258,13 @@ async def get_current_user_info(
     """
     user_out = UserOut.model_validate(current_user)
     
-    # Ajouter les infos artisan si nécessaire
+
     if current_user.role.value == "artisan" and current_user.artisan_profile:
         user_out.specialty = current_user.artisan_profile.main_specialty
         user_out.description = current_user.artisan_profile.activity_description
         user_out.experience = current_user.artisan_profile.years_experience
     
     return user_out
-
 
 @router.post("/refresh", response_model=TokenOut)
 async def refresh_token(
@@ -306,7 +300,7 @@ async def refresh_token(
         
         tokens = auth_service.generate_tokens(user)
         
-        # Préparer la réponse avec les données utilisateur
+
         user_dict = {
             "id": str(user.id),
             "email": user.email,
@@ -324,7 +318,7 @@ async def refresh_token(
             "updated_at": user.updated_at,
         }
         
-        # Ajouter les infos artisan si nécessaire
+
         if user.role.value == "artisan" and user.artisan_profile:
             user_dict["specialty"] = user.artisan_profile.main_specialty
             user_dict["description"] = user.artisan_profile.activity_description
@@ -344,7 +338,6 @@ async def refresh_token(
             detail="Format d'ID utilisateur invalide"
         )
 
-
 @router.post("/logout")
 async def logout(
     current_user: User = Depends(get_current_active_user)
@@ -352,10 +345,8 @@ async def logout(
     """
     Déconnexion de l'utilisateur (invalide le token côté client)
     """
-    # Note: En JWT stateless, on ne peut pas invalider le token côté serveur
-    # Dans une implémentation complète, on pourrait stocker les tokens blacklistés
-    return {"message": "Déconnexion réussie"}
 
+    return {"message": "Déconnexion réussie"}
 
 @router.post("/forgot-password")
 async def forgot_password():
@@ -364,7 +355,6 @@ async def forgot_password():
     TODO: Implémenter avec service email
     """
     return {"message": "Email de réinitialisation envoyé (non implémenté)"}
-
 
 @router.post("/reset-password")
 async def reset_password():

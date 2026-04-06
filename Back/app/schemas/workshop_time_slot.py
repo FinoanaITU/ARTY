@@ -4,7 +4,6 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 
-
 class WorkshopTimeSlotBase(BaseModel):
     workshop_id: UUID
     date: date
@@ -16,16 +15,13 @@ class WorkshopTimeSlotBase(BaseModel):
     is_available: bool = True
     price_modifier: Optional[Decimal] = Decimal("1.0")
 
-
 class WorkshopTimeSlotCreate(WorkshopTimeSlotBase):
     pass
-
 
 class WorkshopTimeSlotUpdate(BaseModel):
     current_participants: Optional[int] = None
     is_available: Optional[bool] = None
     price_modifier: Optional[Decimal] = None
-
 
 class WorkshopTimeSlotOut(WorkshopTimeSlotBase):
     model_config = ConfigDict(from_attributes=True)
@@ -34,7 +30,6 @@ class WorkshopTimeSlotOut(WorkshopTimeSlotBase):
     created_at: datetime
     updated_at: datetime
 
-    # Computed fields
     @property
     def available_spots(self) -> int:
         return max(0, self.max_participants - self.current_participants)
@@ -55,10 +50,9 @@ class WorkshopTimeSlotOut(WorkshopTimeSlotBase):
             return 'almost_full'
         return 'available'
 
-
 class TimeSlotSummary(BaseModel):
     """Simplified time slot for calendar display"""
-    time: str  # Format "HH:MM"
+    time: str
     available: bool
     maxParticipants: int
     currentParticipants: int

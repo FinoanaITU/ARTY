@@ -7,9 +7,6 @@ from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
 
-
-# ============ INPUT SCHEMAS ============
-
 class CartItemCreate(BaseModel):
     """
     Schema pour ajouter un item au panier.
@@ -22,7 +19,6 @@ class CartItemCreate(BaseModel):
     class Config:
         from_attributes = True
 
-
 class CartItemUpdate(BaseModel):
     """
     Schema pour modifier un item du panier (généralement la quantité).
@@ -33,7 +29,6 @@ class CartItemUpdate(BaseModel):
     class Config:
         from_attributes = True
 
-
 class ApplyCouponRequest(BaseModel):
     """
     Schema pour appliquer un code promo au panier.
@@ -42,9 +37,6 @@ class ApplyCouponRequest(BaseModel):
     
     class Config:
         from_attributes = True
-
-
-# ============ OUTPUT SCHEMAS ============
 
 class ProductMinimal(BaseModel):
     """
@@ -58,7 +50,6 @@ class ProductMinimal(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class CartItemOut(BaseModel):
     """
@@ -75,12 +66,11 @@ class CartItemOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     
-    # Informations du produit (nested)
+
     product: Optional[ProductMinimal] = None
     
     class Config:
         from_attributes = True
-
 
 class CartSummary(BaseModel):
     """
@@ -94,7 +84,6 @@ class CartSummary(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class CartOut(BaseModel):
     """
@@ -112,15 +101,14 @@ class CartOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     
-    # Liste des items du panier
+
     items: List[CartItemOut] = []
     
-    # Résumé (calculé)
+
     summary: Optional[CartSummary] = None
     
     class Config:
         from_attributes = True
-
 
 class CartItemAddedResponse(BaseModel):
     """
@@ -132,7 +120,6 @@ class CartItemAddedResponse(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class CartClearedResponse(BaseModel):
     """

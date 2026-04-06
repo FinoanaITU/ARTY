@@ -49,11 +49,11 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
   const { user } = useUser();
   const { language } = useLanguage();
   
-  // Fonction pour déterminer le type d'utilisateur basé sur le profil
+  
   const getUserType = () => {
     if (!user) return 'tourist';
     
-    // Mapping des types du contexte utilisateur vers les types de prix
+    
     if (user.buyerType === 'entreprise') {
       return 'business';
     }
@@ -62,7 +62,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
       return 'local';
     }
     
-    // Par défaut, si c'est un particulier étranger
+    
     return 'tourist';
   };
 
@@ -95,7 +95,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
   }, [watchedParticipants]);
 
   const onSubmit = (data: RegistrationFormData) => {
-    // Ajouter au panier
+    
     addItem({
       type: 'workshop',
       workshopId: workshop.id,
@@ -154,7 +154,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
 
       <CardContent className="space-y-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Informations personnelles */}
+          {}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-brand-brown">Informations personnelles</h3>
             
@@ -237,7 +237,7 @@ const WorkshopRegistrationForm = ({ workshop, onCancel }: WorkshopRegistrationFo
 
           <Separator />
 
-          {/* Affichage du type d'utilisateur automatique */}
+          {}
           {user && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-brand-brown">Profil de l'acheteur</h3>

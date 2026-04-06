@@ -12,7 +12,6 @@ from app.core.security import verify_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
@@ -32,7 +31,7 @@ async def get_current_user(
     if user_id is None:
         raise credentials_exception
     
-    # Vérifier le type de token
+
     token_type = payload.get("type")
     if token_type != "access":
         raise HTTPException(
@@ -46,7 +45,6 @@ async def get_current_user(
     
     return user
 
-
 async def get_current_active_user(
     current_user: User = Depends(get_current_user)
 ) -> User:
@@ -57,7 +55,6 @@ async def get_current_active_user(
             detail="Utilisateur inactif"
         )
     return current_user
-
 
 def require_role(allowed_roles: list[UserRole]):
     """Décorateur/dépendance pour vérifier le rôle de l'utilisateur"""
@@ -70,8 +67,6 @@ def require_role(allowed_roles: list[UserRole]):
         return current_user
     return role_checker
 
-
-# Dépendances spécifiques par rôle
 RequireBuyer = Depends(require_role([UserRole.BUYER]))
 RequireArtisan = Depends(require_role([UserRole.ARTISAN]))
 RequireAdmin = Depends(require_role([UserRole.ADMIN]))

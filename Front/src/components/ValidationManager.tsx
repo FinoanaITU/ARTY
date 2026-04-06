@@ -22,7 +22,7 @@ export const ValidationManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [statsPeriod, setStatsPeriod] = useState('month');
 
-  // Charger les validations en attente
+  
   const loadPendingValidations = async (validationType: string = 'all') => {
     setIsLoading(true);
     try {
@@ -43,7 +43,7 @@ export const ValidationManager: React.FC = () => {
     }
   };
 
-  // Charger les statistiques
+  
   const loadValidationStats = async () => {
     try {
       const stats = await apiService.getValidationStats(statsPeriod);
@@ -58,7 +58,7 @@ export const ValidationManager: React.FC = () => {
     loadValidationStats();
   }, [activeTab, statsPeriod]);
 
-  // Gérer la validation (approve/reject)
+  
   const handleValidation = async (
     item: PendingValidationItem,
     action: 'approve' | 'reject',
@@ -88,11 +88,11 @@ export const ValidationManager: React.FC = () => {
         description: response.message || `${item.type} ${action === 'approve' ? 'approuvé' : 'rejeté'} avec succès`,
       });
 
-      // Recharger les données
+      
       loadPendingValidations(activeTab);
       loadValidationStats();
       
-      // Fermer le dialog
+      
       setDialogOpen(false);
       setValidationNotes('');
       setSelectedItem(null);
@@ -146,7 +146,7 @@ export const ValidationManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec statistiques */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -191,7 +191,7 @@ export const ValidationManager: React.FC = () => {
         </Card>
       </div>
 
-      {/* Statistiques de validation */}
+      {}
       {validationStats && (
         <Card>
           <CardHeader>
@@ -235,7 +235,7 @@ export const ValidationManager: React.FC = () => {
         </Card>
       )}
 
-      {/* Tabs pour filtrer par type */}
+      {}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -327,7 +327,7 @@ export const ValidationManager: React.FC = () => {
                       </div>
 
                       <div className="flex gap-2">
-                        {/* Bouton Approuver */}
+                        {}
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button

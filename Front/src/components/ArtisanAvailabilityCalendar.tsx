@@ -44,7 +44,7 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
     });
   };
 
-  // Vérifie si une date est dans l'intervalle de sélection (pour colorer les dates intermédiaires)
+  
   const isDateInSelectedRange = (date: Date) => {
     if (selectionMode === 'range' && selectedDates.length === 2) {
       const [start, end] = selectedDates;
@@ -111,9 +111,9 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
 
   return (
     <div className="space-y-6 p-1">
-      {/* Layout en 2 colonnes : Gestion + Calendrier */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* En-tête avec informations */}
+        {}
         <Card className="border-orange-200 shadow-sm h-fit">
         <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 pb-4">
           <div className="flex items-start gap-3">
@@ -141,7 +141,7 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
             </Button>
           ) : (
             <div className="space-y-5 p-5 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border-2 border-orange-200 shadow-sm">
-              {/* Sélection du mode */}
+              {}
               <div>
                 <label className="text-sm font-semibold text-gray-700 mb-2 block">
                   Type de période
@@ -178,7 +178,7 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
                 </div>
               </div>
 
-              {/* Affichage de la sélection */}
+              {}
               {selectedDates.length > 0 && (
                 <div className="p-4 bg-white rounded-lg border-2 border-orange-300 shadow-sm">
                   <div className="flex items-start gap-2">
@@ -200,7 +200,7 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
                 </div>
               )}
 
-              {/* Raison */}
+              {}
               <div>
                 <label className="text-sm font-semibold text-gray-700 mb-2 block">
                   Raison de l'indisponibilité
@@ -241,7 +241,7 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
         </CardContent>
       </Card>
 
-      {/* Calendrier */}
+      {}
       <Card className="shadow-sm h-fit">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -285,7 +285,7 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
             />
           </div>
           
-          {/* Légende */}
+          {}
           <div className="px-4 pb-4 border-t bg-gray-50">
             <div className="flex flex-wrap gap-4 text-sm pt-4">
               <div className="flex items-center gap-2">
@@ -311,9 +311,9 @@ const ArtisanAvailabilityCalendar: React.FC<ArtisanAvailabilityCalendarProps> = 
         </CardContent>
       </Card>
       </div>
-      {/* Fin du layout en 2 colonnes */}
+      {}
 
-      {/* Liste des périodes d'indisponibilité */}
+      {}
       {unavailablePeriods.length > 0 && (
         <Card className="shadow-sm border-gray-200">
           <CardHeader className="bg-gray-50 pb-4">

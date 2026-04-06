@@ -33,13 +33,13 @@ const ArtisanDashboard = () => {
   const [workshops, setWorkshops] = useState<WorkshopOut[]>([]);
   const [workshopsLoading, setWorkshopsLoading] = useState(false);
   
-  // États pour les modales d'atelier
+  
   const [viewingWorkshop, setViewingWorkshop] = useState<WorkshopOut | null>(null);
   const [editingWorkshop, setEditingWorkshop] = useState<WorkshopOut | null>(null);
   const [deletingWorkshop, setDeletingWorkshop] = useState<WorkshopOut | null>(null);
   const [isDeletingWorkshop, setIsDeletingWorkshop] = useState(false);
 
-  // États pour les stats, commandes et indisponibilités
+  
   const [artisanStats, setArtisanStats] = useState({
     totalSales: 0,
     ordersThisMonth: 0,
@@ -56,12 +56,12 @@ const ArtisanDashboard = () => {
     if (!user) return;
     
     try {
-      // Supprimer les anciennes indisponibilités
+      
       for (const period of artisanUnavailability) {
         await apiService.deleteUnavailability(period.id);
       }
       
-      // Créer les nouvelles
+      
       for (const period of periods) {
         await apiService.createUnavailability({
           start_date: period.startDate.toISOString().split('T')[0],
@@ -71,7 +71,7 @@ const ArtisanDashboard = () => {
         });
       }
       
-      // Recharger les indisponibilités
+      
       const response = await apiService.getUnavailabilities();
       setArtisanUnavailability(response);
       
@@ -89,7 +89,7 @@ const ArtisanDashboard = () => {
     }
   };
 
-  // Charger les stats de l'artisan
+  
   useEffect(() => {
     const loadStats = async () => {
       if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -115,7 +115,7 @@ const ArtisanDashboard = () => {
     loadStats();
   }, [user]);
 
-  // Charger les commandes récentes
+  
   useEffect(() => {
     const loadOrders = async () => {
       if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -141,7 +141,7 @@ const ArtisanDashboard = () => {
     loadOrders();
   }, [user]);
 
-  // Charger les indisponibilités
+  
   useEffect(() => {
     const loadUnavailabilities = async () => {
       if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -151,7 +151,7 @@ const ArtisanDashboard = () => {
       setUnavailabilitiesLoading(true);
       try {
         const response = await apiService.getUnavailabilities();
-        // Convertir les dates string en objets Date
+        
         const formattedData = response.map((item: any) => ({
           id: item.id,
           startDate: new Date(item.start_date),
@@ -162,7 +162,7 @@ const ArtisanDashboard = () => {
         setArtisanUnavailability(formattedData);
       } catch (error) {
         console.error('Error loading unavailabilities:', error);
-        // Toast non nécessaire ici, c'est optionnel
+        
       } finally {
         setUnavailabilitiesLoading(false);
       }
@@ -171,7 +171,7 @@ const ArtisanDashboard = () => {
     loadUnavailabilities();
   }, [user]);
 
-  // Charger les produits de l'artisan
+  
   useEffect(() => {
     const loadProducts = async () => {
       if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -182,7 +182,7 @@ const ArtisanDashboard = () => {
       try {
         const response = await apiService.getProducts({
           artisan_id: user.id,
-          limit: 100 // Charger tous les produits de l'artisan
+          limit: 100 
         });
         setProducts(response.items || []);
       } catch (error) {
@@ -200,7 +200,7 @@ const ArtisanDashboard = () => {
     loadProducts();
   }, [user]);
 
-  // Charger les ateliers de l'artisan ou tous les ateliers pour l'admin
+  
   useEffect(() => {
     const loadWorkshops = async () => {
       if (!user || (user.role !== 'artisan' && user.role !== 'admin')) {
@@ -210,8 +210,8 @@ const ArtisanDashboard = () => {
       setWorkshopsLoading(true);
       try {
         const params = user.role === 'admin' 
-          ? { limit: 100 } // Admin voit tous les ateliers
-          : { artisan_id: user.id, limit: 100 }; // Artisan voit ses ateliers
+          ? { limit: 100 } 
+          : { artisan_id: user.id, limit: 100 }; 
         
         const response = await apiService.getWorkshops(params);
         setWorkshops(response.items || []);
@@ -325,7 +325,7 @@ const ArtisanDashboard = () => {
       title: "Atelier créé",
       description: "L'atelier a été créé avec succès et est en attente d'approbation.",
     });
-    // Recharger la liste des ateliers
+    
     setWorkshops(prev => [workshopData, ...prev]);
   };
 
@@ -474,7 +474,7 @@ const ArtisanDashboard = () => {
                 </Card>
               </div>
 
-              {/* Activités à venir */}
+              {}
               <div className="grid md:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
@@ -581,7 +581,7 @@ const ArtisanDashboard = () => {
                         </Badge>
                       </div>
                       
-                      {/* Mock detailed orders data */}
+                      {}
                       <div className="space-y-4">
                         <Card>
                           <CardContent className="p-4">
@@ -768,7 +768,7 @@ const ArtisanDashboard = () => {
         </div>
       </div>
 
-      {/* Modales pour les ateliers */}
+      {}
       <WorkshopViewModal
         workshop={viewingWorkshop!}
         isOpen={!!viewingWorkshop}

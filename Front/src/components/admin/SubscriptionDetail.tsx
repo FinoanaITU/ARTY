@@ -51,12 +51,12 @@ export const SubscriptionDetail: React.FC<SubscriptionDetailProps> = ({
   const [history, setHistory] = useState<SubscriptionHistoryOut[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   
-  // Modals
+  
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [extendModalOpen, setExtendModalOpen] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   
-  // Form data
+  
   const [cancelReason, setCancelReason] = useState('');
   const [extendDays, setExtendDays] = useState('30');
   const [extendNotes, setExtendNotes] = useState('');
@@ -179,7 +179,7 @@ export const SubscriptionDetail: React.FC<SubscriptionDetailProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={onBack}>
@@ -348,7 +348,7 @@ export const SubscriptionDetail: React.FC<SubscriptionDetailProps> = ({
         </Card>
       )}
 
-      {/* Admin Notes */}
+      {}
       {subscription.admin_notes && (
         <Card>
           <CardHeader>
@@ -360,7 +360,7 @@ export const SubscriptionDetail: React.FC<SubscriptionDetailProps> = ({
         </Card>
       )}
 
-      {/* History */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

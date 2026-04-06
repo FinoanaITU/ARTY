@@ -3,7 +3,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID
 
-
 class Notification(BaseModel):
     __tablename__ = "notifications"
     
@@ -18,9 +17,6 @@ class Notification(BaseModel):
     priority = Column(String(20), default='normal', index=True)
     expires_at = Column(DateTime, index=True)
     
-    # Relationships - ALL COMMENTED OUT to avoid circular dependency issues
-    # user = relationship("User", back_populates="notifications")
-
 
 class NotificationPreference(BaseModel):
     __tablename__ = "notification_preferences"
@@ -31,5 +27,4 @@ class NotificationPreference(BaseModel):
     sms_enabled = Column(Boolean, default=False)
     preferences = Column(JSON)
     
-    # Relationships - ALL COMMENTED OUT
-    # user = relationship("User")
+

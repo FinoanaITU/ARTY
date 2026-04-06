@@ -25,7 +25,6 @@ interface Unavailability {
   status: 'approved' | 'pending' | 'rejected';
 }
 
-// Type pour les données de workshop unifiées
 interface WorkshopData {
   id: string | number;
   title: string;
@@ -68,13 +67,12 @@ interface WorkshopData {
   total_bookings?: number;
 }
 
-// Fonction pour normaliser les données du workshop
 const normalizeWorkshopData = (apiWorkshop: any, mockWorkshop: any): WorkshopData => {
   if (apiWorkshop) {
-    // Utiliser les données de l'API
+    
     return {
       ...apiWorkshop,
-      // Ajouter des propriétés pour la compatibilité avec le mock
+      
       type: apiWorkshop.workshop_type || 'reservation',
       instructor: apiWorkshop.instructor_name,
       instructorImage: apiWorkshop.instructor_image,
@@ -88,17 +86,16 @@ const normalizeWorkshopData = (apiWorkshop: any, mockWorkshop: any): WorkshopDat
       whatYouWillLearn: apiWorkshop.what_you_will_learn || []
     };
   } else {
-    // Utiliser les données mock
+    
     return mockWorkshop;
   }
 };
 
-// Helper pour normaliser les URLs d'images
 const normalizeImageUrl = (url: string | undefined | null): string => {
   if (!url) return 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop';
-  // Si l'URL commence par http:// or https://, la laisser telle quelle
+  
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  // Construire l'URL complète avec la base du backend
+  
   const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
   return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
 };
@@ -113,17 +110,17 @@ const WorkshopDetail = () => {
   const [unavailabilities, setUnavailabilities] = useState<Unavailability[]>([]);
   const [loadingUnavailabilities, setLoadingUnavailabilities] = useState(false);
   
-  // Use the workshop hook
+  
   const { currentWorkshop: apiWorkshop, loading: apiLoading, error: apiError, getWorkshop } = useWorkshops();
   
-  // Load workshop data on mount
+  
   useEffect(() => {
     if (id) {
       getWorkshop(id);
     }
   }, [id, getWorkshop]);
 
-  // Load unavailabilities when API workshop is available
+  
   useEffect(() => {
     if (apiWorkshop) {
       setLoadingUnavailabilities(true);
@@ -142,7 +139,7 @@ const WorkshopDetail = () => {
     }
   }, [apiWorkshop]);
 
-  // Convert API unavailabilities to the format expected by the calendar
+  
   const artisanUnavailability = unavailabilities.map(unavail => ({
     id: unavail.id,
     artisanId: unavail.artisan_id,
@@ -155,7 +152,7 @@ const WorkshopDetail = () => {
     updatedAt: new Date()
   }));
 
-  // Mock data - in real app, fetch based on id
+  
   const workshopType: 'inscription' | 'reservation' = (id === '2' || id === '4' || id === '6') ? 'reservation' : 'inscription';
   
   const mockWorkshop = {
@@ -210,19 +207,17 @@ const WorkshopDetail = () => {
 
   const handleBooking = (date: Date, time: string) => {
     console.log('Booking confirmed for:', date, time);
-    // Here you would typically send the booking to your backend
+    
     alert(`Réservation confirmée pour le ${date.toLocaleDateString('fr-FR')} à ${time}`);
     setShowBookingCalendar(false);
   };
 
   const handleCustomRequest = (request: any) => {
     console.log('Custom request submitted:', request);
-    // Here you would typically send the custom request to your backend
+    
     alert(`Demande personnalisée envoyée ! Nous vous répondrons sous 24h à ${request.contactEmail}`);
     setShowBookingCalendar(false);
   };
-
-
 
   const handleCustomDateRequest = (requestedDate: Date) => {
     console.log('Date requested:', requestedDate);
@@ -230,10 +225,10 @@ const WorkshopDetail = () => {
     setShowBookingCalendar(true);
   };
 
-  // Use API workshop if available, otherwise use mock
+  
   const workshop = normalizeWorkshopData(apiWorkshop, mockWorkshop);
 
-  // Calculer le prix avec réduction si applicable
+  
   const getUserType = () => {
     if (!user) return 'tourist';
     if (user.buyerType === 'entreprise') return 'business';
@@ -244,7 +239,7 @@ const WorkshopDetail = () => {
   const workshopPrice = workshop.base_price || workshop.price || 0;
   const { priceVariation } = usePriceVariations(workshopPrice, getUserType());
 
-  // Récupération des indisponibilités si on utilise les données API
+  
   useEffect(() => {
     if (apiWorkshop && apiWorkshop.id) {
       setLoadingUnavailabilities(true);
@@ -271,7 +266,7 @@ const WorkshopDetail = () => {
       
       <div className="px-4 py-6">
         <div className="max-w-4xl mx-auto">
-          {/* Loading State */}
+          {}
           {apiLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
@@ -287,12 +282,12 @@ const WorkshopDetail = () => {
             </div>
           )}
           
-          {/* Back Button */}
+          {}
           <Link to="/workshops" className="inline-flex items-center text-brand-brown hover:text-brand-terracotta mb-6">
             ← Retour aux ateliers
           </Link>
 
-          {/* Workshop Header */}
+          {}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
             <div className="aspect-video bg-brand-beige relative">
               <img
@@ -306,7 +301,7 @@ const WorkshopDetail = () => {
                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop'; }}
               />
               
-              {/* Workshop Type Badge */}
+              {}
               <div className={`absolute top-4 left-4 px-3 py-2 rounded-full text-sm font-medium ${
                 workshop.type === 'inscription' 
                   ? 'bg-brand-terracotta text-white' 
@@ -315,7 +310,7 @@ const WorkshopDetail = () => {
                 {workshop.type === 'inscription' ? 'Inscription' : 'Réservation flexible'}
               </div>
 
-              {/* Participants/Availability Info */}
+              {}
               <div className="absolute top-4 right-4 bg-white/90 px-3 py-2 rounded-full">
                 <span className="text-sm font-medium">
                   {workshop.type === 'inscription' 
@@ -370,7 +365,7 @@ const WorkshopDetail = () => {
                 </div>
               )}
               
-              {/* Privatization Info */}
+              {}
               {workshop.privatizationOption && (
                 <div className="mb-6 p-4 bg-brand-beige rounded-lg border border-brand-brown/20">
                   <h3 className="font-semibold text-brand-brown mb-2">Option de privatisation disponible</h3>
@@ -422,7 +417,7 @@ const WorkshopDetail = () => {
             </div>
           </div>
 
-          {/* Registration Form for inscription workshops */}
+          {}
           {showRegistrationForm && workshop.type === 'inscription' && (
             <div className="mb-6">
               <WorkshopRegistrationForm
@@ -443,7 +438,7 @@ const WorkshopDetail = () => {
             </div>
           )}
 
-          {/* Artisan Unavailability Calendar */}
+          {}
           {showUnavailabilityCalendar && workshop.type === 'inscription' && (
             <div className="mb-6">
               <ArtisanUnavailabilityDisplay
@@ -454,7 +449,7 @@ const WorkshopDetail = () => {
             </div>
           )}
 
-          {/* Booking Calendar for reservation type or custom requests */}
+          {}
           {showBookingCalendar && (
             <div className="mb-6">
               <WorkshopBookingCalendar
@@ -472,11 +467,11 @@ const WorkshopDetail = () => {
             </div>
           )}
 
-          {/* Content Grid */}
+          {}
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Main Content */}
+            {}
             <div className="md:col-span-2 space-y-6">
-              {/* Description */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-brand-brown text-xl">📋 Description</CardTitle>
@@ -580,7 +575,7 @@ const WorkshopDetail = () => {
                     )}
                   </div>
 
-                  {/* Materials To Bring */}
+                  {}
                   {workshop.materials_to_bring && workshop.materials_to_bring.length > 0 && (
                     <div className="pt-4 border-t">
                       <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -601,9 +596,9 @@ const WorkshopDetail = () => {
               </Card>
             </div>
 
-            {/* Sidebar */}
+            {}
             <div className="space-y-6">
-              {/* Instructor Card */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-brand-brown text-lg">👨‍🎨 Votre instructeur</CardTitle>
@@ -635,7 +630,7 @@ const WorkshopDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Important Info */}
+              {}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-brand-brown text-lg">ℹ️ Informations pratiques</CardTitle>
@@ -713,7 +708,7 @@ const WorkshopDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Indisponibilités de l'artisan */}
+              {}
               {apiWorkshop && (
                 <Card>
                   <CardHeader>

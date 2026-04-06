@@ -24,14 +24,14 @@ export const AnalyticsDashboard: React.FC = () => {
   const [period, setPeriod] = useState<StatsPeriod>('month');
   const [activeTab, setActiveTab] = useState('overview');
   
-  // States pour les données
+  
   const [platformOverview, setPlatformOverview] = useState<PlatformOverview | null>(null);
   const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null);
   const [artisanStats, setArtisanStats] = useState<ArtisanStats | null>(null);
   const [conversionStats, setConversionStats] = useState<ConversionStats | null>(null);
   const [userBehaviorStats, setUserBehaviorStats] = useState<UserBehaviorStats | null>(null);
 
-  // Charger les données au montage et quand la période change
+  
   useEffect(() => {
     loadAllAnalytics();
   }, [period]);
@@ -39,7 +39,7 @@ export const AnalyticsDashboard: React.FC = () => {
   const loadAllAnalytics = async () => {
     setLoading(true);
     try {
-      // Charger toutes les analytics en parallèle
+      
       const [overview, revenue, artisans, conversion, userBehavior] = await Promise.all([
         apiService.getAdminPlatformOverview(),
         apiService.getAdminRevenueStats(period),
@@ -75,7 +75,7 @@ export const AnalyticsDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header avec sélecteur de période */}
+      {}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Analytics de la plateforme</h2>
@@ -95,7 +95,7 @@ export const AnalyticsDashboard: React.FC = () => {
         </Select>
       </div>
 
-      {/* KPIs rapides */}
+      {}
       {platformOverview && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
@@ -156,7 +156,7 @@ export const AnalyticsDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Tabs pour les différentes sections */}
+      {}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>

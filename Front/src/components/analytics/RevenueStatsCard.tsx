@@ -31,7 +31,7 @@ export const RevenueStatsCard: React.FC<RevenueStatsCardProps> = ({ data }) => {
 
   return (
     <div className="space-y-6">
-      {/* Résumé des revenus */}
+      {}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -44,7 +44,7 @@ export const RevenueStatsCard: React.FC<RevenueStatsCardProps> = ({ data }) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Revenus totaux */}
+            {}
             <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
               <p className="text-sm font-medium text-green-900 mb-2">Revenus totaux</p>
               <p className="text-4xl font-bold text-green-700">{formatCurrency(data.total_revenue)}</p>
@@ -56,7 +56,7 @@ export const RevenueStatsCard: React.FC<RevenueStatsCardProps> = ({ data }) => {
               )}
             </div>
 
-            {/* Répartition produits/ateliers */}
+            {}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm font-medium text-blue-900 mb-1">Ventes Produits</p>
@@ -77,7 +77,7 @@ export const RevenueStatsCard: React.FC<RevenueStatsCardProps> = ({ data }) => {
         </CardContent>
       </Card>
 
-      {/* Commission Artizaho */}
+      {}
       <Card>
         <CardHeader>
           <CardTitle>Commission Artizaho</CardTitle>
@@ -96,7 +96,7 @@ export const RevenueStatsCard: React.FC<RevenueStatsCardProps> = ({ data }) => {
         </CardContent>
       </Card>
 
-      {/* Évolution quotidienne */}
+      {}
       {data.daily_breakdown && data.daily_breakdown.length > 0 && (
         <Card>
           <CardHeader>

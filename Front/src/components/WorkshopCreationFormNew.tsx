@@ -88,7 +88,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
     foreign_price: 0,
     max_participants: 12,
     min_participants: 1,
-    duration_minutes: 180, // 3 heures par défaut
+    duration_minutes: 180, 
     location: '',
     address: '',
     materials_included: [],
@@ -101,7 +101,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
     ...initialData
   });
 
-  // Gestionnaires pour les listes dynamiques
+  
   const addListItem = (field: keyof WorkshopFormData, value: string = '') => {
     const currentList = (formData[field] as string[]) || [];
     setFormData(prev => ({
@@ -129,16 +129,16 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
     }));
   };
 
-  // Gestionnaires pour les photos
+  
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    const newFiles = Array.from(files).slice(0, 5 - photos.length); // Max 5 photos
+    const newFiles = Array.from(files).slice(0, 5 - photos.length); 
     const newPhotos = [...photos, ...newFiles];
     setPhotos(newPhotos);
 
-    // Créer les aperçus
+    
     newFiles.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -147,7 +147,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
       reader.readAsDataURL(file);
     });
 
-    // Reset l'input
+    
     event.target.value = '';
   };
 
@@ -159,7 +159,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation basique
+    
     if (!formData.title || !formData.description || !formData.category || !formData.location) {
       toast({
         title: "Erreur",
@@ -181,7 +181,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
     setLoading(true);
 
     try {
-      // Préparer les données pour l'API
+      
       const workshopData: WorkshopCreate = {
         title: formData.title,
         description: formData.description,
@@ -190,7 +190,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
         workshop_type: formData.workshop_type,
         skill_level: formData.skill_level,
         base_price: formData.base_price,
-        foreign_price: formData.foreign_price || formData.base_price * 1.2, // 20% de plus par défaut
+        foreign_price: formData.foreign_price || formData.base_price * 1.2, 
         min_participants: formData.min_participants,
         max_participants: formData.max_participants,
         duration_minutes: formData.duration_minutes,
@@ -203,7 +203,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
         tags: formData.tags?.filter(t => t.trim() !== ''),
       };
 
-      // Appel API avec photos
+      
       const result = photos.length > 0 
         ? await apiService.createWorkshopWithPhotos(workshopData, photos, publishImmediately)
         : await apiService.createWorkshop(workshopData, publishImmediately);
@@ -224,10 +224,10 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
       let errorMessage = 'Erreur lors de la création de l\'atelier';
       const errorDetail = error.response?.data?.detail;
       
-      // Gérer l'erreur de description trop courte
+      
       if (errorDetail && (errorDetail.includes('String should have at least 10 characters') || errorDetail.includes('description'))) {
         errorMessage = 'Description trop courte (minimum 10 caractères)';
-        // Mettre le focus sur le champ description
+        
         setTimeout(() => {
           descriptionRef.current?.focus();
           descriptionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -266,7 +266,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Informations de base */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle>Informations de base</CardTitle>
@@ -381,30 +381,9 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
                       id="photos"
                       type="file"
                       multiple
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('photos')?.click()}
-                      className="w-full"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Choisir des photos ({photos.length}/5)
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Formats acceptés: JPG, PNG, WebP. Taille max: 5MB par photo.
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                      accept="image
 
-        {/* Type et niveau */}
+}
         <Card>
           <CardHeader>
             <CardTitle>Type et niveau</CardTitle>
@@ -602,7 +581,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
           </CardContent>
         </Card>
 
-        {/* Matériel */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle>Matériel</CardTitle>
@@ -677,7 +656,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
           </CardContent>
         </Card>
 
-        {/* Prérequis */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle>Informations additionnelles</CardTitle>
@@ -697,7 +676,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
           </CardContent>
         </Card>
 
-        {/* Option de publication */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle>Publication</CardTitle>
@@ -724,7 +703,7 @@ const WorkshopCreationForm: React.FC<WorkshopCreationFormProps> = ({
           </CardContent>
         </Card>
 
-        {/* Boutons de soumission */}
+        {}
         <div className="flex gap-4 justify-end">
           <Button
             type="button"

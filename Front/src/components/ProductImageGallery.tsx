@@ -21,7 +21,7 @@ const ProductImageGallery = ({ images, productName }: ProductImageGalleryProps) 
 
   return (
     <div className="space-y-4">
-      {/* Main Image */}
+      {}
       <div className="relative aspect-square bg-orange-100 rounded-lg overflow-hidden">
         <img
           src={images[currentImageIndex]}
@@ -65,7 +65,7 @@ const ProductImageGallery = ({ images, productName }: ProductImageGalleryProps) 
         )}
       </div>
 
-      {/* Thumbnail Images */}
+      {}
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto">
           {images.map((image, index) => (

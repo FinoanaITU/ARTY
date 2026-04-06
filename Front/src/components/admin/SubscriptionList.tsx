@@ -32,7 +32,7 @@ export const SubscriptionList: React.FC<SubscriptionListProps> = ({
   const [page, setPage] = useState(0);
   const [limit] = useState(20);
   
-  // Filtres
+  
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [planFilter, setPlanFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,7 +128,7 @@ export const SubscriptionList: React.FC<SubscriptionListProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        {/* Filtres */}
+        {}
         <div className="grid md:grid-cols-4 gap-4 mb-6">
           <div>
             <Label htmlFor="search">Recherche</Label>
@@ -193,7 +193,7 @@ export const SubscriptionList: React.FC<SubscriptionListProps> = ({
           </div>
         </div>
 
-        {/* Table */}
+        {}
         <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
@@ -264,7 +264,7 @@ export const SubscriptionList: React.FC<SubscriptionListProps> = ({
           </Table>
         </div>
 
-        {/* Pagination */}
+        {}
         {!loading && filteredSubscriptions.length > 0 && (
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-gray-600">

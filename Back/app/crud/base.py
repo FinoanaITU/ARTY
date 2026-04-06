@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.core.database import Base
 
-
 class CRUDBase:
     def __init__(self, model: Type[Base]):
         """

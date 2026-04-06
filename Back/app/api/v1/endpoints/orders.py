@@ -23,7 +23,6 @@ from app.services.order_service import OrderService
 
 router = APIRouter()
 
-
 @router.post("/", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
 async def create_order(
     order_data: OrderCreate,
@@ -59,7 +58,7 @@ async def create_order(
     """
     order = await OrderService.create_order(db, current_user.id, order_data)
     
-    # Récupérer les items et payments
+
     items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
     payments = db.query(Payment).filter(Payment.order_id == order.id).all()
     
@@ -101,7 +100,6 @@ async def create_order(
         payments=[]
     )
 
-
 @router.get("/", response_model=PaginatedOrdersResponse)
 async def get_orders(
     status: Optional[str] = Query(None, description="Filtrer par statut"),
@@ -123,16 +121,15 @@ async def get_orders(
     - limit: Items par page (défaut: 20, max: 100)
     """
     if current_user.role == UserRole.ARTISAN:
-        # Récupérer les commandes où l'artisan a des items
+
         return await OrderService.get_artisan_orders(
             db, current_user.id, status, page, limit
         )
     else:
-        # Récupérer les commandes de l'acheteur
+
         return await OrderService.get_user_orders(
             db, current_user.id, status, page, limit
         )
-
 
 @router.get("/{order_id}", response_model=OrderOut)
 async def get_order(
@@ -150,7 +147,7 @@ async def get_order(
     """
     order = await OrderService.get_order(db, order_id, current_user.id)
     
-    # Récupérer les items et payments
+
     items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
     payments = db.query(Payment).filter(Payment.order_id == order.id).all()
     
@@ -203,7 +200,6 @@ async def get_order(
         ) for payment in payments]
     )
 
-
 @router.patch("/{order_id}/status", response_model=OrderOut)
 async def update_order_status(
     order_id: UUID,
@@ -243,7 +239,7 @@ async def update_order_status(
         db, order_id, current_user.id, status_update
     )
     
-    # Récupérer les items et payments
+
     items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
     payments = db.query(Payment).filter(Payment.order_id == order.id).all()
     

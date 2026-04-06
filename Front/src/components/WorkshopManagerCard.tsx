@@ -11,12 +11,11 @@ import { Edit2, Trash2, Eye, MoreVertical, Send, Archive, Lock, Unlock } from 'l
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Clock, Users, MapPin, CreditCard, Loader2 } from 'lucide-react';
 
-// Helper pour normaliser les URLs d'images
 const normalizeImageUrl = (url: string | undefined | null): string => {
   if (!url) return '';
-  // Si l'URL commence par http:// or https://, la laisser telle quelle
+  
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  // Construire l'URL complète avec la base du backend
+  
   const backendBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/v1\/?$/, '');
   return url.startsWith('/') ? `${backendBase}${url}` : `${backendBase}/${url}`;
 };
@@ -88,7 +87,7 @@ export const WorkshopManagerCard: React.FC<WorkshopManagerCardProps> = ({
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           
-          {/* Status Badge */}
+          {}
           <div className="absolute top-2 left-2">
             <Badge 
               variant={isPublished ? "default" : "secondary"}
@@ -98,7 +97,7 @@ export const WorkshopManagerCard: React.FC<WorkshopManagerCardProps> = ({
             </Badge>
           </div>
 
-          {/* Actions Button */}
+          {}
           {showActions && (
             <div className="absolute top-2 right-2">
               <DropdownMenu>
@@ -154,7 +153,7 @@ export const WorkshopManagerCard: React.FC<WorkshopManagerCardProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-3">
-          {/* Stats Grid */}
+          {}
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="flex items-center gap-1 text-muted-foreground">
               <Clock className="h-4 w-4 flex-shrink-0" />
@@ -174,19 +173,19 @@ export const WorkshopManagerCard: React.FC<WorkshopManagerCardProps> = ({
             </div>
           </div>
 
-          {/* Short Description */}
+          {}
           <p className="text-sm text-muted-foreground line-clamp-2">
             {workshop.short_description || workshop.description}
           </p>
 
-          {/* Booking Stats */}
+          {}
           {workshop.total_bookings > 0 && (
             <div className="text-xs bg-blue-50 text-blue-700 p-2 rounded">
               {workshop.total_bookings} réservation(s) • {workshop.rating_count} avis
             </div>
           )}
 
-          {/* Quick Actions */}
+          {}
           <div className="flex gap-2 pt-2">
             <Link to={`/workshop/${workshop.id}`} className="flex-1">
               <Button size="sm" variant="outline" className="w-full">
@@ -230,7 +229,7 @@ export const WorkshopManagerCard: React.FC<WorkshopManagerCardProps> = ({
         </CardContent>
       </Card>
 
-      {/* Details Dialog */}
+      {}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -304,7 +303,7 @@ export const WorkshopManagerCard: React.FC<WorkshopManagerCardProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogTitle>Supprimer l'atelier?</AlertDialogTitle>

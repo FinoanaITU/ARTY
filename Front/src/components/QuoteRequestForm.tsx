@@ -16,7 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-// Schema pour particuliers
 const individualQuoteSchema = z.object({
   denomination: z.string().min(2, "La dénomination est requise"),
   email: z.string().email("Email invalide"),
@@ -31,7 +30,6 @@ const individualQuoteSchema = z.object({
   contraintes: z.string().optional(),
 });
 
-// Schema pour entreprises
 const businessQuoteSchema = z.object({
   denomination: z.string().min(2, "La dénomination est requise"),
   secteurActivite: z.string().min(1, "Veuillez sélectionner un secteur"),
@@ -87,7 +85,6 @@ const besoinsLogistiquesOptions = [
   'Autres'
 ];
 
-// Mock simulation des créneaux d'indisponibilité de l'artisan avec horaires
 const mockArtisanSchedule = {
   '2024-08-15': {
     reason: 'Congés d\'été',
@@ -158,7 +155,7 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
   const isDateAvailable = (date: Date) => {
     const today = new Date();
     const minDate = new Date(today);
-    minDate.setDate(today.getDate() + 5); // Minimum 5 jours
+    minDate.setDate(today.getDate() + 5); 
     return date >= minDate;
   };
 
@@ -471,7 +468,7 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
                   </select>
                 </div>
                 
-                {/* Grille des créneaux horaires avec statuts visuels */}
+                {}
                 <div className="mt-4">
                   <h5 className="text-sm font-medium mb-2">Aperçu des créneaux du jour :</h5>
                   <div className="grid grid-cols-6 gap-1">
@@ -504,7 +501,7 @@ const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
                 </div>
               </div>
 
-              {/* Simulation de disponibilité en temps réel */}
+              {}
               {watchedValues.heurePreferee && renderTimeSlotSimulation(watchedValues.dateHeure, watchedValues.heurePreferee)}
             </div>
           )}

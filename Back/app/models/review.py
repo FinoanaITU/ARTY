@@ -3,7 +3,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel, GUID
 
-
 class Review(BaseModel):
     __tablename__ = "reviews"
     
@@ -26,16 +25,9 @@ class Review(BaseModel):
     helpful_count = Column(Integer, default=0)
     flagged_count = Column(Integer, default=0)
     
-    # Relationships
-    # Temporarily commented out to avoid circular dependency issues
-    # reviewer = relationship("User", back_populates="reviews")
-    # order = relationship("Order", back_populates="reviews")
-    # booking = relationship("WorkshopBooking", back_populates="reviews")
-    # moderated_by = relationship("User")
-    # helpful_votes = relationship("ReviewHelpfulVote", back_populates="review")
-    # flags = relationship("ReviewFlag", back_populates="review")
+
     
-    # Polymorphic relationships
+
     @property
     def product(self):
         if self.reviewable_type == 'product':
@@ -48,7 +40,6 @@ class Review(BaseModel):
             return self.reviewable
         return None
 
-
 class ReviewHelpfulVote(BaseModel):
     __tablename__ = "review_helpful_votes"
     
@@ -56,11 +47,6 @@ class ReviewHelpfulVote(BaseModel):
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     is_helpful = Column(Boolean, nullable=False)
     
-    # Relationships
-    # Temporarily commented out
-    # review = relationship("Review", back_populates="helpful_votes")
-    # user = relationship("User")
-
 
 class ReviewFlag(BaseModel):
     __tablename__ = "review_flags"
@@ -73,8 +59,4 @@ class ReviewFlag(BaseModel):
     reviewed_by_user_id = Column(GUID(), ForeignKey("users.id"), index=True)
     reviewed_at = Column(DateTime)
     
-    # Relationships
-    # Temporarily commented out
-    # review = relationship("Review", back_populates="flags")
-    # reporter = relationship("User", foreign_keys=[reporter_id])
-    # reviewed_by = relationship("User", foreign_keys=[reviewed_by_user_id]) 
+

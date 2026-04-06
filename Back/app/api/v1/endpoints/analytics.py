@@ -17,7 +17,6 @@ from app.services.artisan_stats_service import ArtisanStatsService
 
 router = APIRouter()
 
-
 @router.get("/artisan/dashboard", response_model=ArtisanDashboardData)
 async def get_artisan_dashboard(
     db: Session = Depends(get_db),
@@ -46,7 +45,6 @@ async def get_artisan_dashboard(
     )
     
     return dashboard_data
-
 
 @router.get("/artisan/stats", response_model=DashboardStatsOut)
 async def get_artisan_stats(
@@ -77,7 +75,6 @@ async def get_artisan_stats(
     )
     
     return stats
-
 
 @router.post("/artisan/refresh", response_model=ArtisanStatsOut)
 async def refresh_artisan_stats(

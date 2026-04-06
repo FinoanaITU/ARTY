@@ -26,7 +26,7 @@ const Navigation = () => {
 
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-brand-beige shadow-sm">
-      {/* Top bar with language toggle and user info */}
+      {}
       <div className="px-4 py-2 bg-brand-beige/50 flex justify-between items-center">
         <div className="flex gap-2">
           <button
@@ -46,7 +46,7 @@ const Navigation = () => {
         {isLoggedIn && (
           <div className="flex items-center gap-3">
             <span className="text-xs text-brand-brown font-medium">{user?.name} ({user?.role})</span>
-            {/* Demo role switcher */}
+            {}
             <select 
               value={user?.role} 
               onChange={(e) => switchRole(e.target.value as any)}
@@ -73,7 +73,7 @@ const Navigation = () => {
         )}
       </div>
 
-      {/* Main navigation */}
+      {}
       <div className="px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold text-brand-brown flex items-center gap-2">
@@ -117,12 +117,12 @@ const Navigation = () => {
               NOUS CONTACTER
             </Link>
             
-            {/* Cart Icon */}
+            {}
             <Link to="/cart" className="p-2 hover:bg-brand-orange/10 rounded-full transition-colors">
               <CartIcon />
             </Link>
             
-            {/* User dropdown menu */}
+            {}
             {!isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -184,7 +184,7 @@ const Navigation = () => {
             )}
           </div>
 
-          {/* Mobile signup button */}
+          {}
           {!isLoggedIn && (
             <div className="md:hidden">
               <DropdownMenu>
