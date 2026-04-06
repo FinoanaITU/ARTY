@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Text, ARRAY, Integer, Numeric, JSON, ForeignKey, Date, Time
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.models.base import BaseModel
+from app.models.base import BaseModel, GUID
 
 
 class Workshop(BaseModel):
@@ -11,8 +11,8 @@ class Workshop(BaseModel):
     slug = Column(String(200), unique=True, nullable=False, index=True)
     description = Column(Text, nullable=False)
     short_description = Column(String(500))
-    artisan_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), index=True)
+    artisan_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
+    category_id = Column(GUID(), ForeignKey("categories.id"), index=True)
     category = Column(String(100), nullable=True)  # String category for quick access
     workshop_type = Column(String(20), default='group', index=True)
     skill_level = Column(String(20), default='beginner')
@@ -59,7 +59,7 @@ class Workshop(BaseModel):
     instructor_bio = Column(Text)
     
     # Approval fields
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    approved_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     approved_at = Column(DateTime, nullable=True)
     approval_notes = Column(Text, nullable=True)
     
@@ -72,7 +72,7 @@ class Workshop(BaseModel):
 class WorkshopSession(BaseModel):
     __tablename__ = "workshop_sessions"
     
-    workshop_id = Column(UUID(as_uuid=True), ForeignKey("workshops.id"), nullable=False, index=True)
+    workshop_id = Column(GUID(), ForeignKey("workshops.id"), nullable=False, index=True)
     start_datetime = Column(DateTime, nullable=False, index=True)
     end_datetime = Column(DateTime, nullable=False)
     timezone = Column(String(50), default='Indian/Antananarivo')
@@ -81,7 +81,7 @@ class WorkshopSession(BaseModel):
     available_spots = Column(Integer, default=0)
     session_price = Column(Numeric(10, 2))
     is_private = Column(Boolean, default=False)
-    private_client_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
+    private_client_id = Column(GUID(), ForeignKey("users.id"), index=True)
     status = Column(String(20), default='scheduled', index=True)
     cancellation_reason = Column(Text)
     session_notes = Column(Text)
@@ -98,9 +98,9 @@ class WorkshopBooking(BaseModel):
     
     booking_number = Column(String(20), unique=True, nullable=False, index=True)
     confirmation_code = Column(String(20), unique=True, nullable=False)  # For reference
-    session_id = Column(UUID(as_uuid=True), ForeignKey("workshop_sessions.id"), nullable=False, index=True)
-    workshop_id = Column(UUID(as_uuid=True), ForeignKey("workshops.id"), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    session_id = Column(GUID(), ForeignKey("workshop_sessions.id"), nullable=False, index=True)
+    workshop_id = Column(GUID(), ForeignKey("workshops.id"), nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     participants_count = Column(Integer, default=1)
     total_price = Column(Numeric(10, 2), nullable=False)
     currency = Column(String(3), default='MGA')
@@ -128,7 +128,7 @@ class WorkshopBooking(BaseModel):
 class WorkshopAvailability(BaseModel):
     __tablename__ = "workshop_availability"
     
-    artisan_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    artisan_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     day_of_week = Column(Integer, nullable=False, index=True)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)

@@ -1,13 +1,13 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.models.base import BaseModel
+from app.models.base import BaseModel, GUID
 
 
 class Notification(BaseModel):
     __tablename__ = "notifications"
     
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     type = Column(String(50), nullable=False, index=True)
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
@@ -25,7 +25,7 @@ class Notification(BaseModel):
 class NotificationPreference(BaseModel):
     __tablename__ = "notification_preferences"
     
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), unique=True, nullable=False, index=True)
     email_enabled = Column(Boolean, default=True)
     push_enabled = Column(Boolean, default=True)
     sms_enabled = Column(Boolean, default=False)

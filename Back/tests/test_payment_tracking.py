@@ -56,7 +56,7 @@ class TestPaymentTracking:
             email=f"customer_{uuid4().hex[:8]}@test.com",
             password_hash="hashed",
             name="Test Customer",
-            role=UserRole.CLIENT,
+            role=UserRole.BUYER,
             is_active=True
         )
         db_session.add(customer)
@@ -132,7 +132,7 @@ class TestPaymentTracking:
             email=f"customer_{uuid4().hex[:8]}@test.com",
             password_hash="hashed",
             name="Test Customer",
-            role=UserRole.CLIENT,
+            role=UserRole.BUYER,
             is_active=True
         )
         artisan = User(
@@ -214,7 +214,7 @@ class TestPaymentTracking:
             email=f"customer_{uuid4().hex[:8]}@test.com",
             password_hash="hashed",
             name="Test Customer",
-            role=UserRole.CLIENT,
+            role=UserRole.BUYER,
             is_active=True
         )
         artisan = User(
@@ -288,7 +288,7 @@ class TestPaymentTracking:
             email=f"customer_{uuid4().hex[:8]}@test.com",
             password_hash="hashed",
             name="Test Customer",
-            role=UserRole.CLIENT,
+            role=UserRole.BUYER,
             is_active=True
         )
         artisan = User(
@@ -353,7 +353,7 @@ class TestPaymentTracking:
             email=f"customer_{uuid4().hex[:8]}@test.com",
             password_hash="hashed",
             name="Test Customer",
-            role=UserRole.CLIENT,
+            role=UserRole.BUYER,
             is_active=True
         )
         artisan = User(
@@ -429,7 +429,7 @@ class TestPaymentTracking:
             email=f"customer_{uuid4().hex[:8]}@test.com",
             password_hash="hashed",
             name="Test Customer",
-            role=UserRole.CLIENT,
+            role=UserRole.BUYER,
             is_active=True
         )
         artisan = User(

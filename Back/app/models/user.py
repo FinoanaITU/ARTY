@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Text, ARRAY, Integer, Date, JSON, func, Enum as SQLEnum, ForeignKey, TypeDecorator
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.models.base import BaseModel
+from app.models.base import BaseModel, GUID
 import enum
 
 
@@ -42,9 +42,9 @@ class EnumType(TypeDecorator):
         self.enum_class = enum_class
     
     def load_dialect_impl(self, dialect):
-        # Pour PostgreSQL, utiliser SQLEnum natif
+        # Pour PostgreSQL, utiliser SQLEnum natif avec les valeurs (pas les noms)
         if dialect.name == 'postgresql':
-            return dialect.type_descriptor(SQLEnum(self.enum_class))
+            return dialect.type_descriptor(SQLEnum(self.enum_class, values_callable=lambda x: [e.value for e in x]))
         # Pour SQLite, utiliser String
         return dialect.type_descriptor(String(50))
     
@@ -80,12 +80,12 @@ class User(BaseModel):
     address = Column(Text, nullable=True)
     city = Column(String(100), nullable=True)
     country = Column(String(100), nullable=True, default="madagascar")
-    role = Column(EnumType(UserRole), nullable=False, default=UserRole.BUYER, index=True)
+    role = Column(SQLEnum(UserRole, values_callable=lambda x: [e.value for e in x]), nullable=False, default=UserRole.BUYER.value, index=True, server_default='buyer')
     avatar = Column(String(500), nullable=True)
     
     # Buyer specific fields
-    buyer_type = Column(EnumType(BuyerType), nullable=True)
-    nationality = Column(EnumType(Nationality), nullable=True)
+    buyer_type = Column(SQLEnum(BuyerType, values_callable=lambda x: [e.value for e in x]), nullable=True)
+    nationality = Column(SQLEnum(Nationality, values_callable=lambda x: [e.value for e in x]), nullable=True)
     company_name = Column(String(200), nullable=True)
     siret = Column(String(50), nullable=True)
     
@@ -95,7 +95,7 @@ class User(BaseModel):
     last_login_at = Column(DateTime, nullable=True)
     
     # Approval fields (for artisan profile validation)
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    approved_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     approved_at = Column(DateTime, nullable=True)
     approval_notes = Column(Text, nullable=True)
     
@@ -118,7 +118,7 @@ class User(BaseModel):
 class ArtisanProfile(BaseModel):
     __tablename__ = "artisan_profiles"
     
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), unique=True, nullable=False, index=True)
     region = Column(String(100), nullable=True)
     languages = Column(ARRAY(String), nullable=True)
     company_name = Column(String(200), nullable=False)
@@ -157,7 +157,7 @@ class ArtisanProfile(BaseModel):
 class ArtisanPhoto(BaseModel):
     __tablename__ = "artisan_photos"
     
-    artisan_profile_id = Column(UUID(as_uuid=True), ForeignKey("artisan_profiles.id"), nullable=False, index=True)
+    artisan_profile_id = Column(GUID(), ForeignKey("artisan_profiles.id"), nullable=False, index=True)
     photo_url = Column(String(500), nullable=False)
     # 'order' is a SQL reserved word in some dialects (e.g. SQLite). Use 'position'
     # to avoid SQL syntax errors during migrations / tests.
@@ -192,7 +192,7 @@ class UserProfile(BaseModel):
 class SocialAccount(BaseModel):
     __tablename__ = "social_accounts"
     
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     provider = Column(String(20), nullable=False)
     provider_id = Column(String(100), nullable=False)
     provider_email = Column(String(255))
@@ -205,7 +205,7 @@ class SocialAccount(BaseModel):
 class UserSession(BaseModel):
     __tablename__ = "user_sessions"
     
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     refresh_token = Column(String(500), unique=True, nullable=False, index=True)
     access_token_jti = Column(String(100), unique=True, nullable=True)
     device_info = Column(JSON, nullable=True)

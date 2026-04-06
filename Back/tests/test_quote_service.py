@@ -1,6 +1,7 @@
 """
 Tests for quote management functionality
 """
+import asyncio
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -21,7 +22,7 @@ def regular_user(db: Session) -> User:
         name="Regular User",
         password_hash="hashed_password",
         role=UserRole.BUYER,
-        is_verified=True
+        is_email_verified=True
     )
     db.add(user)
     db.commit()
@@ -48,7 +49,7 @@ class TestQuoteService:
             company_name=None
         )
 
-        quote = pytest.asyncio.run(
+        quote = asyncio.run(
             QuoteService.create_quote_request(
                 db=db,
                 user_id=regular_user.id,
@@ -80,7 +81,7 @@ class TestQuoteService:
         )
 
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.create_quote_request(
                     db=db,
                     user_id=uuid4(),
@@ -111,7 +112,7 @@ class TestQuoteService:
             db.add(quote)
         db.commit()
 
-        result = pytest.asyncio.run(
+        result = asyncio.run(
             QuoteService.get_all_quotes(
                 db=db,
                 skip=0,
@@ -147,7 +148,7 @@ class TestQuoteService:
             db.add(quote)
         db.commit()
 
-        result = pytest.asyncio.run(
+        result = asyncio.run(
             QuoteService.get_all_quotes(
                 db=db,
                 status="pending"
@@ -167,7 +168,7 @@ class TestQuoteService:
             name="Other User",
             role=UserRole.BUYER,
             password_hash="hashed",
-            is_verified=True
+            is_email_verified=True
         )
         db.add(other_user)
         db.commit()
@@ -204,7 +205,7 @@ class TestQuoteService:
         db.add(quote)
         db.commit()
 
-        result = pytest.asyncio.run(
+        result = asyncio.run(
             QuoteService.get_user_quotes(
                 db=db,
                 user_id=regular_user.id
@@ -233,7 +234,7 @@ class TestQuoteService:
         db.add(quote)
         db.commit()
 
-        retrieved = pytest.asyncio.run(
+        retrieved = asyncio.run(
             QuoteService.get_quote_by_id(db=db, quote_id=quote.id)
         )
 
@@ -246,7 +247,7 @@ class TestQuoteService:
         from fastapi import HTTPException
 
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.get_quote_by_id(db=db, quote_id=uuid4())
             )
 
@@ -276,7 +277,7 @@ class TestQuoteService:
             admin_notes="High quality leather requested"
         )
 
-        updated = pytest.asyncio.run(
+        updated = asyncio.run(
             QuoteService.update_quote(
                 db=db,
                 quote_id=quote.id,
@@ -314,7 +315,7 @@ class TestQuoteService:
         update_data = QuoteUpdateIn(final_price=Decimal("250.00"))
 
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.update_quote(
                     db=db,
                     quote_id=quote.id,
@@ -345,7 +346,7 @@ class TestQuoteService:
         db.add(quote)
         db.commit()
 
-        approved = pytest.asyncio.run(
+        approved = asyncio.run(
             QuoteService.approve_quote(db=db, quote_id=quote.id)
         )
 
@@ -373,7 +374,7 @@ class TestQuoteService:
         db.commit()
 
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.approve_quote(db=db, quote_id=quote.id)
             )
 
@@ -400,7 +401,7 @@ class TestQuoteService:
         db.add(quote)
         db.commit()
 
-        rejected = pytest.asyncio.run(
+        rejected = asyncio.run(
             QuoteService.reject_quote(db=db, quote_id=quote.id)
         )
 
@@ -428,7 +429,7 @@ class TestQuoteService:
         db.add(quote)
         db.commit()
 
-        order_data = pytest.asyncio.run(
+        order_data = asyncio.run(
             QuoteService.convert_quote_to_order(db=db, quote_id=quote.id)
         )
 
@@ -465,7 +466,7 @@ class TestQuoteService:
         db.commit()
 
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.convert_quote_to_order(db=db, quote_id=quote.id)
             )
 
@@ -502,7 +503,7 @@ class TestQuoteService:
             db.add(quote)
         db.commit()
 
-        stats = pytest.asyncio.run(QuoteService.get_quote_stats(db=db))
+        stats = asyncio.run(QuoteService.get_quote_stats(db=db))
 
         assert stats["total_quotes"] == 6
         assert stats["pending_count"] == 2
@@ -526,7 +527,7 @@ class TestQuoteService:
             company_name=None
         )
         
-        quote = pytest.asyncio.run(
+        quote = asyncio.run(
             QuoteService.create_quote_request(
                 db=db_session,
                 user_id=regular_user.id,
@@ -558,7 +559,7 @@ class TestQuoteService:
         )
         
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.create_quote_request(
                     db=db_session,
                     user_id=uuid4(),
@@ -589,7 +590,7 @@ class TestQuoteService:
             db_session.add(quote)
         db_session.commit()
         
-        result = pytest.asyncio.run(
+        result = asyncio.run(
             QuoteService.get_all_quotes(
                 db=db_session,
                 skip=0,
@@ -623,7 +624,7 @@ class TestQuoteService:
             db_session.add(quote)
         db_session.commit()
         
-        result = pytest.asyncio.run(
+        result = asyncio.run(
             QuoteService.get_all_quotes(
                 db=db_session,
                 status="pending"
@@ -640,8 +641,9 @@ class TestQuoteService:
         # Create quotes for different users
         other_user = User(
             email="other@example.com",
-            username="otheruser",
-            role=UserRole.CUSTOMER
+            name="Other User",
+            password_hash="hashed",
+            role=UserRole.BUYER
         )
         db_session.add(other_user)
         db_session.commit()
@@ -678,7 +680,7 @@ class TestQuoteService:
         db_session.add(quote)
         db_session.commit()
         
-        result = pytest.asyncio.run(
+        result = asyncio.run(
             QuoteService.get_user_quotes(
                 db=db_session,
                 user_id=regular_user.id
@@ -707,7 +709,7 @@ class TestQuoteService:
         db_session.add(quote)
         db_session.commit()
         
-        retrieved = pytest.asyncio.run(
+        retrieved = asyncio.run(
             QuoteService.get_quote_by_id(db=db_session, quote_id=quote.id)
         )
         
@@ -720,7 +722,7 @@ class TestQuoteService:
         from fastapi import HTTPException
         
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.get_quote_by_id(db=db_session, quote_id=uuid4())
             )
         
@@ -750,7 +752,7 @@ class TestQuoteService:
             admin_notes="High quality leather requested"
         )
         
-        updated = pytest.asyncio.run(
+        updated = asyncio.run(
             QuoteService.update_quote(
                 db=db_session,
                 quote_id=quote.id,
@@ -786,7 +788,7 @@ class TestQuoteService:
         update_data = QuoteUpdateIn(final_price=Decimal("250.00"))
         
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.update_quote(
                     db=db_session,
                     quote_id=quote.id,
@@ -817,7 +819,7 @@ class TestQuoteService:
         db_session.add(quote)
         db_session.commit()
         
-        approved = pytest.asyncio.run(
+        approved = asyncio.run(
             QuoteService.approve_quote(db=db_session, quote_id=quote.id)
         )
         
@@ -845,7 +847,7 @@ class TestQuoteService:
         db_session.commit()
         
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.approve_quote(db=db_session, quote_id=quote.id)
             )
         
@@ -872,7 +874,7 @@ class TestQuoteService:
         db_session.add(quote)
         db_session.commit()
         
-        rejected = pytest.asyncio.run(
+        rejected = asyncio.run(
             QuoteService.reject_quote(db=db_session, quote_id=quote.id)
         )
         
@@ -900,7 +902,7 @@ class TestQuoteService:
         db_session.add(quote)
         db_session.commit()
         
-        order_data = pytest.asyncio.run(
+        order_data = asyncio.run(
             QuoteService.convert_quote_to_order(db=db_session, quote_id=quote.id)
         )
         
@@ -935,7 +937,7 @@ class TestQuoteService:
         db_session.commit()
         
         with pytest.raises(HTTPException) as exc_info:
-            pytest.asyncio.run(
+            asyncio.run(
                 QuoteService.convert_quote_to_order(db=db_session, quote_id=quote.id)
             )
         
@@ -972,7 +974,7 @@ class TestQuoteService:
             db_session.add(quote)
         db_session.commit()
         
-        stats = pytest.asyncio.run(QuoteService.get_quote_stats(db=db_session))
+        stats = asyncio.run(QuoteService.get_quote_stats(db=db_session))
         
         assert stats["total_quotes"] == 6
         assert stats["pending_count"] == 2

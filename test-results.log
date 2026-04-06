@@ -1,0 +1,30 @@
+🚀 Démarrage des tests de création de compte...
+
+📝 Test 1: Création d'un compte Acheteur
+==================================================
+→ Navigation vers http://localhost:8080/signup
+→ Sélection du rôle "Acheteur"
+→ Sélection du type "Particulier"
+→ Sélection du pays "Madagascar"
+→ Remplissage des informations personnelles
+   Nom: Jean Rakoto
+   Email: acheteur.test.1775151064409@example.com
+→ Soumission du formulaire...
+→ URL actuelle: http://localhost:8080/signup
+⚠️  Vérification du résultat nécessaire
+
+
+📝 Test 2: Création d'un compte Artisan
+==================================================
+→ Navigation vers http://localhost:8080/signup
+→ Sélection du rôle "Artisan"
+→ Remplissage des informations de base
+   Nom: Marie Rasoamalala
+   Email: artisan.test.1775151104144@example.com
+→ Étape 1/5: Photos (passée)
+❌ Erreur lors des tests: Waiting for selector `.//button[contains(text(), "Suivant")]` failed
+TimeoutError: Waiting for selector `.//button[contains(text(), "Suivant")]` failed
+    at XPathQueryHandler.waitFor (/Users/finoanaandriatsilavo/Documents/ARTY/node_modules/puppeteer-core/lib/cjs/puppeteer/common/QueryHandler.js:214:46)
+    at async CdpFrame.waitForSelector (/Users/finoanaandriatsilavo/Documents/ARTY/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Frame.js:544:21)
+    at async CdpPage.waitForSelector (/Users/finoanaandriatsilavo/Documents/ARTY/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Page.js:1391:20)
+    at async testSignup (/Users/finoanaandriatsilavo/Documents/ARTY/test-signup.js:137:25)

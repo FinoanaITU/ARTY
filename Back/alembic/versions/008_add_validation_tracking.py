@@ -40,11 +40,16 @@ def upgrade() -> None:
     op.create_index('ix_artisan_validations_validated_by', 'artisan_validations', ['validated_by'])
 
     # Add approval fields to users table (for artisan profile approval)
-    op.add_column('users', sa.Column('approved_by', postgresql.UUID(as_uuid=True), nullable=True))
-    op.add_column('users', sa.Column('approved_at', sa.DateTime(), nullable=True))
-    op.add_column('users', sa.Column('approval_notes', sa.Text(), nullable=True))
-    op.create_foreign_key('fk_users_approved_by', 'users', 'users', ['approved_by'], ['id'], ondelete='SET NULL')
-    op.create_index('ix_users_approved_by', 'users', ['approved_by'])
+    # Check if columns already exist (they may have been added by migration 001b)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    users_columns = [col['name'] for col in inspector.get_columns('users')]
+    if 'approved_by' not in users_columns:
+        op.add_column('users', sa.Column('approved_by', postgresql.UUID(as_uuid=True), nullable=True))
+        op.add_column('users', sa.Column('approved_at', sa.DateTime(), nullable=True))
+        op.add_column('users', sa.Column('approval_notes', sa.Text(), nullable=True))
+        op.create_foreign_key('fk_users_approved_by', 'users', 'users', ['approved_by'], ['id'], ondelete='SET NULL')
+        op.create_index('ix_users_approved_by', 'users', ['approved_by'])
 
     # Add approval fields to products table
     op.add_column('products', sa.Column('approved_by', postgresql.UUID(as_uuid=True), nullable=True))

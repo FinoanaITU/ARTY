@@ -331,7 +331,6 @@ class TestAdminAnalytics:
             password_hash="hashed",
             name="Artisan 1",
             role=UserRole.ARTISAN,
-            region="Analamanga",
             is_active=True
         )
         artisan2 = User(
@@ -340,7 +339,6 @@ class TestAdminAnalytics:
             password_hash="hashed",
             name="Artisan 2",
             role=UserRole.ARTISAN,
-            region="Vakinankaratra",
             is_active=True
         )
         db_session.add_all([artisan1, artisan2])

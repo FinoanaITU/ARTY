@@ -45,17 +45,13 @@ wait_for_postgres || echo "⚠️  Continuing with migrations anyway..."
 echo "📦 Running database migrations..."
 cd /app
 
-# Exécuter les migrations
-alembic upgrade head
-MIGRATION_EXIT_CODE=$?
+# Essayer d'abord les migrations Alembic
+echo "Running Alembic migrations..."
+alembic upgrade head 2>&1 || echo "⚠️  Alembic migrations failed or completed with issues"
 
-if [ $MIGRATION_EXIT_CODE -eq 0 ]; then
-    echo "✅ Database migrations completed successfully!"
-else
-    echo "⚠️  Migration exited with code: $MIGRATION_EXIT_CODE"
-    echo "💡 Check the logs above for details."
-    echo "💡 Continuing to start the application..."
-fi
+# Vérifier si les tables ont été créées, sinon les créer avec SQLAlchemy
+echo "Ensuring database tables exist..."
+python3 scripts/ensure_db_tables.py
 
 # Exécuter le seed data (catégories, admin user)
 echo "🌱 Seeding initial data (categories, admin user)..."

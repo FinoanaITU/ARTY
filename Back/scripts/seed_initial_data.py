@@ -9,6 +9,7 @@ import os
 # Ajouter le répertoire parent au path pour les imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal, engine
 from app.models.product import Category
@@ -277,34 +278,39 @@ def create_admin_user(db: Session) -> Optional[User]:
     admin_password = "admin123"  # À changer en production
     
     # Vérifier si l'admin existe déjà
-    existing_admin = db.query(User).filter(User.email == admin_email).first()
+    # Check if admin already exists using raw SQL to avoid enum issues
+    result = db.execute(sa.text("SELECT email FROM users WHERE email = :email"), {"email": admin_email})
+    existing_admin = result.first()
+    
     if existing_admin:
         print(f"✓ Utilisateur admin '{admin_email}' existe déjà")
-        return existing_admin
+        return db.query(User).filter(User.email == admin_email).first()
     
     # Créer le hash du mot de passe
     password_hash = get_password_hash(admin_password)
     
-    # Créer l'utilisateur admin
-    admin_user = User(
-        id=uuid.uuid4(),
-        email=admin_email,
-        password_hash=password_hash,
-        name="Administrateur Artizaho",
-        role=UserRole.ADMIN,
-        is_active=True,
-        is_email_verified=True,
-        country="madagascar"
-    )
-    
-    db.add(admin_user)
+    # Create admin user with raw SQL to avoid enum conversion issues
+    admin_id = str(uuid.uuid4())
+    db.execute(sa.text("""
+        INSERT INTO users (id, email, password_hash, name, country, role, is_active, is_email_verified)
+        VALUES (:id, :email, :password_hash, :name, :country, CAST(:role AS userrole), :is_active, :is_email_verified)
+    """), {
+        "id": admin_id,
+        "email": admin_email,
+        "password_hash": password_hash,
+        "name": "Administrateur Artizaho",
+        "country": "madagascar",
+        "role": "admin",
+        "is_active": True,
+        "is_email_verified": True
+    })
     db.commit()
-    db.refresh(admin_user)
     
     print(f"✓ Utilisateur admin créé: {admin_email} / {admin_password}")
     print(f"  ⚠️  ATTENTION: Changez le mot de passe en production!")
     
-    return admin_user
+    # Return the created user
+    return db.query(User).filter(User.email == admin_email).first()
 
 
 def seed_initial_data():

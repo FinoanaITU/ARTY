@@ -2,13 +2,13 @@ from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, Numeric
 from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.models.base import BaseModel
+from app.models.base import BaseModel, GUID
 
 
 class Cart(BaseModel):
     __tablename__ = "carts"
     
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), unique=True, index=True)
     session_id = Column(String(100), index=True)
     currency = Column(String(3), default='MGA')
     total_amount = Column(Numeric(10, 2), default=0)
@@ -26,9 +26,9 @@ class Cart(BaseModel):
 class CartItem(BaseModel):
     __tablename__ = "cart_items"
     
-    cart_id = Column(UUID(as_uuid=True), ForeignKey("carts.id"), nullable=False, index=True)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False, index=True)
-    variant_id = Column(UUID(as_uuid=True), ForeignKey("product_variants.id"), index=True)
+    cart_id = Column(GUID(), ForeignKey("carts.id"), nullable=False, index=True)
+    product_id = Column(GUID(), ForeignKey("products.id"), nullable=False, index=True)
+    variant_id = Column(GUID(), ForeignKey("product_variants.id"), index=True)
     quantity = Column(Integer, nullable=False, default=1)
     unit_price = Column(Numeric(10, 2), nullable=False)
     total_price = Column(Numeric(10, 2), nullable=False)
@@ -44,7 +44,7 @@ class Order(BaseModel):
     __tablename__ = "orders"
     
     order_number = Column(String(20), unique=True, nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     status = Column(String(20), default='pending', index=True)
     payment_status = Column(String(20), default='pending', index=True)
     fulfillment_status = Column(String(20), default='unfulfilled')
@@ -81,10 +81,10 @@ class Order(BaseModel):
 class OrderItem(BaseModel):
     __tablename__ = "order_items"
     
-    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"), nullable=False, index=True)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False, index=True)
-    variant_id = Column(UUID(as_uuid=True), ForeignKey("product_variants.id"), index=True)
-    artisan_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    order_id = Column(GUID(), ForeignKey("orders.id"), nullable=False, index=True)
+    product_id = Column(GUID(), ForeignKey("products.id"), nullable=False, index=True)
+    variant_id = Column(GUID(), ForeignKey("product_variants.id"), index=True)
+    artisan_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     title = Column(String(200), nullable=False)
     sku = Column(String(50))
     quantity = Column(Integer, nullable=False)
@@ -107,8 +107,8 @@ class OrderItem(BaseModel):
 class Payment(BaseModel):
     __tablename__ = "payments"
     
-    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    order_id = Column(GUID(), ForeignKey("orders.id"), nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     payment_method = Column(String(30), nullable=False, index=True)
     payment_provider = Column(String(20), nullable=False)
     provider_payment_id = Column(String(100), index=True)
@@ -132,11 +132,11 @@ class Payment(BaseModel):
 class OrderStatusHistory(BaseModel):
     __tablename__ = "order_status_history"
     
-    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"), nullable=False, index=True)
+    order_id = Column(GUID(), ForeignKey("orders.id"), nullable=False, index=True)
     status = Column(String(20), nullable=False)
     comment = Column(Text)
     notified_customer = Column(Boolean, default=False)
-    changed_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
+    changed_by_user_id = Column(GUID(), ForeignKey("users.id"), index=True)
     
     # Relationships
     # Temporarily commented out

@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field, model_validator
+import json
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -208,7 +209,17 @@ class ArtisanProfileOut(BaseModel):
     status: ProfileStatus
     created_at: datetime
     updated_at: datetime
-    
+
+    @field_validator('other_skills', 'offerings', mode='before')
+    @classmethod
+    def parse_json_list(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, ValueError):
+                return v
+        return v
+
     class Config:
         from_attributes = True
 

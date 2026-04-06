@@ -113,6 +113,12 @@ def db() -> Generator[Session, None, None]:
             pass
 
 
+@pytest.fixture(scope="function")
+def db_session(db: Session) -> Session:
+    """Alias for db fixture — used by tests that expect db_session name."""
+    return db
+
+
 def _create_tables_manually(engine):
     """Crée les tables manuellement avec des types SQLite-compatibles"""
     from sqlalchemy import text
@@ -272,6 +278,9 @@ def _create_tables_manually(engine):
                 rating_average NUMERIC(3, 2) DEFAULT 0,
                 rating_count INTEGER DEFAULT 0,
                 published_at DATETIME,
+                approved_by VARCHAR(36),
+                approved_at DATETIME,
+                approval_notes TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (category_id) REFERENCES categories(id),
@@ -322,7 +331,265 @@ def _create_tables_manually(engine):
                 FOREIGN KEY (product_id) REFERENCES products(id)
             )
         """))
-        
+
+        # Table workshops
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS workshops (
+                id VARCHAR(36) PRIMARY KEY,
+                title VARCHAR(200) NOT NULL,
+                slug VARCHAR(200) UNIQUE NOT NULL,
+                description TEXT NOT NULL,
+                short_description VARCHAR(500),
+                artisan_id VARCHAR(36) NOT NULL,
+                category_id VARCHAR(36),
+                category VARCHAR(100),
+                workshop_type VARCHAR(20) DEFAULT 'group',
+                skill_level VARCHAR(20) DEFAULT 'beginner',
+                base_price NUMERIC(10, 2) NOT NULL,
+                foreign_price NUMERIC(10, 2),
+                private_price NUMERIC(10, 2),
+                currency VARCHAR(3) DEFAULT 'MGA',
+                min_participants INTEGER DEFAULT 1,
+                max_participants INTEGER NOT NULL,
+                duration_minutes INTEGER NOT NULL,
+                location VARCHAR(200),
+                location_type VARCHAR(20) DEFAULT 'physical',
+                address TEXT,
+                room_details TEXT,
+                online_platform VARCHAR(50),
+                online_link VARCHAR(500),
+                materials_included TEXT,
+                materials_to_bring TEXT,
+                prerequisites TEXT,
+                what_you_will_learn TEXT,
+                featured_image_url VARCHAR(500),
+                gallery_images TEXT,
+                video_preview_url VARCHAR(500),
+                tags TEXT,
+                status VARCHAR(20) DEFAULT 'draft',
+                is_featured BOOLEAN DEFAULT 0,
+                requires_approval BOOLEAN DEFAULT 0,
+                cancellation_policy TEXT,
+                refund_policy TEXT,
+                late_arrival_policy TEXT,
+                meta_title VARCHAR(160),
+                meta_description VARCHAR(320),
+                total_bookings INTEGER DEFAULT 0,
+                rating_average NUMERIC(3, 2) DEFAULT 0,
+                rating_count INTEGER DEFAULT 0,
+                instructor_name VARCHAR(200),
+                instructor_image VARCHAR(500),
+                instructor_bio TEXT,
+                approved_by VARCHAR(36),
+                approved_at DATETIME,
+                approval_notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (artisan_id) REFERENCES users(id),
+                FOREIGN KEY (category_id) REFERENCES categories(id)
+            )
+        """))
+
+        # Table orders
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS orders (
+                id VARCHAR(36) PRIMARY KEY,
+                order_number VARCHAR(20) UNIQUE NOT NULL,
+                user_id VARCHAR(36) NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                payment_status VARCHAR(20) DEFAULT 'pending',
+                fulfillment_status VARCHAR(20) DEFAULT 'unfulfilled',
+                currency VARCHAR(3) DEFAULT 'MGA',
+                subtotal NUMERIC(10, 2) NOT NULL,
+                discount_amount NUMERIC(10, 2) DEFAULT 0,
+                shipping_amount NUMERIC(10, 2) DEFAULT 0,
+                tax_amount NUMERIC(10, 2) DEFAULT 0,
+                total_amount NUMERIC(10, 2) NOT NULL,
+                shipping_address TEXT NOT NULL,
+                billing_address TEXT,
+                shipping_method VARCHAR(50),
+                tracking_number VARCHAR(100),
+                estimated_delivery_date DATE,
+                delivered_at DATETIME,
+                coupon_code VARCHAR(50),
+                discount_type VARCHAR(20),
+                discount_value NUMERIC(10, 2),
+                customer_notes TEXT,
+                admin_notes TEXT,
+                device_info TEXT,
+                ip_address VARCHAR(50),
+                user_agent TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """))
+
+        # Table order_items
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_items (
+                id VARCHAR(36) PRIMARY KEY,
+                order_id VARCHAR(36) NOT NULL,
+                product_id VARCHAR(36) NOT NULL,
+                variant_id VARCHAR(36),
+                artisan_id VARCHAR(36) NOT NULL,
+                title VARCHAR(200) NOT NULL,
+                sku VARCHAR(50),
+                quantity INTEGER NOT NULL,
+                unit_price NUMERIC(10, 2) NOT NULL,
+                total_price NUMERIC(10, 2) NOT NULL,
+                commission_rate NUMERIC(5, 4) DEFAULT 0.1,
+                commission_amount NUMERIC(10, 2) DEFAULT 0,
+                artisan_payout NUMERIC(10, 2) DEFAULT 0,
+                product_snapshot TEXT,
+                customization_notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (order_id) REFERENCES orders(id),
+                FOREIGN KEY (product_id) REFERENCES products(id),
+                FOREIGN KEY (artisan_id) REFERENCES users(id)
+            )
+        """))
+
+        # Table workshop_bookings
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS workshop_bookings (
+                id VARCHAR(36) PRIMARY KEY,
+                booking_number VARCHAR(20) UNIQUE NOT NULL,
+                confirmation_code VARCHAR(20) UNIQUE NOT NULL,
+                session_id VARCHAR(36) NOT NULL,
+                workshop_id VARCHAR(36) NOT NULL,
+                user_id VARCHAR(36) NOT NULL,
+                participants_count INTEGER DEFAULT 1,
+                total_price NUMERIC(10, 2) NOT NULL,
+                currency VARCHAR(3) DEFAULT 'MGA',
+                status VARCHAR(20) DEFAULT 'pending',
+                payment_status VARCHAR(20) DEFAULT 'pending',
+                participant_names TEXT,
+                participant_info TEXT,
+                special_requests TEXT,
+                dietary_restrictions TEXT,
+                cancellation_reason TEXT,
+                cancelled_at DATETIME,
+                refund_amount NUMERIC(10, 2) DEFAULT 0,
+                refunded_at DATETIME,
+                attended BOOLEAN,
+                attendance_notes TEXT,
+                certificate_issued BOOLEAN DEFAULT 0,
+                certificate_url VARCHAR(500),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (workshop_id) REFERENCES workshops(id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """))
+
+        # Table payment_tracking
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS payment_tracking (
+                id VARCHAR(36) PRIMARY KEY,
+                order_id VARCHAR(36),
+                booking_id VARCHAR(36),
+                user_id VARCHAR(36) NOT NULL,
+                artisan_id VARCHAR(36) NOT NULL,
+                type VARCHAR(20) NOT NULL,
+                amount_total NUMERIC(10, 2) NOT NULL,
+                amount_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
+                payment_status VARCHAR(50) NOT NULL DEFAULT 'unpaid',
+                payment_method VARCHAR(50),
+                artisan_type VARCHAR(20) NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (artisan_id) REFERENCES users(id)
+            )
+        """))
+
+        # Table artisan_payouts
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS payment_tracking_history (
+                id VARCHAR(36) PRIMARY KEY,
+                payment_id VARCHAR(36) NOT NULL,
+                amount NUMERIC(10, 2) NOT NULL,
+                payment_method VARCHAR(50) NOT NULL,
+                transaction_ref VARCHAR(100),
+                notes TEXT,
+                paid_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                recorded_by VARCHAR(36),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (payment_id) REFERENCES payment_tracking(id)
+            )
+        """))
+
+        # Table artisan_payouts
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS artisan_payouts (
+                id VARCHAR(36) PRIMARY KEY,
+                artisan_id VARCHAR(36) NOT NULL,
+                period_start DATE NOT NULL,
+                period_end DATE NOT NULL,
+                total_sales NUMERIC(10, 2) NOT NULL,
+                commission_rate NUMERIC(5, 2) NOT NULL,
+                commission_amount NUMERIC(10, 2) NOT NULL,
+                net_payout NUMERIC(10, 2) NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                payment_method VARCHAR(50),
+                payment_ref VARCHAR(100),
+                paid_at DATETIME,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (artisan_id) REFERENCES users(id)
+            )
+        """))
+
+        # Table quotes
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS quotes (
+                id VARCHAR(36) PRIMARY KEY,
+                user_id VARCHAR(36) NOT NULL,
+                artisan_id VARCHAR(36),
+                quote_type VARCHAR(50) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                client_type VARCHAR(50) NOT NULL,
+                client_name VARCHAR(255) NOT NULL,
+                client_email VARCHAR(255) NOT NULL,
+                client_phone VARCHAR(20) NOT NULL,
+                company_name VARCHAR(255),
+                status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                estimated_price NUMERIC(10, 2),
+                final_price NUMERIC(10, 2),
+                admin_notes TEXT,
+                requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                quoted_at DATETIME,
+                responded_at DATETIME,
+                completed_at DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """))
+
+        # Table artisan_validations
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS artisan_validations (                id VARCHAR(36) PRIMARY KEY,
+                artisan_id VARCHAR(36) NOT NULL,
+                validation_type VARCHAR(50) NOT NULL,
+                entity_id VARCHAR(36),
+                status VARCHAR(20) NOT NULL,
+                validated_by VARCHAR(36),
+                validation_notes TEXT,
+                validated_at DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (artisan_id) REFERENCES users(id),
+                FOREIGN KEY (validated_by) REFERENCES users(id)
+            )
+        """))
+
         conn.commit()
 
 

@@ -6,7 +6,7 @@ from sqlalchemy import Column, String, Date, Text, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
-from app.models.base import BaseModel
+from app.models.base import BaseModel, GUID
 from datetime import datetime
 
 
@@ -14,7 +14,7 @@ class ArtisanUnavailability(BaseModel):
     """Modèle pour les indisponibilités d'artisan"""
     __tablename__ = "artisan_unavailability"
     
-    artisan_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    artisan_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)
     start_date = Column(Date, nullable=False, index=True)
     end_date = Column(Date, nullable=True)
     reason = Column(Text, nullable=True)

@@ -2,13 +2,13 @@ from sqlalchemy import Column, String, Boolean, DateTime, Text, Integer, Numeric
 from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.models.base import BaseModel
+from app.models.base import BaseModel, GUID
 
 
 class AnalyticsEvent(BaseModel):
     __tablename__ = "analytics_events"
     
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
+    user_id = Column(GUID(), ForeignKey("users.id"), index=True)
     session_id = Column(String(100), index=True)
     event_type = Column(String(50), nullable=False, index=True)
     event_category = Column(String(30))
@@ -52,7 +52,7 @@ class DailyStats(BaseModel):
 class ArtisanStats(BaseModel):
     __tablename__ = "artisan_stats"
     
-    artisan_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False, index=True)
+    artisan_id = Column(GUID(), ForeignKey("users.id"), unique=True, nullable=False, index=True)
     total_products = Column(Integer, default=0)
     total_sales = Column(Integer, default=0)
     total_revenue = Column(Numeric(10, 2), default=0)

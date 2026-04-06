@@ -92,7 +92,8 @@ class TestAdminSubscriptionService:
     def test_migration_exists(self):
         """Test that migration file exists"""
         import os
-        migration_path = "/Users/finoanaandriatsilavo/Documents/ARTY/Back/alembic/versions/012_add_subscriptions_table.py"
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        migration_path = os.path.join(base_dir, "alembic", "versions", "012_add_subscriptions_table.py")
         assert os.path.exists(migration_path), f"Migration file not found at {migration_path}"
 
     def test_endpoints_registered(self):

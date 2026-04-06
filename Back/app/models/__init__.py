@@ -1,6 +1,13 @@
+# Import all models to ensure they are registered with SQLAlchemy
 from app.models.base import BaseModel
 from app.models.user import User, ArtisanProfile, ArtisanPhoto, UserSession, SocialAccount
 
+try:
+    from app.models.order import Cart, CartItem, Order, OrderItem, Payment, OrderStatusHistory
+except ImportError:
+    pass
+
+# Import other models (optional, for Alembic autogenerate)
 try:
     from app.models.product import Product, ProductVariant, ProductImage, Category, BulkOrderRequest, ProductFavorite
 except ImportError:
