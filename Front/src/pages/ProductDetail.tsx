@@ -185,14 +185,14 @@ const ProductDetail = () => {
                     )}
                   </div>
                 </div>
-                {product.rating && (
+                {product.rating != null && product.rating > 0 && (
                   <div className="flex items-center gap-4 mb-4">
                     <div className="flex items-center gap-1">
                       {[...Array(5)].map((_, i) => (
                         <Star 
                           key={i} 
                           className={`w-5 h-5 ${
-                            product.rating && i < Math.floor(product.rating) 
+                            product.rating != null && i < Math.floor(product.rating) 
                               ? 'fill-yellow-400 text-yellow-400' 
                               : 'text-gray-300'
                           }`} 
@@ -410,7 +410,7 @@ const ProductDetail = () => {
                     className="w-full border-green-600 text-green-600 hover:bg-green-50"
                     onClick={() => setShowBulkForm(true)}
                   >
-                    Commande en gros {product.min_bulk_quantity && `(min. ${product.min_bulk_quantity} pièces)`}
+                    Commande en gros {product.min_bulk_quantity != null && product.min_bulk_quantity > 0 && `(min. ${product.min_bulk_quantity} pièces)`}
                   </Button>
                 )}
               </div>
