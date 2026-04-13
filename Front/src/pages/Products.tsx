@@ -93,9 +93,14 @@ const Products = () => {
     setPage(1); 
   };
 
-  const handleSubcategoryClick = (subcategory: string) => {
-    setSelectedSubcategory(selectedSubcategory === subcategory ? '' : subcategory);
-    setPage(1); 
+  const handleSubcategoryClick = (parentCategory: string, subcategory: string) => {
+    if (selectedSubcategory === subcategory) {
+      setSelectedSubcategory('');
+    } else {
+      setSelectedCategory(parentCategory);
+      setSelectedSubcategory(subcategory);
+    }
+    setPage(1);
   };
 
   return (
@@ -168,7 +173,7 @@ const Products = () => {
                           {category.subcategories.map((subcategory) => (
                             <button
                               key={subcategory}
-                              onClick={() => handleSubcategoryClick(subcategory)}
+                              onClick={() => handleSubcategoryClick(category.name, subcategory)}
                               className={`block w-full text-left py-1 px-2 text-sm rounded transition-colors ${
                                 selectedSubcategory === subcategory
                                   ? 'bg-orange-100 text-orange-700'

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -6,61 +6,12 @@ import { useUser } from '@/contexts/UserContext';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
+import apiService from '@/services/api';
+import type { ProductOut } from '@/types/product';
 import baobabHero from '@/assets/baobab-hero.jpg';
 import workshopArtisan from '@/assets/workshop-artisan.jpg';
 import cloudDivider from '@/assets/cloud-divider.png';
-
-const featuredProducts = [
-  {
-    id: 1,
-    name: 'Papier antemoro décoratif',
-    artisan: 'Rakoto Michel',
-    price: 20.00,
-    location: 'Antananarivo',
-    image: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=400&fit=crop',
-    category: 'PAPIER ANTEMORO',
-    rating: 4.8,
-    stock: 'En stock',
-    type: 'product'
-  },
-  {
-    id: 2,
-    name: 'Bouquet séché artisanal',
-    artisan: 'Hery Rasoamanana', 
-    price: 35.00,
-    location: 'Fianarantsoa',
-    image: 'https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=400&h=400&fit=crop',
-    category: 'FLORAL',
-    rating: 4.9,
-    stock: 'En stock',
-    type: 'product'
-  },
-  {
-    id: 3,
-    name: 'Bracelet en cuir tressé',
-    artisan: 'Naina Andriamalala',
-    price: 15.00,
-    location: 'Mahajanga',
-    image: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=400&fit=crop',
-    category: 'CUIR',
-    rating: 4.7,
-    stock: 'En stock',
-    type: 'product'
-  },
-  {
-    id: 4,
-    name: 'Atelier : Initiation à l\'apiculture',
-    artisan: 'Paul Razafy',
-    price: 45.00,
-    location: 'Antananarivo',
-    image: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=400&fit=crop',
-    category: 'ATELIER',
-    rating: 4.9,
-    duration: '2h30',
-    type: 'workshop'
-  }
-];
 
 const testimonials = [
   {
@@ -86,6 +37,22 @@ const testimonials = [
 const Index = () => {
   const { t, language } = useLanguage();
   const { isLoggedIn } = useUser();
+  const [featuredProducts, setFeaturedProducts] = useState<ProductOut[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNewProducts = async () => {
+      try {
+        const response = await apiService.getProducts({ limit: 4, page: 1 });
+        setFeaturedProducts(response.items);
+      } catch (err) {
+        console.error('Erreur lors du chargement des nouveautés:', err);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+    fetchNewProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -254,83 +221,76 @@ const Index = () => {
             <p className="text-artisan-text/70 text-lg mt-4">Nos derniers produits artisanaux et ateliers</p>
           </div>
           
-          <div className="grid md:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-0 rounded-2xl bg-white shadow-lg group">
-                <div className="aspect-square relative overflow-hidden rounded-t-2xl">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-xs font-semibold text-artisan-brown uppercase tracking-wide">
-                    {product.category}
-                  </div>
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors cursor-pointer">
-                    <svg className="w-4 h-4 text-artisan-brown" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                    </svg>
+          {productsLoading ? (
+            <div className="grid md:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="rounded-2xl bg-white shadow-lg animate-pulse">
+                  <div className="aspect-square bg-gray-200 rounded-t-2xl" />
+                  <div className="p-6 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded w-full" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    <div className="h-8 bg-gray-200 rounded-full mt-4" />
                   </div>
                 </div>
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-lg text-artisan-brown mb-2">{product.name}</h3>
-                  
-                  {product.type === 'product' ? (
-                    <>
+              ))}
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <p className="text-artisan-text/60 text-center py-8">Aucun produit disponible pour le moment.</p>
+          ) : (
+            <div className="grid md:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <Link key={product.id} to={`/product/${product.id}`}>
+                  <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 border-0 rounded-2xl bg-white shadow-lg group">
+                    <div className="aspect-square relative overflow-hidden rounded-t-2xl">
+                      <img
+                        src={product.images[0] || 'https://via.placeholder.com/400?text=Image+non+disponible'}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Image+non+disponible'; }}
+                      />
+                      <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-xs font-semibold text-artisan-brown uppercase tracking-wide">
+                        {product.category}
+                      </div>
+                      <div className="absolute top-4 right-4 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors cursor-pointer">
+                        <svg className="w-4 h-4 text-artisan-brown" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <CardContent className="p-6">
+                      <h3 className="font-bold text-lg text-artisan-brown mb-2">{product.name}</h3>
                       <p className="text-sm text-artisan-text/60 mb-4">
-                        Créé par {product.artisan} à {product.location}. Produit artisanal authentique fabriqué selon les traditions malgaches.
+                        Créé par {product.artisan.name}. Produit artisanal authentique fabriqué selon les traditions malgaches.
                       </p>
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2 text-sm text-artisan-text/60">
                           <span className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
                             <span className="text-xs text-white">✓</span>
                           </span>
-                          {product.stock}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-artisan-text/60">
-                          <MapPin className="w-4 h-4" />
-                          {product.location}
+                          {product.stock > 0 ? 'En stock' : 'Rupture de stock'}
                         </div>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm text-artisan-text/60 mb-4">
-                        Atelier animé par {product.artisan}. Découvrez les techniques traditionnelles dans une ambiance conviviale.
-                      </p>
                       <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2 text-sm text-artisan-text/60">
-                          <span className="w-4 h-4 rounded-full bg-artisan-brown flex items-center justify-center">
-                            <span className="text-xs text-white">⏱</span>
-                          </span>
-                          {product.duration}
+                        <div className="font-bold text-xl text-artisan-brown">
+                          {formatCurrency(product.price)}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-artisan-text/60">
-                          <MapPin className="w-4 h-4" />
-                          {product.location}
-                        </div>
+                        {product.rating != null && (
+                          <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm text-artisan-text/60">{product.rating.toFixed(1)}</span>
+                          </div>
+                        )}
                       </div>
-                    </>
-                  )}
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="font-bold text-xl text-artisan-brown">
-                      {product.price.toFixed(2)}€
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-artisan-text/60">{product.rating}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Bouton d'achat rapide */}
-                  <Button className="w-full bg-artisan-brown hover:bg-artisan-brown/90 text-white py-2 rounded-full font-medium transition-all duration-300 hover:scale-105">
-                    {product.type === 'product' ? 'Ajouter au panier' : 'Réserver maintenant'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      <Button className="w-full bg-artisan-brown hover:bg-artisan-brown/90 text-white py-2 rounded-full font-medium transition-all duration-300 hover:scale-105">
+                        Voir détails
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

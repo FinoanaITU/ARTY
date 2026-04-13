@@ -53,7 +53,7 @@ export interface ProductListItem {
 }
 
 export interface ProductListResponse {
-  items: ProductListItem[];
+  items: ProductOut[];
   total: number;
   page: number;
   pages: number;
